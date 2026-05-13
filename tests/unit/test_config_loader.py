@@ -146,6 +146,86 @@ providers:
     assert profile.bind.title == "Example Meeting"
 
 
+def test_profile_provider_fields_are_trimmed(tmp_path: Path) -> None:
+    profile_path = tmp_path / "providers-trimmed.yaml"
+    profile_path.write_text(
+        """
+id: provider-demo
+type: browser
+launch:
+  url: https://example.test/meeting
+bind:
+  title: Example Meeting
+observe:
+  intervalMs: 1000
+  sources: [screenshot]
+events: []
+narration:
+  style: concise_presenter
+  maxSentences: 2
+  minSecondsBetweenUtterances: 4
+  repeatCooldownSeconds: 30
+  confidenceThreshold: 0.75
+  forbidSharedScreenInterpretation: true
+audio:
+  output: speaker
+providers:
+  vision: " fake-vision "
+  narration: " fake-narration "
+  speech: " fake-speech "
+""",
+        encoding="utf-8",
+    )
+
+    profile = load_profile(profile_path)
+
+    assert profile.providers.vision == "fake-vision"
+    assert profile.providers.narration == "fake-narration"
+    assert profile.providers.speech == "fake-speech"
+
+
+@pytest.mark.parametrize("provider_field", ["vision", "narration", "speech"])
+def test_rejects_blank_profile_provider_field(tmp_path: Path, provider_field: str) -> None:
+    profile_path = tmp_path / "blank-provider.yaml"
+    providers = {
+        "vision": "fake",
+        "narration": "fake",
+        "speech": "fake",
+        provider_field: "   ",
+    }
+    profile_path.write_text(
+        f"""
+id: provider-demo
+type: browser
+launch:
+  url: https://example.test/meeting
+bind:
+  title: Example Meeting
+observe:
+  intervalMs: 1000
+  sources: [screenshot]
+events: []
+narration:
+  style: concise_presenter
+  maxSentences: 2
+  minSecondsBetweenUtterances: 4
+  repeatCooldownSeconds: 30
+  confidenceThreshold: 0.75
+  forbidSharedScreenInterpretation: true
+audio:
+  output: speaker
+providers:
+  vision: "{providers["vision"]}"
+  narration: "{providers["narration"]}"
+  speech: "{providers["speech"]}"
+""",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValidationError, match=provider_field):
+        load_profile(profile_path)
+
+
 def test_rejects_browser_profile_without_bind_target(tmp_path: Path) -> None:
     profile_path = tmp_path / "browser-without-bind-target.yaml"
     profile_path.write_text(

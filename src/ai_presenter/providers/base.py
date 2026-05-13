@@ -31,11 +31,24 @@ class SpeechProvider(Protocol):
 
 
 class ProviderRegistrationError(ValueError):
-    pass
+    def __init__(self, kind: str, name: str, message: str) -> None:
+        self.kind = kind
+        self.name = name
+        super().__init__(message)
 
 
 class ProviderLookupError(LookupError):
-    pass
+    def __init__(
+        self,
+        kind: str,
+        name: str,
+        available_names: tuple[str, ...],
+        message: str,
+    ) -> None:
+        self.kind = kind
+        self.name = name
+        self.available_names = available_names
+        super().__init__(message)
 
 
 class ProviderRegistry:
@@ -69,9 +82,14 @@ class ProviderRegistry:
         provider: ProviderT,
         providers: dict[str, ProviderT],
     ) -> None:
-        if name in providers:
-            raise ProviderRegistrationError(f"{kind} provider '{name}' is already registered.")
-        providers[name] = provider
+        normalized_name = self._normalize_name(kind, name, for_lookup=False)
+        if normalized_name in providers:
+            raise ProviderRegistrationError(
+                kind,
+                normalized_name,
+                f"{kind} provider '{normalized_name}' is already registered.",
+            )
+        providers[normalized_name] = provider
 
     def _lookup(
         self,
@@ -79,10 +97,25 @@ class ProviderRegistry:
         name: str,
         providers: dict[str, ProviderT],
     ) -> ProviderT:
+        normalized_name = self._normalize_name(kind, name, for_lookup=True)
         try:
-            return providers[name]
+            return providers[normalized_name]
         except KeyError as error:
-            available = ", ".join(sorted(providers)) or "none"
+            available_names = tuple(sorted(providers))
+            available = ", ".join(available_names) or "none"
             raise ProviderLookupError(
-                f"Unknown {kind} provider '{name}'. Available {kind} providers: {available}."
+                kind,
+                normalized_name,
+                available_names,
+                f"Unknown {kind} provider '{normalized_name}'. "
+                f"Available {kind} providers: {available}.",
             ) from error
+
+    def _normalize_name(self, kind: str, name: str, *, for_lookup: bool) -> str:
+        normalized_name = name.strip()
+        if normalized_name:
+            return normalized_name
+        message = f"{kind} provider name cannot be blank."
+        if for_lookup:
+            raise ProviderLookupError(kind, normalized_name, (), message)
+        raise ProviderRegistrationError(kind, normalized_name, message)

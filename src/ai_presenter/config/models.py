@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Annotated, Any, Literal, TypeAlias
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class CamelModel(BaseModel):
@@ -94,6 +94,16 @@ class ProviderConfig(CamelModel):
     vision: str
     narration: str
     speech: str
+
+    @field_validator("vision", "narration", "speech", mode="before")
+    @classmethod
+    def normalize_provider_name(cls, value: object) -> object:
+        if not isinstance(value, str):
+            return value
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("provider name cannot be blank")
+        return normalized
 
 
 class SharedProfileConfig(CamelModel):

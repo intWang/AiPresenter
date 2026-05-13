@@ -68,12 +68,50 @@ def test_registry_rejects_duplicate_speech_provider_name() -> None:
         registry.register_speech("fake", FakeSpeechProvider())
 
 
+def test_registry_rejects_blank_provider_name_for_registration() -> None:
+    registry = ProviderRegistry()
+
+    with pytest.raises(ProviderRegistrationError, match="vision.*blank"):
+        registry.register_vision("   ", FakeVisionProvider())
+
+
+def test_registry_rejects_blank_provider_name_for_lookup() -> None:
+    registry = ProviderRegistry()
+
+    with pytest.raises(ProviderLookupError, match="speech.*blank") as exc_info:
+        registry.speech("\t")
+
+    assert exc_info.value.kind == "speech"
+    assert exc_info.value.name == ""
+    assert exc_info.value.available_names == ()
+
+
+def test_registry_normalizes_whitespace_padded_names() -> None:
+    registry = ProviderRegistry()
+    speech = FakeSpeechProvider()
+
+    registry.register_speech("  fake  ", speech)
+
+    assert registry.speech("fake") is speech
+    assert registry.speech(" fake ") is speech
+
+    with pytest.raises(ProviderRegistrationError, match="speech.*fake") as exc_info:
+        registry.register_speech("fake", FakeSpeechProvider())
+
+    assert exc_info.value.kind == "speech"
+    assert exc_info.value.name == "fake"
+
+
 def test_registry_rejects_missing_provider() -> None:
     registry = ProviderRegistry()
     registry.register_speech("available", FakeSpeechProvider())
 
-    with pytest.raises(ProviderLookupError, match="speech.*missing.*available"):
+    with pytest.raises(ProviderLookupError, match="speech.*missing.*available") as exc_info:
         registry.speech("missing")
+
+    assert exc_info.value.kind == "speech"
+    assert exc_info.value.name == "missing"
+    assert exc_info.value.available_names == ("available",)
 
 
 def test_missing_provider_message_reports_empty_available_names() -> None:
@@ -109,6 +147,8 @@ def test_fake_speech_returns_wav_bytes() -> None:
     audio = FakeSpeechProvider().synthesize("Meeting joined.")
 
     assert audio.mime_type == "audio/wav"
+    assert audio.sample_rate == 16_000
+    assert audio.channels == 1
     assert audio.data.startswith(b"RIFF")
 
 

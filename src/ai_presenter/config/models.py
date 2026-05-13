@@ -30,6 +30,26 @@ class LaunchStep(CamelModel):
     target: str | None = None
     match: dict[str, Any] = Field(default_factory=dict)
 
+    @field_validator("action", mode="before")
+    @classmethod
+    def normalize_action(cls, value: object) -> object:
+        if not isinstance(value, str):
+            return value
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("launch action cannot be blank")
+        return normalized
+
+    @field_validator("target", mode="before")
+    @classmethod
+    def normalize_target(cls, value: object) -> object:
+        if value is None or not isinstance(value, str):
+            return value
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("launch target cannot be blank")
+        return normalized
+
 
 class LaunchConfig(CamelModel):
     app_process: str = Field(alias="appProcess")

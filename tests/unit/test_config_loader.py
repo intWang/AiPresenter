@@ -146,6 +146,121 @@ providers:
     assert profile.bind.title == "Example Meeting"
 
 
+def test_launch_step_action_and_target_are_trimmed(tmp_path: Path) -> None:
+    profile_path = tmp_path / "trimmed-launch-step.yaml"
+    profile_path.write_text(
+        """
+id: launch-step-demo
+type: browser
+launch:
+  url: https://example.test/meeting
+  steps:
+    - action: " clickTab "
+      target: " Video "
+bind:
+  title: Example Meeting
+observe:
+  intervalMs: 1000
+  sources: [screenshot]
+events: []
+narration:
+  style: concise_presenter
+  maxSentences: 2
+  minSecondsBetweenUtterances: 4
+  repeatCooldownSeconds: 30
+  confidenceThreshold: 0.75
+  forbidSharedScreenInterpretation: true
+audio:
+  output: speaker
+providers:
+  vision: fake
+  narration: fake
+  speech: fake
+""",
+        encoding="utf-8",
+    )
+
+    profile = load_profile(profile_path)
+
+    assert profile.launch.steps[0].action == "clickTab"
+    assert profile.launch.steps[0].target == "Video"
+
+
+def test_rejects_blank_launch_action(tmp_path: Path) -> None:
+    profile_path = tmp_path / "blank-launch-action.yaml"
+    profile_path.write_text(
+        """
+id: launch-step-demo
+type: browser
+launch:
+  url: https://example.test/meeting
+  steps:
+    - action: "   "
+bind:
+  title: Example Meeting
+observe:
+  intervalMs: 1000
+  sources: [screenshot]
+events: []
+narration:
+  style: concise_presenter
+  maxSentences: 2
+  minSecondsBetweenUtterances: 4
+  repeatCooldownSeconds: 30
+  confidenceThreshold: 0.75
+  forbidSharedScreenInterpretation: true
+audio:
+  output: speaker
+providers:
+  vision: fake
+  narration: fake
+  speech: fake
+""",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValidationError, match="launch action cannot be blank"):
+        load_profile(profile_path)
+
+
+def test_rejects_blank_launch_target(tmp_path: Path) -> None:
+    profile_path = tmp_path / "blank-launch-target.yaml"
+    profile_path.write_text(
+        """
+id: launch-step-demo
+type: browser
+launch:
+  url: https://example.test/meeting
+  steps:
+    - action: clickTab
+      target: "   "
+bind:
+  title: Example Meeting
+observe:
+  intervalMs: 1000
+  sources: [screenshot]
+events: []
+narration:
+  style: concise_presenter
+  maxSentences: 2
+  minSecondsBetweenUtterances: 4
+  repeatCooldownSeconds: 30
+  confidenceThreshold: 0.75
+  forbidSharedScreenInterpretation: true
+audio:
+  output: speaker
+providers:
+  vision: fake
+  narration: fake
+  speech: fake
+""",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValidationError, match="launch target cannot be blank"):
+        load_profile(profile_path)
+
+
 def test_profile_provider_fields_are_trimmed(tmp_path: Path) -> None:
     profile_path = tmp_path / "providers-trimmed.yaml"
     profile_path.write_text(

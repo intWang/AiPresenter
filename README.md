@@ -17,3 +17,7 @@ python -m venv .venv
 ```
 
 The RingCentral MVP assumes `RingCentralDevelop` is already open and logged in.
+
+## Manual Acceptance
+
+Use `docs/runbooks/ringcentral-manual-acceptance.md` for the RingCentral MVP checklist.

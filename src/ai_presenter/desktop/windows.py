@@ -78,6 +78,7 @@ class WindowsDesktopDriver:
 
     def focus_window(self, process: str) -> None:
         _require_dependency(Application, "pywinauto")
+        self._focused_window = None
         executable = _process_executable(process)
         try:
             app = Application(backend="uia").connect(path=executable)

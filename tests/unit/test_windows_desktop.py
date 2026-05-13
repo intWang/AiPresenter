@@ -165,6 +165,28 @@ def test_focus_window_connects_to_process_executable_and_focuses(
     ]
 
 
+def test_failed_refocus_clears_previous_focused_window(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root = FakeControl("RingCentral", [FakeClickableControl("Start", "ButtonControl", [])])
+    driver = focused_driver(monkeypatch, root)
+
+    class FailingApplication:
+        def __init__(self, backend: str) -> None:
+            assert backend == "uia"
+
+        def connect(self, path: str) -> "FailingApplication":
+            raise RuntimeError(f"missing {path}")
+
+    monkeypatch.setattr(windows, "Application", FailingApplication)
+
+    with pytest.raises(RuntimeError, match="missing Missing.exe"):
+        driver.focus_window("Missing")
+
+    with pytest.raises(RuntimeError, match="before focusing a window"):
+        driver.click_button("Start")
+
+
 def test_click_tab_clicks_named_tab(monkeypatch: pytest.MonkeyPatch) -> None:
     clicked: list[str] = []
     root = FakeControl(
@@ -255,6 +277,24 @@ def test_wait_for_window_fails_fast_on_binding_errors(monkeypatch: pytest.Monkey
         WindowsDesktopDriver().wait_for_window("RingCentralVideo", "VideoClass", 30_000)
 
 
+def test_wait_for_window_reports_missing_pywinauto_dependency(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(windows, "Desktop", None)
+
+    with pytest.raises(RuntimeError, match="pywinauto"):
+        WindowsDesktopDriver().wait_for_window("RingCentralVideo", "VideoClass", 30_000)
+
+
+def test_wait_for_window_reports_missing_psutil_dependency(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(windows, "psutil", None)
+
+    with pytest.raises(RuntimeError, match="psutil"):
+        WindowsDesktopDriver().wait_for_window("RingCentralVideo", "VideoClass", 30_000)
+
+
 def test_focus_window_reports_missing_dependency(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(windows, "Application", None)
 
@@ -267,6 +307,21 @@ def test_capture_reports_missing_pywinauto_dependency(monkeypatch: pytest.Monkey
 
     with pytest.raises(RuntimeError, match="pywinauto"):
         WindowsDesktopDriver().capture(WindowHandle("RingCentralVideo", 4321, "VideoClass", "Old"))
+
+
+@pytest.mark.parametrize(
+    ("dependency", "package"),
+    [("mss", "mss"), ("Image", "Pillow")],
+)
+def test_capture_bounds_png_reports_missing_dependencies(
+    monkeypatch: pytest.MonkeyPatch,
+    dependency: str,
+    package: str,
+) -> None:
+    monkeypatch.setattr(windows, dependency, None)
+
+    with pytest.raises(RuntimeError, match=package):
+        windows._capture_bounds_png((0, 0, 10, 10))
 
 
 def test_capture_binds_window_and_builds_observation(monkeypatch: pytest.MonkeyPatch) -> None:

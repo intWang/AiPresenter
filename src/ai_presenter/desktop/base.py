@@ -1,6 +1,8 @@
 from dataclasses import dataclass
+from collections.abc import Iterable
 from typing import Protocol
 
+from ai_presenter.config.models import ObservationSource
 from ai_presenter.domain.state import RawObservation
 
 
@@ -25,7 +27,14 @@ class DesktopDriver(Protocol):
     def wait_for_window(self, process: str, window_class: str, timeout_ms: int) -> WindowHandle:
         ...
 
+    def read_focused_window_text(self) -> tuple[str, ...]:
+        ...
+
 
 class ObservationDriver(Protocol):
-    def capture(self, handle: WindowHandle) -> RawObservation:
+    def capture(
+        self,
+        handle: WindowHandle,
+        sources: Iterable[ObservationSource] | None = None,
+    ) -> RawObservation:
         ...

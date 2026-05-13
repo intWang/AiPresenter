@@ -88,6 +88,33 @@ def test_detects_connection_warning():
     assert events[0].payload == {"connectionWarning": "unstable"}
 
 
+def test_filters_events_by_enabled_event_types() -> None:
+    detector = EventDetector(enabled_event_types=("camera_state_changed",))
+    previous = MeetingState(
+        meeting_joined=True,
+        mic_muted=False,
+        camera_off=False,
+        confidence=0.9,
+    )
+    current = MeetingState(
+        meeting_joined=True,
+        mic_muted=True,
+        camera_off=True,
+        confidence=0.9,
+    )
+
+    events = detector.detect(previous=previous, current=current)
+
+    assert [event.type for event in events] == ["camera_state_changed"]
+
+
+def test_empty_enabled_event_types_suppresses_all_events() -> None:
+    detector = EventDetector(enabled_event_types=())
+    current = MeetingState(meeting_joined=True, confidence=0.9)
+
+    assert detector.detect(previous=None, current=current) == []
+
+
 def test_uses_injected_clock_for_event_timestamps():
     occurred_at = datetime(2026, 5, 13, 12, 0, tzinfo=timezone.utc)
     detector = EventDetector(clock=lambda: occurred_at)
@@ -155,6 +182,17 @@ def test_reducer_handles_empty_candidates():
     state = reducer.reduce(current, [])
 
     assert state == current
+
+
+def test_reducer_ignores_confidence_from_states_without_field_evidence() -> None:
+    reducer = StateReducer()
+    current = MeetingState(confidence=0.2)
+    candidate = MeetingState(meeting_joined=True, confidence=0.9)
+
+    state = reducer.reduce(current, [candidate])
+
+    assert state.meeting_joined is True
+    assert state.confidence == 0.9
 
 
 def test_raw_observation_stores_ui_text_immutably():

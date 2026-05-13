@@ -4,7 +4,7 @@ import pytest
 
 from ai_presenter.adapters.ringcentral import RingCentralAdapter
 from ai_presenter.config.loader import load_profile
-from ai_presenter.config.models import DesktopAppProfile
+from ai_presenter.config.models import DesktopAppProfile, ObservationSource
 from ai_presenter.desktop.base import WindowHandle
 from ai_presenter.domain.state import MeetingState, PresenterEvent, RawObservation, WindowMetadata
 from ai_presenter.providers.base import SpeechAudio
@@ -18,9 +18,15 @@ class FakeObservationDriver:
     def __init__(self, observations: list[RawObservation]) -> None:
         self._observations = list(observations)
         self.handles: list[WindowHandle] = []
+        self.sources: list[tuple[ObservationSource, ...] | None] = []
 
-    def capture(self, handle: WindowHandle) -> RawObservation:
+    def capture(
+        self,
+        handle: WindowHandle,
+        sources: tuple[ObservationSource, ...] | None = None,
+    ) -> RawObservation:
         self.handles.append(handle)
+        self.sources.append(sources)
         if not self._observations:
             raise AssertionError("capture called more times than expected")
         return self._observations.pop(0)
@@ -80,6 +86,16 @@ class SequenceNarrationProvider:
         return self._responses.pop(0)
 
 
+class StaticVisionProvider:
+    def __init__(self, state: MeetingState) -> None:
+        self._state = state
+        self.calls = 0
+
+    def recognize(self, observation: RawObservation) -> MeetingState:
+        self.calls += 1
+        return self._state
+
+
 def make_handle() -> WindowHandle:
     return WindowHandle(
         process="RingCentralVideo",
@@ -120,6 +136,8 @@ def make_loop(
     narration_provider: FakeNarrationProvider | SequenceNarrationProvider | None = None,
     speech_provider: FakeSpeechProvider | FailingOnceSpeechProvider | None = None,
     media_output: RecordingSink | FailingOnceSink | None = None,
+    observation_sources: tuple[ObservationSource, ...] | None = None,
+    vision_provider: StaticVisionProvider | None = None,
 ) -> tuple[
     PresenterLoop,
     FakeSpeechProvider | FailingOnceSpeechProvider,
@@ -140,6 +158,8 @@ def make_loop(
         narration_engine=narration,
         speech_provider=speech,
         media_output=sink,
+        observation_sources=observation_sources,
+        vision_provider=vision_provider,
     )
     return loop, speech, sink
 
@@ -274,3 +294,49 @@ def test_media_output_failure_does_not_commit_cooldown_or_state() -> None:
         "Detected meeting event: meeting_joined.",
     ]
     assert len(sink.audio) == 1
+
+
+def test_loop_passes_configured_observation_sources_to_driver() -> None:
+    observation = make_observation(["Mute microphone", "Stop video", "Participants 2"])
+    driver = FakeObservationDriver([observation])
+    profile = load_desktop_profile()
+    speech = FakeSpeechProvider()
+    sink = RecordingSink()
+    loop = PresenterLoop(
+        observation_driver=driver,
+        adapter=RingCentralAdapter(),
+        event_detector=EventDetector(confidence_threshold=profile.narration.confidence_threshold),
+        narration_engine=NarrationEngine(profile.narration, FakeNarrationProvider()),
+        speech_provider=speech,
+        media_output=sink,
+        observation_sources=(ObservationSource.WINDOWS_UI_AUTOMATION,),
+    )
+
+    loop.run_once(make_handle())
+
+    assert driver.sources == [(ObservationSource.WINDOWS_UI_AUTOMATION,)]
+
+
+def test_loop_merges_vision_provider_state_before_detecting_events() -> None:
+    provider = StaticVisionProvider(MeetingState(meeting_joined=True, confidence=0.9))
+    loop, speech, _ = make_loop(
+        [make_observation(["RingCentral Video"])],
+        vision_provider=provider,
+    )
+
+    loop.run_once(make_handle())
+
+    assert provider.calls == 1
+    assert speech.spoken_texts == ["Detected meeting event: meeting_joined."]
+
+
+def test_loop_prefers_higher_confidence_adapter_state_over_lower_confidence_vision() -> None:
+    provider = StaticVisionProvider(MeetingState(meeting_joined=False, confidence=0.2))
+    loop, speech, _ = make_loop(
+        [make_observation(["Mute microphone", "Stop video", "Participants 2"])],
+        vision_provider=provider,
+    )
+
+    loop.run_once(make_handle())
+
+    assert speech.spoken_texts == ["Detected meeting event: meeting_joined."]

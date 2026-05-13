@@ -18,6 +18,14 @@ def test_load_ringcentral_profile() -> None:
     assert profile.audio.output is AudioOutputMode.BOTH
 
 
+def test_load_ringcentral_openai_example_profile() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-openai.example.yaml"))
+
+    assert profile.id == "ringcentral-video-openai"
+    assert profile.providers.narration == "openai"
+    assert profile.providers.speech == "openai"
+
+
 def test_rejects_unknown_audio_mode(tmp_path: Path) -> None:
     profile_path = tmp_path / "bad.yaml"
     profile_path.write_text(

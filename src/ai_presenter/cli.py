@@ -9,6 +9,9 @@ from ai_presenter.runtime.logging import configure_logging
 
 app = typer.Typer(help="AI presenter CLI for configured app profiles.")
 
+PACKAGE_PROFILE_DIR = Path(__file__).resolve().parent / "profiles"
+REPO_PROFILE_DIR = Path(__file__).resolve().parents[2] / "profiles"
+
 
 @app.callback()
 def main() -> None:
@@ -16,12 +19,13 @@ def main() -> None:
 
 
 def resolve_profile(profile: str) -> Path:
-    candidate = Path(profile)
+    candidate = Path(profile).expanduser()
     if candidate.exists():
         return candidate
-    bundled = Path("profiles") / f"{profile}.yaml"
-    if bundled.exists():
-        return bundled
+    for profile_dir in (Path.cwd() / "profiles", REPO_PROFILE_DIR, PACKAGE_PROFILE_DIR):
+        bundled = profile_dir / f"{profile}.yaml"
+        if bundled.exists():
+            return bundled
     raise typer.BadParameter(f"Profile not found: {profile}")
 
 

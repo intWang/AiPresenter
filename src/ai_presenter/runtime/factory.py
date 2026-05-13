@@ -22,7 +22,7 @@ from ai_presenter.runtime.profile_runner import ProfileRunner
 
 def create_fake_provider_registry() -> ProviderRegistry:
     registry = ProviderRegistry()
-    registry.register_vision("fake", FakeVisionProvider(MeetingState(meeting_joined=True, confidence=1.0)))
+    registry.register_vision("fake", FakeVisionProvider(MeetingState(confidence=1.0)))
     registry.register_narration("fake", FakeNarrationProvider())
     registry.register_speech("fake", FakeSpeechProvider())
     return registry
@@ -59,13 +59,18 @@ def create_presenter_loop(
     return PresenterLoop(
         observation_driver=desktop,
         adapter=create_adapter(profile),
-        event_detector=EventDetector(profile.narration.confidence_threshold),
+        event_detector=EventDetector(
+            profile.narration.confidence_threshold,
+            enabled_event_types=profile.events,
+        ),
         narration_engine=NarrationEngine(
             profile.narration,
             registry.narration(profile.providers.narration),
         ),
         speech_provider=registry.speech(profile.providers.speech),
         media_output=create_media_output(profile),
+        observation_sources=profile.observe.sources,
+        vision_provider=registry.vision(profile.providers.vision),
     )
 
 

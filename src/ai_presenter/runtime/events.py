@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from dataclasses import replace
 from datetime import datetime
 from typing import Callable
@@ -14,9 +15,13 @@ class EventDetector:
         self,
         confidence_threshold: float = 0.75,
         clock: Callable[[], datetime] = utc_now,
+        enabled_event_types: Iterable[str] | None = None,
     ) -> None:
         self._confidence_threshold = confidence_threshold
         self._clock = clock
+        self._enabled_event_types = (
+            None if enabled_event_types is None else frozenset(enabled_event_types)
+        )
 
     def detect(
         self,
@@ -42,7 +47,7 @@ class EventDetector:
                         event_time,
                     )
                 )
-            return events
+            return self._filter_enabled_events(events)
 
         if previous.meeting_joined is not True and current.meeting_joined is True:
             events.append(self._event("meeting_joined", {}, current.confidence, event_time))
@@ -100,7 +105,7 @@ class EventDetector:
                 )
             )
 
-        return events
+        return self._filter_enabled_events(events)
 
     def is_confident(self, state: MeetingState) -> bool:
         return state.confidence >= self._confidence_threshold
@@ -114,6 +119,11 @@ class EventDetector:
     ) -> PresenterEvent:
         return PresenterEvent(event_type, payload, confidence, occurred_at)
 
+    def _filter_enabled_events(self, events: list[PresenterEvent]) -> list[PresenterEvent]:
+        if self._enabled_event_types is None:
+            return events
+        return [event for event in events if event.type in self._enabled_event_types]
+
 
 class StateReducer:
     def reduce(
@@ -122,10 +132,11 @@ class StateReducer:
         candidates: list[MeetingState],
     ) -> MeetingState:
         state = current
-        confidence = current.confidence
+        evidence_confidences = [current.confidence] if self._has_evidence(current) else []
 
         for candidate in candidates:
-            confidence = min(confidence, candidate.confidence)
+            if self._has_evidence(candidate):
+                evidence_confidences.append(candidate.confidence)
             state = replace(
                 state,
                 meeting_joined=self._latest(state.meeting_joined, candidate.meeting_joined),
@@ -140,10 +151,27 @@ class StateReducer:
                     state.connection_warning,
                     candidate.connection_warning,
                 ),
-                confidence=confidence,
+                confidence=(
+                    min(evidence_confidences)
+                    if evidence_confidences
+                    else current.confidence
+                ),
             )
 
         return state
+
+    def _has_evidence(self, state: MeetingState) -> bool:
+        return any(
+            field is not None
+            for field in (
+                state.meeting_joined,
+                state.mic_muted,
+                state.camera_off,
+                state.active_dialog,
+                state.participant_count,
+                state.connection_warning,
+            )
+        )
 
     def _latest(self, previous: T | None, candidate: T | None) -> T | None:
         if candidate is None:

@@ -17,6 +17,8 @@ python -m venv .venv
 ```
 
 The RingCentral MVP assumes `RingCentralDevelop` is already open and logged in.
+The bundled `ringcentral-video` profile uses fake narration and speech providers for smoke testing.
+Use `profiles\ringcentral-video-openai.example.yaml` when manually accepting real OpenAI narration and audio output.
 
 ## Manual Acceptance
 

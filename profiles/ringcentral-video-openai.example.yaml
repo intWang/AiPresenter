@@ -1,0 +1,52 @@
+id: ringcentral-video-openai
+type: desktop
+
+launch:
+  appProcess: RingCentralDevelop
+  requireAlreadyLoggedIn: true
+  steps:
+    - action: focusWindow
+      match:
+        process: RingCentralDevelop
+    - action: clickTab
+      target: Video
+    - action: clickButton
+      target: Start
+
+bind:
+  process: RingCentralVideo
+  windowClass: RingCentralVideoClass
+  timeoutMs: 30000
+
+observe:
+  intervalMs: 1000
+  sources:
+    - screenshot
+    - windowsUiAutomation
+    - windowMetadata
+
+events:
+  - meeting_joined
+  - mic_state_changed
+  - camera_state_changed
+  - participant_count_changed
+  - dialog_appeared
+  - connection_warning
+
+narration:
+  style: concise_presenter
+  maxSentences: 2
+  minSecondsBetweenUtterances: 4
+  repeatCooldownSeconds: 30
+  confidenceThreshold: 0.75
+  forbidSharedScreenInterpretation: true
+
+audio:
+  output: both
+  speakerDevice: default
+  virtualMicDevice: "VB-CABLE Input"
+
+providers:
+  vision: fake
+  narration: openai
+  speech: openai

@@ -9,8 +9,9 @@ from ai_presenter.runtime.profile_runner import ProfileRunner
 
 
 class FakeDesktopDriver(DesktopDriver):
-    def __init__(self) -> None:
+    def __init__(self, focused_text: tuple[str, ...] = ()) -> None:
         self.actions: list[str] = []
+        self._focused_text = focused_text
 
     def focus_window(self, process: str) -> None:
         self.actions.append(f"focus:{process}")
@@ -24,6 +25,10 @@ class FakeDesktopDriver(DesktopDriver):
     def wait_for_window(self, process: str, window_class: str, timeout_ms: int) -> WindowHandle:
         self.actions.append(f"wait:{process}:{window_class}:{timeout_ms}")
         return WindowHandle(process, 1234, window_class, "RingCentral Video")
+
+    def read_focused_window_text(self) -> tuple[str, ...]:
+        self.actions.append("read-text")
+        return self._focused_text
 
 
 def load_desktop_profile() -> DesktopAppProfile:
@@ -46,6 +51,7 @@ def test_profile_runner_executes_launch_steps_and_binds_window() -> None:
     assert handle.process == "RingCentralVideo"
     assert desktop.actions == [
         "focus:RingCentralDevelop",
+        "read-text",
         "tab:Video",
         "button:Start",
         "wait:RingCentralVideo:RingCentralVideoClass:30000",
@@ -123,7 +129,7 @@ def test_profile_runner_rejects_blank_target_before_dispatch(
     assert desktop.actions == []
 
 
-def test_profile_runner_stops_after_first_validation_failure() -> None:
+def test_profile_runner_validates_all_steps_before_dispatch() -> None:
     profile = profile_with_steps(
         [
             LaunchStep(action="clickButton", target="Join"),
@@ -135,4 +141,26 @@ def test_profile_runner_stops_after_first_validation_failure() -> None:
     with pytest.raises(ValueError, match="focusWindow requires match.process"):
         ProfileRunner(profile, desktop).launch_and_bind()
 
-    assert desktop.actions == ["button:Join"]
+    assert desktop.actions == []
+
+
+def test_profile_runner_requires_focus_process_to_match_app_process() -> None:
+    profile = profile_with_steps(
+        [LaunchStep(action="focusWindow", match={"process": "OtherApp"})]
+    )
+    desktop = FakeDesktopDriver()
+
+    with pytest.raises(ValueError, match="match.process must match launch.appProcess"):
+        ProfileRunner(profile, desktop).launch_and_bind()
+
+    assert desktop.actions == []
+
+
+def test_profile_runner_stops_before_clicking_when_login_screen_is_visible() -> None:
+    profile = load_desktop_profile()
+    desktop = FakeDesktopDriver(focused_text=("RingCentral", "Sign in"))
+
+    with pytest.raises(RuntimeError, match="already logged-in"):
+        ProfileRunner(profile, desktop).launch_and_bind()
+
+    assert desktop.actions == ["focus:RingCentralDevelop", "read-text"]

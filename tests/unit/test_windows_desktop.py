@@ -6,6 +6,7 @@ import pytest
 from ai_presenter.desktop import windows
 from ai_presenter.desktop.base import WindowHandle
 from ai_presenter.desktop.windows import WindowsDesktopDriver, collect_ui_text
+from ai_presenter.config.models import ObservationSource
 
 
 class FakeControl:
@@ -214,6 +215,23 @@ def test_click_button_requires_focused_window() -> None:
         WindowsDesktopDriver().click_button("Start")
 
 
+def test_read_focused_window_text_uses_focused_control_tree(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root = FakeControl("RingCentral", [FakeControl("Video"), FakeControl("Start")])
+
+    assert focused_driver(monkeypatch, root).read_focused_window_text() == (
+        "RingCentral",
+        "Video",
+        "Start",
+    )
+
+
+def test_read_focused_window_text_requires_focused_window() -> None:
+    with pytest.raises(RuntimeError, match="before focusing a window"):
+        WindowsDesktopDriver().read_focused_window_text()
+
+
 def test_wait_for_window_uses_process_and_class(monkeypatch: pytest.MonkeyPatch) -> None:
     lookups: list[tuple[int, str]] = []
 
@@ -380,3 +398,54 @@ def test_capture_binds_window_and_builds_observation(monkeypatch: pytest.MonkeyP
     assert observation.metadata.bounds == (5, 10, 105, 60)
     assert observation.metadata.focused is True
     assert observation.metadata.minimized is False
+
+
+def test_capture_respects_requested_observation_sources(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    capture_calls: list[tuple[int, int, int, int]] = []
+    control_calls: list[int] = []
+
+    class FakeWindow:
+        handle = 99
+
+        def rectangle(self) -> SimpleNamespace:
+            return SimpleNamespace(left=5, top=10, right=105, bottom=60)
+
+        def window_text(self) -> str:
+            return "Live meeting"
+
+    class FakeWindowSpec:
+        def wrapper_object(self) -> FakeWindow:
+            return FakeWindow()
+
+    class FakeDesktop:
+        def __init__(self, backend: str) -> None:
+            assert backend == "uia"
+
+        def window(self, *, process: int, class_name: str) -> FakeWindowSpec:
+            return FakeWindowSpec()
+
+    def fake_capture(bounds: tuple[int, int, int, int]) -> bytes:
+        capture_calls.append(bounds)
+        return b"png"
+
+    def fake_control_from_handle(handle: int) -> FakeControl:
+        control_calls.append(handle)
+        return FakeControl("Meeting")
+
+    monkeypatch.setattr(windows, "Desktop", FakeDesktop)
+    monkeypatch.setattr(windows, "_capture_bounds_png", fake_capture)
+    monkeypatch.setattr(windows.uiautomation, "ControlFromHandle", fake_control_from_handle)
+
+    observation = WindowsDesktopDriver().capture(
+        WindowHandle("RingCentralVideo", 4321, "VideoClass", "Old title"),
+        [ObservationSource.WINDOW_METADATA],
+    )
+
+    assert observation.screenshot_png is None
+    assert observation.ui_text == ()
+    assert observation.metadata.title == "Live meeting"
+    assert observation.metadata.bounds == (5, 10, 105, 60)
+    assert capture_calls == []
+    assert control_calls == []

@@ -39,6 +39,9 @@ ai-presenter = "ai_presenter.cli:app"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+ai_presenter = ["profiles/*.yaml"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--cov=ai_presenter --cov-report=term-missing --cov-fail-under=80"

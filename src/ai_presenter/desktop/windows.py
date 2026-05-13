@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import importlib
+from collections.abc import Iterable
 from io import BytesIO
 from time import monotonic, sleep
 from typing import Any
 
+from ai_presenter.config.models import ObservationSource
 from ai_presenter.desktop.base import WindowHandle
 from ai_presenter.domain.state import RawObservation, WindowMetadata
 
@@ -94,6 +96,15 @@ class WindowsDesktopDriver:
     def click_button(self, target: str) -> None:
         _click_named_control(self._focused_window, target, "Button", ("button",))
 
+    def read_focused_window_text(self) -> tuple[str, ...]:
+        if self._focused_window is None:
+            raise RuntimeError("Cannot read focused window text before focusing a window")
+
+        root_control = _control_from_window(self._focused_window)
+        if root_control is None:
+            return ()
+        return tuple(collect_ui_text(root_control))
+
     def wait_for_window(self, process: str, window_class: str, timeout_ms: int) -> WindowHandle:
         _require_dependency(Desktop, "pywinauto")
         _require_dependency(psutil, "psutil")
@@ -119,7 +130,12 @@ class WindowsDesktopDriver:
 
             sleep(min(_WINDOW_POLL_INTERVAL_SECONDS, max(deadline - monotonic(), 0)))
 
-    def capture(self, handle: WindowHandle) -> RawObservation:
+    def capture(
+        self,
+        handle: WindowHandle,
+        sources: Iterable[ObservationSource] | None = None,
+    ) -> RawObservation:
+        requested_sources = _normalize_observation_sources(sources)
         try:
             window = _bind_window(handle.pid, handle.window_class)
         except Exception as exc:
@@ -127,21 +143,40 @@ class WindowsDesktopDriver:
                 f"Unable to bind window class {handle.window_class} for pid {handle.pid}: {exc}"
             ) from exc
 
-        bounds = _window_bounds(window)
-        control = _control_from_window(window)
-        ui_text = collect_ui_text(control) if control is not None else []
+        needs_bounds = (
+            ObservationSource.SCREENSHOT in requested_sources
+            or ObservationSource.WINDOW_METADATA in requested_sources
+        )
+        bounds = _window_bounds(window) if needs_bounds else (0, 0, 0, 0)
+
+        ui_text: list[str] = []
+        if ObservationSource.WINDOWS_UI_AUTOMATION in requested_sources:
+            control = _control_from_window(window)
+            ui_text = collect_ui_text(control) if control is not None else []
+
+        title = handle.title
+        focused = False
+        minimized = False
+        if ObservationSource.WINDOW_METADATA in requested_sources:
+            title = _window_title(window, fallback=handle.title)
+            focused = _call_bool_window_method(window, "is_active")
+            minimized = _call_bool_window_method(window, "is_minimized")
 
         return RawObservation(
             metadata=WindowMetadata(
                 process=handle.process,
                 pid=handle.pid,
                 window_class=handle.window_class,
-                title=_window_title(window, fallback=handle.title),
+                title=title,
                 bounds=bounds,
-                focused=_call_bool_window_method(window, "is_active"),
-                minimized=_call_bool_window_method(window, "is_minimized"),
+                focused=focused,
+                minimized=minimized,
             ),
-            screenshot_png=_capture_bounds_png(bounds),
+            screenshot_png=(
+                _capture_bounds_png(bounds)
+                if ObservationSource.SCREENSHOT in requested_sources
+                else None
+            ),
             ui_text=ui_text,
         )
 
@@ -151,6 +186,14 @@ def _process_executable(process: str) -> str:
     if stripped_process.casefold().endswith(".exe"):
         return stripped_process
     return f"{stripped_process}.exe"
+
+
+def _normalize_observation_sources(
+    sources: Iterable[ObservationSource] | None,
+) -> frozenset[ObservationSource]:
+    if sources is None:
+        return frozenset(ObservationSource)
+    return frozenset(ObservationSource(source) for source in sources)
 
 
 def _focus_window(window: Any) -> None:

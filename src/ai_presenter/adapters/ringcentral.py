@@ -6,20 +6,23 @@ from ai_presenter.domain.state import MeetingState, RawObservation
 class RingCentralAdapter:
     def extract_state(self, observation: RawObservation) -> MeetingState:
         labels = tuple(observation.ui_text)
-        text = " ".join(observation.ui_text)
         ringcentral_window = (
             observation.metadata.process == "RingCentralVideo"
             and observation.metadata.window_class == "RingCentralVideoClass"
         )
         mic_muted = self._mic_muted(labels)
         camera_off = self._camera_off(labels)
-        participant_count = self._participant_count(text)
-        meeting_joined = ringcentral_window and self._has_in_meeting_evidence(
-            mic_muted=mic_muted,
-            camera_off=camera_off,
-            participant_count=participant_count,
-        )
+        participant_count = self._participant_count(labels)
         active_dialog = self._active_dialog(labels)
+        meeting_joined = (
+            ringcentral_window
+            and active_dialog is None
+            and self._has_in_meeting_evidence(
+                mic_muted=mic_muted,
+                camera_off=camera_off,
+                participant_count=participant_count,
+            )
+        )
         connection_warning = self._connection_warning(labels)
         return MeetingState(
             meeting_joined=meeting_joined,
@@ -50,12 +53,17 @@ class RingCentralAdapter:
             return False
         return None
 
-    def _participant_count(self, text: str) -> int | None:
-        match = re.search(r"\bParticipants?\s*(?:\(\s*(\d+)\s*\)|:\s*(\d+)|\s+(\d+))", text)
-        if not match:
-            return None
-        count = next(group for group in match.groups() if group is not None)
-        return int(count)
+    def _participant_count(self, labels: tuple[str, ...]) -> int | None:
+        for label in labels:
+            match = re.fullmatch(
+                r"\s*Participants\s*(?:\(\s*(\d+)\s*\)|:\s*(\d+)|\s+(\d+))\s*",
+                label,
+                flags=re.IGNORECASE,
+            )
+            if match:
+                count = next(group for group in match.groups() if group is not None)
+                return int(count)
+        return None
 
     def _active_dialog(self, labels: tuple[str, ...]) -> str | None:
         normalized = {label.strip().lower() for label in labels}

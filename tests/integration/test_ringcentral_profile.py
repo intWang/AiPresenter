@@ -150,6 +150,20 @@ def test_participant_count_supports_colon():
     assert state.participant_count == 3
 
 
+@pytest.mark.parametrize("label", ["Participant 3", "Participant 3 of 10"])
+def test_singular_participant_labels_do_not_create_in_meeting_evidence(label: str):
+    adapter = RingCentralAdapter()
+    detector = EventDetector(confidence_threshold=0.75)
+    state = adapter.extract_state(make_observation([label]))
+
+    events = detector.detect(previous=None, current=state)
+
+    assert state.participant_count is None
+    assert state.meeting_joined is False
+    assert state.confidence < 0.75
+    assert events == []
+
+
 def test_no_useful_evidence_returns_lower_confidence_than_happy_path():
     adapter = RingCentralAdapter()
     happy_path = adapter.extract_state(
@@ -210,6 +224,31 @@ def test_prejoin_dialogs_do_not_emit_initial_meeting_joined_event(
     assert [event.type for event in events] == ["dialog_appeared"]
 
 
+@pytest.mark.parametrize(
+    ("label", "active_dialog"),
+    [
+        ("Waiting room", "waiting room"),
+        ("Waiting for host", "waiting room"),
+        ("Permission required", "permission"),
+        ("Permissions required", "permission"),
+    ],
+)
+def test_prejoin_dialogs_suppress_meeting_joined_with_other_evidence(
+    label: str,
+    active_dialog: str,
+):
+    adapter = RingCentralAdapter()
+    detector = EventDetector(confidence_threshold=0.75)
+    state = adapter.extract_state(make_observation([label, "Participants 3"]))
+
+    events = detector.detect(previous=None, current=state)
+
+    assert state.meeting_joined is False
+    assert state.active_dialog == active_dialog
+    assert state.participant_count == 3
+    assert [event.type for event in events] == ["dialog_appeared"]
+
+
 def test_happy_path_state_stays_above_runtime_threshold():
     adapter = RingCentralAdapter()
     detector = EventDetector(confidence_threshold=0.75)
@@ -226,6 +265,18 @@ def test_right_window_class_with_wrong_process_does_not_mark_joined():
     observation = make_observation(
         ["Mute microphone", "Stop video"],
         process="OtherProcess",
+    )
+
+    state = adapter.extract_state(observation)
+
+    assert state.meeting_joined is False
+
+
+def test_right_process_with_wrong_window_class_does_not_mark_joined():
+    adapter = RingCentralAdapter()
+    observation = make_observation(
+        ["Mute microphone", "Stop video"],
+        window_class="OtherWindowClass",
     )
 
     state = adapter.extract_state(observation)

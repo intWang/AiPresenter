@@ -16,7 +16,7 @@ class NarrationEngine:
         self._config = config
         self._provider = provider
         self._now = now or time.monotonic
-        self._last_spoken_at = -1_000_000.0
+        self._last_spoken_at = float("-inf")
         self._event_spoken_at: dict[str, float] = {}
 
     def maybe_narrate(

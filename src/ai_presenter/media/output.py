@@ -1,7 +1,14 @@
-from typing import Protocol
+from __future__ import annotations
+
+import logging
+from typing import TYPE_CHECKING, Protocol
 
 from ai_presenter.config.models import AudioConfig, AudioOutputMode
-from ai_presenter.providers.base import SpeechAudio
+
+if TYPE_CHECKING:
+    from ai_presenter.providers.base import SpeechAudio
+
+logger = logging.getLogger(__name__)
 
 
 class AudioSink(Protocol):
@@ -12,6 +19,12 @@ class AudioSink(Protocol):
 class MediaOutput(Protocol):
     def play(self, audio: SpeechAudio) -> None:
         ...
+
+
+class AudioOutputError(RuntimeError):
+    def __init__(self, message: str, *, sink_failures: dict[str, Exception] | None = None) -> None:
+        self.sink_failures = sink_failures or {}
+        super().__init__(message)
 
 
 class SingleOutput:
@@ -27,14 +40,26 @@ class CombinedOutput:
         self._sinks = sinks
 
     def play(self, audio: SpeechAudio) -> None:
-        errors: list[Exception] = []
-        for sink in self._sinks:
+        errors: dict[str, Exception] = {}
+        for index, sink in enumerate(self._sinks):
+            sink_name = self._sink_name(index, sink)
             try:
                 sink.play(audio)
-            except Exception as exc:
-                errors.append(exc)
+            except AudioOutputError as exc:
+                errors[sink_name] = exc
+                logger.warning("Audio output failed for %s: %s", sink_name, exc)
         if len(errors) == len(self._sinks):
-            raise RuntimeError("All audio outputs failed") from errors[0]
+            failed_sinks = ", ".join(errors)
+            raise AudioOutputError(
+                f"All audio outputs failed: {failed_sinks}",
+                sink_failures=errors,
+            ) from next(iter(errors.values()))
+
+    def _sink_name(self, index: int, sink: AudioSink) -> str:
+        name = getattr(sink, "name", None)
+        if isinstance(name, str) and name.strip():
+            return f"sink {index} ({name.strip()})"
+        return f"sink {index} ({sink.__class__.__name__})"
 
 
 class MediaOutputFactory:
@@ -46,11 +71,11 @@ class MediaOutputFactory:
         if config.output is AudioOutputMode.SPEAKER:
             return SingleOutput(self._speaker_sink)
         if config.output is AudioOutputMode.VIRTUAL_MIC:
-            if not config.virtual_mic_device:
+            if not config.virtual_mic_device or not config.virtual_mic_device.strip():
                 raise ValueError("virtualMicDevice is required for virtual_mic output")
             return SingleOutput(self._virtual_mic_sink)
         if config.output is AudioOutputMode.BOTH:
-            if not config.virtual_mic_device:
+            if not config.virtual_mic_device or not config.virtual_mic_device.strip():
                 raise ValueError("virtualMicDevice is required for both output")
             return CombinedOutput([self._speaker_sink, self._virtual_mic_sink])
         raise ValueError(f"Unsupported audio output mode: {config.output}")

@@ -10,6 +10,7 @@ from ai_presenter.domain.state import MeetingState, PresenterEvent
 from ai_presenter.providers.base import SpeechAudio
 
 _NARRATION_MODEL_ENV = "AI_PRESENTER_OPENAI_NARRATION_MODEL"
+_SPEECH_MODEL_ENV = "AI_PRESENTER_OPENAI_TTS_MODEL"
 
 _NARRATION_INSTRUCTIONS = (
     "You are the narration voice for an AI presenter observing RingCentral meeting UI. "
@@ -44,11 +45,12 @@ class OpenAISpeechProvider:
     def __init__(
         self,
         client: Any | None = None,
-        model: str = "gpt-4o-mini-tts",
+        model: str | None = None,
         voice: str = "verse",
     ) -> None:
         self._client = _resolve_client(client)
-        self._model = _require_nonblank(model, "OpenAI speech model cannot be blank.")
+        model_value = model if model is not None else os.getenv(_SPEECH_MODEL_ENV, "gpt-4o-mini-tts")
+        self._model = _require_nonblank(model_value, "OpenAI speech model cannot be blank.")
         self._voice = _require_nonblank(voice, "OpenAI speech voice cannot be blank.")
 
     def synthesize(self, text: str) -> SpeechAudio:

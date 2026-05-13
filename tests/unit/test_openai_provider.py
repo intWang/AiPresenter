@@ -189,6 +189,19 @@ def test_speech_calls_audio_api_and_returns_wav_metadata(monkeypatch: pytest.Mon
     assert audio.channels == 1
 
 
+def test_speech_uses_env_model_when_constructor_model_is_omitted(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.setenv("AI_PRESENTER_OPENAI_TTS_MODEL", "  tts-env-model  ")
+    speech = FakeSpeechClient()
+    provider = OpenAISpeechProvider(client=FakeOpenAIClient(speech=speech))
+
+    provider.synthesize("Meeting joined.")
+
+    assert speech.calls[0]["model"] == "tts-env-model"
+
+
 def test_speech_supports_readable_binary_response(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     speech = FakeSpeechClient(FakeReadableSpeechResponse(b"RIFFreadable"))
@@ -244,6 +257,11 @@ def test_speech_validates_constructor_inputs(monkeypatch: pytest.MonkeyPatch) ->
 
     with pytest.raises(ValueError, match="speech model"):
         OpenAISpeechProvider(client=client, model=" ")
+
+    monkeypatch.setenv("AI_PRESENTER_OPENAI_TTS_MODEL", " ")
+    with pytest.raises(ValueError, match="speech model"):
+        OpenAISpeechProvider(client=client)
+    monkeypatch.delenv("AI_PRESENTER_OPENAI_TTS_MODEL", raising=False)
 
     with pytest.raises(ValueError, match="speech voice"):
         OpenAISpeechProvider(client=client, voice="\t")

@@ -30,7 +30,8 @@ This uses the default fake providers. It verifies desktop automation, window bin
 This uses `profiles/ringcentral-video-openai.example.yaml`, which switches narration and speech to OpenAI while keeping RingCentral state recognition deterministic through the adapter.
 
 - [ ] Set `OPENAI_API_KEY`.
-- [ ] Optionally set `AI_PRESENTER_OPENAI_NARRATION_MODEL` and `AI_PRESENTER_OPENAI_TTS_MODEL`.
+- [ ] Set `AI_PRESENTER_OPENAI_NARRATION_MODEL`.
+- [ ] Optionally set `AI_PRESENTER_OPENAI_TTS_MODEL`; when omitted, speech uses the built-in TTS model default.
 - [ ] Confirm `profiles/ringcentral-video-openai.example.yaml` points `virtualMicDevice` to the installed virtual audio device.
 - [ ] From the repo root, run `.venv\Scripts\ai-presenter run --profile profiles\ringcentral-video-openai.example.yaml --dry-run`.
 - [ ] From the repo root, run `.venv\Scripts\ai-presenter run --profile profiles\ringcentral-video-openai.example.yaml --iterations 1`.

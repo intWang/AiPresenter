@@ -22,7 +22,11 @@ class FakeNarrationProvider:
 
 
 class FakeSpeechProvider:
+    def __init__(self) -> None:
+        self.spoken_texts: list[str] = []
+
     def synthesize(self, text: str) -> SpeechAudio:
+        self.spoken_texts.append(text)
         sample_rate = 16_000
         frames = b"\x00\x00" * int(sample_rate * 0.1)
         buffer = io.BytesIO()

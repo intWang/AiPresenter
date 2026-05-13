@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from ai_presenter.config.loader import load_profile
+from ai_presenter.config.loader import load_profile, profile_to_public_dict
 from ai_presenter.config.models import AudioOutputMode, ProfileType
 
 
@@ -53,4 +53,149 @@ providers:
     )
 
     with pytest.raises(ValidationError):
+        load_profile(profile_path)
+
+
+@pytest.mark.parametrize("output", ["virtual_mic", "both"])
+@pytest.mark.parametrize("virtual_mic_device", [None, "", "   "])
+def test_requires_virtual_mic_device_for_virtual_mic_output(
+    tmp_path: Path,
+    output: str,
+    virtual_mic_device: str | None,
+) -> None:
+    profile_path = tmp_path / "bad-audio.yaml"
+    virtual_mic_line = (
+        ""
+        if virtual_mic_device is None
+        else f'  virtualMicDevice: "{virtual_mic_device}"\n'
+    )
+    profile_path.write_text(
+        f"""
+id: bad-audio
+type: desktop
+launch:
+  appProcess: App
+  requireAlreadyLoggedIn: true
+  steps: []
+bind:
+  process: Proc
+  windowClass: Class
+observe:
+  intervalMs: 1000
+  sources: [screenshot]
+events: []
+narration:
+  style: concise_presenter
+  maxSentences: 2
+  minSecondsBetweenUtterances: 4
+  repeatCooldownSeconds: 30
+  confidenceThreshold: 0.75
+  forbidSharedScreenInterpretation: true
+audio:
+  output: {output}
+{virtual_mic_line}providers:
+  vision: fake
+  narration: fake
+  speech: fake
+""",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValidationError):
+        load_profile(profile_path)
+
+
+def test_loads_browser_profile_with_browser_launch_and_bind(tmp_path: Path) -> None:
+    profile_path = tmp_path / "browser.yaml"
+    profile_path.write_text(
+        """
+id: browser-demo
+type: browser
+launch:
+  url: https://example.test/meeting
+bind:
+  urlPattern: https://example.test/*
+  title: Example Meeting
+observe:
+  intervalMs: 1000
+  sources: [screenshot]
+events: []
+narration:
+  style: concise_presenter
+  maxSentences: 2
+  minSecondsBetweenUtterances: 4
+  repeatCooldownSeconds: 30
+  confidenceThreshold: 0.75
+  forbidSharedScreenInterpretation: true
+audio:
+  output: speaker
+providers:
+  vision: fake
+  narration: fake
+  speech: fake
+""",
+        encoding="utf-8",
+    )
+
+    profile = load_profile(profile_path)
+
+    assert profile.type is ProfileType.BROWSER
+    assert profile.launch.url == "https://example.test/meeting"
+    assert profile.launch.steps == []
+    assert profile.bind.url_pattern == "https://example.test/*"
+    assert profile.bind.title == "Example Meeting"
+
+
+def test_rejects_browser_profile_without_bind_target(tmp_path: Path) -> None:
+    profile_path = tmp_path / "browser-without-bind-target.yaml"
+    profile_path.write_text(
+        """
+id: browser-demo
+type: browser
+launch:
+  url: https://example.test/meeting
+bind: {}
+observe:
+  intervalMs: 1000
+  sources: [screenshot]
+events: []
+narration:
+  style: concise_presenter
+  maxSentences: 2
+  minSecondsBetweenUtterances: 4
+  repeatCooldownSeconds: 30
+  confidenceThreshold: 0.75
+  forbidSharedScreenInterpretation: true
+audio:
+  output: speaker
+providers:
+  vision: fake
+  narration: fake
+  speech: fake
+""",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValidationError):
+        load_profile(profile_path)
+
+
+def test_profile_to_public_dict_uses_aliases() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video.yaml"))
+
+    public = profile_to_public_dict(profile)
+
+    assert public["launch"]["appProcess"] == "RingCentralDevelop"
+    assert "app_process" not in public["launch"]
+    assert public["bind"]["windowClass"] == "RingCentralVideoClass"
+    assert "window_class" not in public["bind"]
+    assert public["audio"]["virtualMicDevice"] == "VB-CABLE Input"
+    assert public["audio"]["output"] == "both"
+
+
+def test_rejects_non_mapping_yaml(tmp_path: Path) -> None:
+    profile_path = tmp_path / "list.yaml"
+    profile_path.write_text("- not\n- a\n- mapping\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="Profile must be a YAML mapping"):
         load_profile(profile_path)

@@ -15,7 +15,7 @@ EventFingerprint: TypeAlias = tuple[str, PayloadFingerprint]
 class PreparedNarration:
     text: str
     events: tuple[PresenterEvent, ...]
-    spoken_at: float
+    prepared_at: float
 
 
 class NarrationEngine:
@@ -39,7 +39,7 @@ class NarrationEngine:
         prepared = self.prepare_narration(state, events)
         if prepared is None:
             return None
-        self.commit(prepared)
+        self.commit(prepared, spoken_at=prepared.prepared_at)
         return prepared.text
 
     def prepare_narration(
@@ -59,12 +59,13 @@ class NarrationEngine:
         text = self._provider.narrate(state, eligible).strip()
         if not text:
             return None
-        return PreparedNarration(text=text, events=tuple(eligible), spoken_at=now)
+        return PreparedNarration(text=text, events=tuple(eligible), prepared_at=now)
 
-    def commit(self, narration: PreparedNarration) -> None:
-        self._last_spoken_at = narration.spoken_at
+    def commit(self, narration: PreparedNarration, spoken_at: float | None = None) -> None:
+        committed_at = self._now() if spoken_at is None else spoken_at
+        self._last_spoken_at = committed_at
         for event in narration.events:
-            self._event_spoken_at[self._event_fingerprint(event)] = narration.spoken_at
+            self._event_spoken_at[self._event_fingerprint(event)] = committed_at
 
     def _eligible_events(self, events: list[PresenterEvent], now: float) -> list[PresenterEvent]:
         eligible: list[PresenterEvent] = []

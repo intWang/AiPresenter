@@ -130,6 +130,38 @@ def test_prepared_narration_does_not_update_cooldown_until_committed() -> None:
     assert provider.calls == [["meeting_joined"], ["meeting_joined"]]
 
 
+def test_commit_without_explicit_time_starts_cooldown_at_commit_time() -> None:
+    current_time = 100.0
+
+    def now() -> float:
+        return current_time
+
+    provider = RecordingNarrationProvider()
+    engine = NarrationEngine(make_config(), provider, now=now)
+    first = engine.prepare_narration(
+        MeetingState(confidence=0.9),
+        [PresenterEvent("meeting_joined", {}, 0.9)],
+    )
+    assert first is not None
+
+    current_time = 108.0
+    engine.commit(first)
+    current_time = 109.0
+    second = engine.prepare_narration(
+        MeetingState(confidence=0.9),
+        [PresenterEvent("mic_state_changed", {"micMuted": True}, 0.9)],
+    )
+    current_time = 112.0
+    third = engine.prepare_narration(
+        MeetingState(confidence=0.9),
+        [PresenterEvent("mic_state_changed", {"micMuted": True}, 0.9)],
+    )
+
+    assert second is None
+    assert third is not None
+    assert provider.calls == [["meeting_joined"], ["mic_state_changed"]]
+
+
 def test_suppresses_repeated_event_during_cooldown() -> None:
     current_time = 100.0
 

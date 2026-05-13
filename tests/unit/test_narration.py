@@ -7,10 +7,12 @@ from ai_presenter.runtime.narration import NarrationEngine
 class RecordingNarrationProvider:
     def __init__(self, responses: list[str] | None = None) -> None:
         self.calls: list[list[str]] = []
+        self.event_batches: list[list[PresenterEvent]] = []
         self._responses = responses or []
 
     def narrate(self, state: MeetingState, events: list[PresenterEvent]) -> str:
         self.calls.append([event.type for event in events])
+        self.event_batches.append(list(events))
         if self._responses:
             return self._responses.pop(0)
         event_names = ", ".join(event.type for event in events)
@@ -148,6 +150,45 @@ def test_suppresses_exact_same_event_payload_during_repeat_cooldown() -> None:
     assert first == "Detected meeting event: mic_state_changed."
     assert second is None
     assert provider.calls == [["mic_state_changed"]]
+
+
+def test_dedupes_identical_events_within_same_batch() -> None:
+    provider = RecordingNarrationProvider()
+    engine = NarrationEngine(make_config(), provider, now=lambda: 100.0)
+
+    text = engine.maybe_narrate(
+        MeetingState(confidence=0.9),
+        [
+            PresenterEvent("mic_state_changed", {"micMuted": True}, 0.9),
+            PresenterEvent("mic_state_changed", {"micMuted": True}, 0.9),
+        ],
+    )
+
+    assert text == "Detected meeting event: mic_state_changed."
+    assert provider.calls == [["mic_state_changed"]]
+    assert len(provider.event_batches[0]) == 1
+    assert provider.event_batches[0][0].payload == {"micMuted": True}
+
+
+def test_keeps_distinct_event_fingerprint_when_deduping_batch() -> None:
+    provider = RecordingNarrationProvider()
+    engine = NarrationEngine(make_config(), provider, now=lambda: 100.0)
+
+    text = engine.maybe_narrate(
+        MeetingState(confidence=0.9),
+        [
+            PresenterEvent("mic_state_changed", {"micMuted": True}, 0.9),
+            PresenterEvent("mic_state_changed", {"micMuted": True}, 0.9),
+            PresenterEvent("mic_state_changed", {"micMuted": False}, 0.9),
+        ],
+    )
+
+    assert text == "Detected meeting event: mic_state_changed, mic_state_changed."
+    assert provider.calls == [["mic_state_changed", "mic_state_changed"]]
+    assert [event.payload for event in provider.event_batches[0]] == [
+        {"micMuted": True},
+        {"micMuted": False},
+    ]
 
 
 def test_allows_opposite_mic_transitions_during_repeat_cooldown() -> None:

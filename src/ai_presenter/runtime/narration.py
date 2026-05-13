@@ -47,8 +47,14 @@ class NarrationEngine:
 
     def _eligible_events(self, events: list[PresenterEvent], now: float) -> list[PresenterEvent]:
         eligible: list[PresenterEvent] = []
+        seen_fingerprints: set[EventFingerprint] = set()
         for event in events:
-            last = self._event_spoken_at.get(self._event_fingerprint(event))
+            fingerprint = self._event_fingerprint(event)
+            if fingerprint in seen_fingerprints:
+                continue
+            seen_fingerprints.add(fingerprint)
+
+            last = self._event_spoken_at.get(fingerprint)
             if last is None or now - last >= self._config.repeat_cooldown_seconds:
                 eligible.append(event)
         return eligible
@@ -63,6 +69,8 @@ class NarrationEngine:
         )
 
     def _normalize_payload_value(self, value: object) -> Hashable:
+        if value is None or isinstance(value, str | int | float | bool):
+            return value
         if isinstance(value, Mapping):
             return tuple(
                 (str(key), self._normalize_payload_value(nested_value))
@@ -70,8 +78,4 @@ class NarrationEngine:
             )
         if isinstance(value, list | tuple):
             return tuple(self._normalize_payload_value(item) for item in value)
-        if isinstance(value, set):
-            return tuple(sorted((self._normalize_payload_value(item) for item in value), key=repr))
-        if isinstance(value, Hashable):
-            return value
-        return repr(value)
+        raise TypeError("PresenterEvent payload values must be JSON-like primitives, mappings, or lists.")

@@ -1,9 +1,13 @@
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Hashable, Mapping
+from typing import TypeAlias
 
 from ai_presenter.config.models import NarrationConfig
 from ai_presenter.domain.state import MeetingState, PresenterEvent
 from ai_presenter.providers.base import NarrationProvider
+
+PayloadFingerprint: TypeAlias = tuple[tuple[str, Hashable], ...]
+EventFingerprint: TypeAlias = tuple[str, PayloadFingerprint]
 
 
 class NarrationEngine:
@@ -17,7 +21,7 @@ class NarrationEngine:
         self._provider = provider
         self._now = now or time.monotonic
         self._last_spoken_at = float("-inf")
-        self._event_spoken_at: dict[str, float] = {}
+        self._event_spoken_at: dict[EventFingerprint, float] = {}
 
     def maybe_narrate(
         self,
@@ -26,10 +30,10 @@ class NarrationEngine:
     ) -> str | None:
         if state.confidence < self._config.confidence_threshold:
             return None
-        eligible = self._eligible_events(events)
+        now = self._now()
+        eligible = self._eligible_events(events, now)
         if not eligible:
             return None
-        now = self._now()
         if now - self._last_spoken_at < self._config.min_seconds_between_utterances:
             return None
 
@@ -38,14 +42,36 @@ class NarrationEngine:
             return None
         self._last_spoken_at = now
         for event in eligible:
-            self._event_spoken_at[event.type] = now
+            self._event_spoken_at[self._event_fingerprint(event)] = now
         return text
 
-    def _eligible_events(self, events: list[PresenterEvent]) -> list[PresenterEvent]:
-        now = self._now()
+    def _eligible_events(self, events: list[PresenterEvent], now: float) -> list[PresenterEvent]:
         eligible: list[PresenterEvent] = []
         for event in events:
-            last = self._event_spoken_at.get(event.type)
+            last = self._event_spoken_at.get(self._event_fingerprint(event))
             if last is None or now - last >= self._config.repeat_cooldown_seconds:
                 eligible.append(event)
         return eligible
+
+    def _event_fingerprint(self, event: PresenterEvent) -> EventFingerprint:
+        return (
+            event.type,
+            tuple(
+                (key, self._normalize_payload_value(event.payload[key]))
+                for key in sorted(event.payload)
+            ),
+        )
+
+    def _normalize_payload_value(self, value: object) -> Hashable:
+        if isinstance(value, Mapping):
+            return tuple(
+                (str(key), self._normalize_payload_value(nested_value))
+                for key, nested_value in sorted(value.items(), key=lambda item: str(item[0]))
+            )
+        if isinstance(value, list | tuple):
+            return tuple(self._normalize_payload_value(item) for item in value)
+        if isinstance(value, set):
+            return tuple(sorted((self._normalize_payload_value(item) for item in value), key=repr))
+        if isinstance(value, Hashable):
+            return value
+        return repr(value)

@@ -17,6 +17,18 @@ class RecordingNarrationProvider:
         return f"Detected meeting event: {event_names}."
 
 
+class SequenceClock:
+    def __init__(self, times: list[float]) -> None:
+        self._times = times
+        self.calls = 0
+
+    def __call__(self) -> float:
+        self.calls += 1
+        if self._times:
+            return self._times.pop(0)
+        raise AssertionError("clock called more times than expected")
+
+
 def make_config(overrides: dict[str, object] | None = None) -> NarrationConfig:
     data = {
         "style": "concise_presenter",
@@ -79,6 +91,19 @@ def test_suppresses_different_event_during_global_utterance_cooldown() -> None:
     assert provider.calls == [["meeting_joined"]]
 
 
+def test_samples_clock_once_per_narration_attempt() -> None:
+    clock = SequenceClock([100.0])
+    engine = NarrationEngine(make_config(), FakeNarrationProvider(), now=clock)
+
+    text = engine.maybe_narrate(
+        MeetingState(confidence=0.9),
+        [PresenterEvent("meeting_joined", {}, 0.9)],
+    )
+
+    assert text == "Detected meeting event: meeting_joined."
+    assert clock.calls == 1
+
+
 def test_suppresses_repeated_event_during_cooldown() -> None:
     current_time = 100.0
 
@@ -99,6 +124,78 @@ def test_suppresses_repeated_event_during_cooldown() -> None:
 
     assert first
     assert second is None
+
+
+def test_suppresses_exact_same_event_payload_during_repeat_cooldown() -> None:
+    current_time = 100.0
+
+    def now() -> float:
+        return current_time
+
+    provider = RecordingNarrationProvider()
+    engine = NarrationEngine(make_config(), provider, now=now)
+
+    first = engine.maybe_narrate(
+        MeetingState(confidence=0.9),
+        [PresenterEvent("mic_state_changed", {"micMuted": True}, 0.9)],
+    )
+    current_time = 105.0
+    second = engine.maybe_narrate(
+        MeetingState(confidence=0.9),
+        [PresenterEvent("mic_state_changed", {"micMuted": True}, 0.9)],
+    )
+
+    assert first == "Detected meeting event: mic_state_changed."
+    assert second is None
+    assert provider.calls == [["mic_state_changed"]]
+
+
+def test_allows_opposite_mic_transitions_during_repeat_cooldown() -> None:
+    current_time = 100.0
+
+    def now() -> float:
+        return current_time
+
+    provider = RecordingNarrationProvider()
+    engine = NarrationEngine(make_config(), provider, now=now)
+
+    first = engine.maybe_narrate(
+        MeetingState(confidence=0.9),
+        [PresenterEvent("mic_state_changed", {"micMuted": True}, 0.9)],
+    )
+    current_time = 105.0
+    second = engine.maybe_narrate(
+        MeetingState(confidence=0.9),
+        [PresenterEvent("mic_state_changed", {"micMuted": False}, 0.9)],
+    )
+
+    assert first == "Detected meeting event: mic_state_changed."
+    assert second == "Detected meeting event: mic_state_changed."
+    assert provider.calls == [["mic_state_changed"], ["mic_state_changed"]]
+
+
+def test_allows_participant_count_changes_to_different_counts() -> None:
+    current_time = 100.0
+
+    def now() -> float:
+        return current_time
+
+    provider = RecordingNarrationProvider()
+    engine = NarrationEngine(make_config(), provider, now=now)
+
+    first = engine.maybe_narrate(
+        MeetingState(confidence=0.9),
+        [PresenterEvent("participant_count_changed", {"participantCount": 2}, 0.9)],
+    )
+    current_time = 105.0
+    second = engine.maybe_narrate(
+        MeetingState(confidence=0.9),
+        [PresenterEvent("participant_count_changed", {"participantCount": 3}, 0.9)],
+    )
+
+    assert first == "Detected meeting event: participant_count_changed."
+    assert second == "Detected meeting event: participant_count_changed."
+    assert provider.calls == [["participant_count_changed"], ["participant_count_changed"]]
 
 
 def test_allows_repeated_event_after_repeat_cooldown() -> None:

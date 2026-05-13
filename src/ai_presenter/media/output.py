@@ -1,7 +1,12 @@
 from __future__ import annotations
 
+import io
 import logging
-from typing import TYPE_CHECKING, Protocol
+from typing import TYPE_CHECKING, Any, Protocol, cast
+
+import numpy as np
+import sounddevice  # type: ignore[import-untyped]
+import soundfile  # type: ignore[import-untyped]
 
 from ai_presenter.config.models import AudioConfig, AudioOutputMode
 
@@ -9,6 +14,8 @@ if TYPE_CHECKING:
     from ai_presenter.providers.base import SpeechAudio
 
 logger = logging.getLogger(__name__)
+
+_Float32Samples = np.ndarray[Any, np.dtype[np.float32]]
 
 
 class AudioSink(Protocol):
@@ -25,6 +32,37 @@ class AudioOutputError(RuntimeError):
     def __init__(self, message: str, *, sink_failures: dict[str, Exception] | None = None) -> None:
         self.sink_failures = sink_failures or {}
         super().__init__(message)
+
+
+def decode_wav(audio: SpeechAudio) -> tuple[_Float32Samples, int]:
+    try:
+        raw_samples, sample_rate = soundfile.read(
+            io.BytesIO(audio.data),
+            dtype="float32",
+            always_2d=True,
+        )
+    except soundfile.SoundFileError as exc:
+        raise AudioOutputError("Failed to decode WAV audio.") from exc
+    samples = cast(_Float32Samples, raw_samples)
+    return samples, int(sample_rate)
+
+
+class SoundDeviceSink:
+    def __init__(self, device: str | int | None = None) -> None:
+        self._device = device
+        self.name = "sounddevice" if device is None else f"sounddevice: {device}"
+
+    def play(self, audio: SpeechAudio) -> None:
+        samples, sample_rate = decode_wav(audio)
+        try:
+            sounddevice.play(
+                samples,
+                samplerate=sample_rate,
+                device=self._device,
+                blocking=True,
+            )
+        except sounddevice.PortAudioError as exc:
+            raise AudioOutputError(f"Audio playback failed for {self.name}.") from exc
 
 
 class SingleOutput:

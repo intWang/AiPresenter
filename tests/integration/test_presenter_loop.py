@@ -4,7 +4,7 @@ from ai_presenter.adapters.ringcentral import RingCentralAdapter
 from ai_presenter.config.loader import load_profile
 from ai_presenter.config.models import DesktopAppProfile
 from ai_presenter.desktop.base import WindowHandle
-from ai_presenter.domain.state import RawObservation, WindowMetadata
+from ai_presenter.domain.state import MeetingState, PresenterEvent, RawObservation, WindowMetadata
 from ai_presenter.providers.fake import FakeNarrationProvider, FakeSpeechProvider
 from ai_presenter.runtime.events import EventDetector
 from ai_presenter.runtime.narration import NarrationEngine
@@ -37,6 +37,18 @@ class MutableClock:
 
     def __call__(self) -> float:
         return self.value
+
+
+class SequenceNarrationProvider:
+    def __init__(self, responses: list[str]) -> None:
+        self._responses = list(responses)
+        self.calls: list[list[str]] = []
+
+    def narrate(self, state: MeetingState, events: list[PresenterEvent]) -> str:
+        self.calls.append([event.type for event in events])
+        if not self._responses:
+            raise AssertionError("narration called more times than expected")
+        return self._responses.pop(0)
 
 
 def make_handle() -> WindowHandle:
@@ -76,13 +88,14 @@ def make_loop(
     observations: list[RawObservation],
     *,
     clock: MutableClock | None = None,
+    narration_provider: FakeNarrationProvider | SequenceNarrationProvider | None = None,
 ) -> tuple[PresenterLoop, FakeSpeechProvider, RecordingSink]:
     profile = load_desktop_profile()
     speech = FakeSpeechProvider()
     sink = RecordingSink()
     narration = NarrationEngine(
         profile.narration,
-        FakeNarrationProvider(),
+        narration_provider or FakeNarrationProvider(),
         now=clock or (lambda: 100.0),
     )
     loop = PresenterLoop(
@@ -128,6 +141,22 @@ def test_low_confidence_prejoin_only_observation_does_not_speak_or_output() -> N
     assert sink.audio == []
 
 
+def test_blank_narration_does_not_commit_state_so_event_retries() -> None:
+    provider = SequenceNarrationProvider(["   ", "Meeting joined."])
+    observation = make_observation(["Mute microphone", "Stop video", "Participants 2"])
+    loop, speech, sink = make_loop(
+        [observation, observation],
+        narration_provider=provider,
+    )
+
+    loop.run_once(make_handle())
+    loop.run_once(make_handle())
+
+    assert provider.calls == [["meeting_joined"], ["meeting_joined"]]
+    assert speech.spoken_texts == ["Meeting joined."]
+    assert len(sink.audio) == 1
+
+
 def test_later_changed_meeting_state_speaks_for_event_changes() -> None:
     clock = MutableClock(100.0)
     loop, speech, sink = make_loop(
@@ -146,5 +175,29 @@ def test_later_changed_meeting_state_speaks_for_event_changes() -> None:
         "Detected meeting event: meeting_joined.",
         "Detected meeting event: "
         "mic_state_changed, camera_state_changed, participant_count_changed.",
+    ]
+    assert len(sink.audio) == 2
+
+
+def test_cooldown_suppressed_event_retries_after_cooldown_clears() -> None:
+    clock = MutableClock(100.0)
+    loop, speech, sink = make_loop(
+        [
+            make_observation(["Mute microphone", "Stop video", "Participants 2"]),
+            make_observation(["Unmute microphone", "Stop video", "Participants 2"]),
+            make_observation(["Unmute microphone", "Stop video", "Participants 2"]),
+        ],
+        clock=clock,
+    )
+
+    loop.run_once(make_handle())
+    clock.value = 101.0
+    loop.run_once(make_handle())
+    clock.value = 105.0
+    loop.run_once(make_handle())
+
+    assert speech.spoken_texts == [
+        "Detected meeting event: meeting_joined.",
+        "Detected meeting event: mic_state_changed.",
     ]
     assert len(sink.audio) == 2

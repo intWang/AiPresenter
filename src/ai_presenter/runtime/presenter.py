@@ -39,11 +39,15 @@ class PresenterLoop:
             current=current_state,
             occurred_at=observation.captured_at,
         )
-        self._previous_state = current_state
 
+        if not events:
+            if self._event_detector.is_confident(current_state):
+                self._previous_state = current_state
+            return
         text = self._narration_engine.maybe_narrate(current_state, events)
         if text is None:
             return
 
         audio = self._speech_provider.synthesize(text)
         self._media_output.play(audio)
+        self._previous_state = current_state

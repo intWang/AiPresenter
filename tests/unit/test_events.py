@@ -118,6 +118,13 @@ def test_ignores_low_confidence_state():
     assert events == []
 
 
+def test_reports_whether_state_meets_confidence_threshold():
+    detector = EventDetector(confidence_threshold=0.75)
+
+    assert detector.is_confident(MeetingState(confidence=0.75)) is True
+    assert detector.is_confident(MeetingState(confidence=0.74)) is False
+
+
 def test_reducer_merges_latest_non_none_fields_with_conservative_confidence():
     reducer = StateReducer()
     current = MeetingState(

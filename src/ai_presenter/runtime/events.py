@@ -24,7 +24,7 @@ class EventDetector:
         current: MeetingState,
         occurred_at: datetime | None = None,
     ) -> list[PresenterEvent]:
-        if current.confidence < self._confidence_threshold:
+        if not self.is_confident(current):
             return []
 
         events: list[PresenterEvent] = []
@@ -101,6 +101,9 @@ class EventDetector:
             )
 
         return events
+
+    def is_confident(self, state: MeetingState) -> bool:
+        return state.confidence >= self._confidence_threshold
 
     def _event(
         self,

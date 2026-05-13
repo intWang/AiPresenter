@@ -262,6 +262,13 @@ def test_focus_window_reports_missing_dependency(monkeypatch: pytest.MonkeyPatch
         WindowsDesktopDriver().focus_window("RingCentralDevelop")
 
 
+def test_capture_reports_missing_pywinauto_dependency(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(windows, "Desktop", None)
+
+    with pytest.raises(RuntimeError, match="pywinauto"):
+        WindowsDesktopDriver().capture(WindowHandle("RingCentralVideo", 4321, "VideoClass", "Old"))
+
+
 def test_capture_binds_window_and_builds_observation(monkeypatch: pytest.MonkeyPatch) -> None:
     bounds_seen: list[tuple[int, int, int, int]] = []
     lookups: list[tuple[int, str]] = []

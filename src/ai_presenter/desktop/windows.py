@@ -235,6 +235,7 @@ def _find_window(pid: int, window_class: str) -> Any | None:
 
 
 def _bind_window(pid: int, window_class: str) -> Any:
+    _require_dependency(Desktop, "pywinauto")
     window_spec = Desktop(backend="uia").window(process=pid, class_name=window_class)
     return _window_from_spec(window_spec)
 

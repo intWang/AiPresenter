@@ -1,5 +1,6 @@
 import time
 from collections.abc import Callable, Hashable, Mapping
+from dataclasses import dataclass
 from typing import TypeAlias
 
 from ai_presenter.config.models import NarrationConfig
@@ -8,6 +9,13 @@ from ai_presenter.providers.base import NarrationProvider
 
 PayloadFingerprint: TypeAlias = tuple[tuple[str, Hashable], ...]
 EventFingerprint: TypeAlias = tuple[str, PayloadFingerprint]
+
+
+@dataclass(frozen=True)
+class PreparedNarration:
+    text: str
+    events: tuple[PresenterEvent, ...]
+    spoken_at: float
 
 
 class NarrationEngine:
@@ -28,6 +36,17 @@ class NarrationEngine:
         state: MeetingState,
         events: list[PresenterEvent],
     ) -> str | None:
+        prepared = self.prepare_narration(state, events)
+        if prepared is None:
+            return None
+        self.commit(prepared)
+        return prepared.text
+
+    def prepare_narration(
+        self,
+        state: MeetingState,
+        events: list[PresenterEvent],
+    ) -> PreparedNarration | None:
         if state.confidence < self._config.confidence_threshold:
             return None
         now = self._now()
@@ -40,10 +59,12 @@ class NarrationEngine:
         text = self._provider.narrate(state, eligible).strip()
         if not text:
             return None
-        self._last_spoken_at = now
-        for event in eligible:
-            self._event_spoken_at[self._event_fingerprint(event)] = now
-        return text
+        return PreparedNarration(text=text, events=tuple(eligible), spoken_at=now)
+
+    def commit(self, narration: PreparedNarration) -> None:
+        self._last_spoken_at = narration.spoken_at
+        for event in narration.events:
+            self._event_spoken_at[self._event_fingerprint(event)] = narration.spoken_at
 
     def _eligible_events(self, events: list[PresenterEvent], now: float) -> list[PresenterEvent]:
         eligible: list[PresenterEvent] = []

@@ -1,10 +1,13 @@
 from pathlib import Path
 
+import pytest
+
 from ai_presenter.adapters.ringcentral import RingCentralAdapter
 from ai_presenter.config.loader import load_profile
 from ai_presenter.config.models import DesktopAppProfile
 from ai_presenter.desktop.base import WindowHandle
 from ai_presenter.domain.state import MeetingState, PresenterEvent, RawObservation, WindowMetadata
+from ai_presenter.providers.base import SpeechAudio
 from ai_presenter.providers.fake import FakeNarrationProvider, FakeSpeechProvider
 from ai_presenter.runtime.events import EventDetector
 from ai_presenter.runtime.narration import NarrationEngine
@@ -29,6 +32,32 @@ class RecordingSink:
 
     def play(self, audio: object) -> None:
         self.audio.append(audio)
+
+
+class FailingOnceSink:
+    def __init__(self) -> None:
+        self.failures_remaining = 1
+        self.audio: list[object] = []
+
+    def play(self, audio: object) -> None:
+        if self.failures_remaining > 0:
+            self.failures_remaining -= 1
+            raise RuntimeError("speaker unavailable")
+        self.audio.append(audio)
+
+
+class FailingOnceSpeechProvider:
+    def __init__(self) -> None:
+        self.failures_remaining = 1
+        self.spoken_texts: list[str] = []
+        self._delegate = FakeSpeechProvider()
+
+    def synthesize(self, text: str) -> SpeechAudio:
+        self.spoken_texts.append(text)
+        if self.failures_remaining > 0:
+            self.failures_remaining -= 1
+            raise RuntimeError("tts unavailable")
+        return self._delegate.synthesize(text)
 
 
 class MutableClock:
@@ -89,10 +118,16 @@ def make_loop(
     *,
     clock: MutableClock | None = None,
     narration_provider: FakeNarrationProvider | SequenceNarrationProvider | None = None,
-) -> tuple[PresenterLoop, FakeSpeechProvider, RecordingSink]:
+    speech_provider: FakeSpeechProvider | FailingOnceSpeechProvider | None = None,
+    media_output: RecordingSink | FailingOnceSink | None = None,
+) -> tuple[
+    PresenterLoop,
+    FakeSpeechProvider | FailingOnceSpeechProvider,
+    RecordingSink | FailingOnceSink,
+]:
     profile = load_desktop_profile()
-    speech = FakeSpeechProvider()
-    sink = RecordingSink()
+    speech = speech_provider or FakeSpeechProvider()
+    sink = media_output or RecordingSink()
     narration = NarrationEngine(
         profile.narration,
         narration_provider or FakeNarrationProvider(),
@@ -201,3 +236,41 @@ def test_cooldown_suppressed_event_retries_after_cooldown_clears() -> None:
         "Detected meeting event: mic_state_changed.",
     ]
     assert len(sink.audio) == 2
+
+
+def test_speech_failure_does_not_commit_cooldown_or_state() -> None:
+    observation = make_observation(["Mute microphone", "Stop video", "Participants 2"])
+    speech = FailingOnceSpeechProvider()
+    loop, _, sink = make_loop(
+        [observation, observation],
+        speech_provider=speech,
+    )
+
+    with pytest.raises(RuntimeError, match="tts unavailable"):
+        loop.run_once(make_handle())
+    loop.run_once(make_handle())
+
+    assert speech.spoken_texts == [
+        "Detected meeting event: meeting_joined.",
+        "Detected meeting event: meeting_joined.",
+    ]
+    assert len(sink.audio) == 1
+
+
+def test_media_output_failure_does_not_commit_cooldown_or_state() -> None:
+    observation = make_observation(["Mute microphone", "Stop video", "Participants 2"])
+    sink = FailingOnceSink()
+    loop, speech, _ = make_loop(
+        [observation, observation],
+        media_output=sink,
+    )
+
+    with pytest.raises(RuntimeError, match="speaker unavailable"):
+        loop.run_once(make_handle())
+    loop.run_once(make_handle())
+
+    assert speech.spoken_texts == [
+        "Detected meeting event: meeting_joined.",
+        "Detected meeting event: meeting_joined.",
+    ]
+    assert len(sink.audio) == 1

@@ -106,6 +106,30 @@ def test_samples_clock_once_per_narration_attempt() -> None:
     assert clock.calls == 1
 
 
+def test_prepared_narration_does_not_update_cooldown_until_committed() -> None:
+    current_time = 100.0
+
+    def now() -> float:
+        return current_time
+
+    provider = RecordingNarrationProvider()
+    engine = NarrationEngine(make_config(), provider, now=now)
+    event = PresenterEvent("meeting_joined", {}, 0.9)
+
+    first = engine.prepare_narration(MeetingState(confidence=0.9), [event])
+    current_time = 101.0
+    second = engine.prepare_narration(MeetingState(confidence=0.9), [event])
+    assert first is not None
+    assert second is not None
+
+    engine.commit(first)
+    current_time = 102.0
+    third = engine.prepare_narration(MeetingState(confidence=0.9), [event])
+
+    assert third is None
+    assert provider.calls == [["meeting_joined"], ["meeting_joined"]]
+
+
 def test_suppresses_repeated_event_during_cooldown() -> None:
     current_time = 100.0
 

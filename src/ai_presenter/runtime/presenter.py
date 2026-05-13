@@ -44,10 +44,11 @@ class PresenterLoop:
             if self._event_detector.is_confident(current_state):
                 self._previous_state = current_state
             return
-        text = self._narration_engine.maybe_narrate(current_state, events)
-        if text is None:
+        narration = self._narration_engine.prepare_narration(current_state, events)
+        if narration is None:
             return
 
-        audio = self._speech_provider.synthesize(text)
+        audio = self._speech_provider.synthesize(narration.text)
         self._media_output.play(audio)
+        self._narration_engine.commit(narration)
         self._previous_state = current_state

@@ -9,7 +9,7 @@ class RingCentralAdapter:
         text = " ".join(observation.ui_text)
         meeting_joined = observation.metadata.window_class == "RingCentralVideoClass"
         mic_muted = self._mic_muted(labels)
-        camera_off = self._camera_off(text)
+        camera_off = self._camera_off(labels)
         participant_count = self._participant_count(text)
         active_dialog = self._active_dialog(text)
         connection_warning = self._connection_warning(text)
@@ -28,16 +28,17 @@ class RingCentralAdapter:
 
     def _mic_muted(self, labels: tuple[str, ...]) -> bool | None:
         normalized = {label.strip().lower() for label in labels}
-        if normalized & {"unmute microphone", "unmute"}:
+        if "unmute microphone" in normalized:
             return True
-        if normalized & {"mute microphone", "mute"}:
+        if "mute microphone" in normalized:
             return False
         return None
 
-    def _camera_off(self, text: str) -> bool | None:
-        if "Start video" in text:
+    def _camera_off(self, labels: tuple[str, ...]) -> bool | None:
+        normalized = {label.strip().lower() for label in labels}
+        if "start video" in normalized:
             return True
-        if "Stop video" in text:
+        if "stop video" in normalized:
             return False
         return None
 

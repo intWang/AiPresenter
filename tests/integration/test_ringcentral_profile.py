@@ -4,6 +4,7 @@ from ai_presenter.adapters.ringcentral import RingCentralAdapter
 from ai_presenter.config.loader import load_profile
 from ai_presenter.config.models import DesktopAppProfile
 from ai_presenter.domain.state import RawObservation, WindowMetadata
+from ai_presenter.runtime.events import EventDetector
 
 
 def make_observation(ui_text: list[str]) -> RawObservation:
@@ -68,6 +69,35 @@ def test_mute_participants_does_not_set_self_mic_state():
     assert state.mic_muted is None
 
 
+def test_bare_mute_labels_do_not_set_self_mic_state():
+    adapter = RingCentralAdapter()
+
+    muted_state = adapter.extract_state(make_observation(["Mute"]))
+    unmuted_state = adapter.extract_state(make_observation(["Unmute"]))
+
+    assert muted_state.mic_muted is None
+    assert unmuted_state.mic_muted is None
+
+
+def test_split_start_video_labels_do_not_set_camera_state():
+    adapter = RingCentralAdapter()
+    observation = make_observation(["Start", "video"])
+
+    state = adapter.extract_state(observation)
+
+    assert state.camera_off is None
+
+
+def test_camera_settings_and_help_phrases_do_not_set_camera_state():
+    adapter = RingCentralAdapter()
+
+    start_settings = adapter.extract_state(make_observation(["Start video settings"]))
+    stop_help = adapter.extract_state(make_observation(["Stop video help"]))
+
+    assert start_settings.camera_off is None
+    assert stop_help.camera_off is None
+
+
 def test_participant_count_supports_parentheses():
     adapter = RingCentralAdapter()
     observation = make_observation(["Participants (3)"])
@@ -94,3 +124,24 @@ def test_no_useful_evidence_returns_lower_confidence_than_happy_path():
     no_signal = adapter.extract_state(make_observation(["RingCentral Video"]))
 
     assert no_signal.confidence < happy_path.confidence
+
+
+def test_low_evidence_state_does_not_emit_runtime_events():
+    adapter = RingCentralAdapter()
+    detector = EventDetector(confidence_threshold=0.75)
+    state = adapter.extract_state(make_observation(["RingCentral Video"]))
+
+    events = detector.detect(previous=None, current=state)
+
+    assert events == []
+
+
+def test_happy_path_state_stays_above_runtime_threshold():
+    adapter = RingCentralAdapter()
+    detector = EventDetector(confidence_threshold=0.75)
+    state = adapter.extract_state(make_observation(["Mute microphone", "Stop video"]))
+
+    events = detector.detect(previous=None, current=state)
+
+    assert state.confidence >= 0.75
+    assert [event.type for event in events] == ["meeting_joined"]

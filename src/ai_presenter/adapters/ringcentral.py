@@ -7,12 +7,15 @@ class RingCentralAdapter:
     def extract_state(self, observation: RawObservation) -> MeetingState:
         labels = tuple(observation.ui_text)
         text = " ".join(observation.ui_text)
-        meeting_joined = observation.metadata.window_class == "RingCentralVideoClass"
+        meeting_joined = (
+            observation.metadata.process == "RingCentralVideo"
+            and observation.metadata.window_class == "RingCentralVideoClass"
+        )
         mic_muted = self._mic_muted(labels)
         camera_off = self._camera_off(labels)
         participant_count = self._participant_count(text)
-        active_dialog = self._active_dialog(text)
-        connection_warning = self._connection_warning(text)
+        active_dialog = self._active_dialog(labels)
+        connection_warning = self._connection_warning(labels)
         return MeetingState(
             meeting_joined=meeting_joined,
             mic_muted=mic_muted,
@@ -49,17 +52,17 @@ class RingCentralAdapter:
         count = next(group for group in match.groups() if group is not None)
         return int(count)
 
-    def _active_dialog(self, text: str) -> str | None:
-        dialog_markers = ["permission", "waiting room"]
-        lowered = text.lower()
-        for marker in dialog_markers:
-            if marker in lowered:
-                return marker
+    def _active_dialog(self, labels: tuple[str, ...]) -> str | None:
+        normalized = {label.strip().lower() for label in labels}
+        if normalized & {"permission required", "permissions required"}:
+            return "permission"
+        if normalized & {"waiting room", "waiting for host"}:
+            return "waiting room"
         return None
 
-    def _connection_warning(self, text: str) -> str | None:
-        lowered = text.lower()
-        if "unstable" in lowered or "reconnecting" in lowered:
+    def _connection_warning(self, labels: tuple[str, ...]) -> str | None:
+        normalized = {label.strip().lower() for label in labels}
+        if normalized & {"reconnecting", "your connection is unstable"}:
             return "connection issue"
         return None
 

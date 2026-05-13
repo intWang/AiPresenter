@@ -7,12 +7,17 @@ from ai_presenter.domain.state import RawObservation, WindowMetadata
 from ai_presenter.runtime.events import EventDetector
 
 
-def make_observation(ui_text: list[str]) -> RawObservation:
+def make_observation(
+    ui_text: list[str],
+    *,
+    process: str = "RingCentralVideo",
+    window_class: str = "RingCentralVideoClass",
+) -> RawObservation:
     return RawObservation(
         metadata=WindowMetadata(
-            process="RingCentralVideo",
+            process=process,
             pid=10,
-            window_class="RingCentralVideoClass",
+            window_class=window_class,
             title="RingCentral Video",
             bounds=(0, 0, 1000, 800),
         ),
@@ -57,6 +62,33 @@ def test_connection_settings_does_not_create_dialog_or_warning():
     state = adapter.extract_state(observation)
 
     assert state.active_dialog is None
+    assert state.connection_warning is None
+
+
+def test_permission_settings_does_not_create_active_dialog():
+    adapter = RingCentralAdapter()
+    observation = make_observation(["Permission settings"])
+
+    state = adapter.extract_state(observation)
+
+    assert state.active_dialog is None
+
+
+def test_waiting_room_settings_does_not_create_active_dialog():
+    adapter = RingCentralAdapter()
+    observation = make_observation(["Waiting room settings"])
+
+    state = adapter.extract_state(observation)
+
+    assert state.active_dialog is None
+
+
+def test_reconnecting_help_does_not_create_connection_warning():
+    adapter = RingCentralAdapter()
+    observation = make_observation(["Reconnecting help"])
+
+    state = adapter.extract_state(observation)
+
     assert state.connection_warning is None
 
 
@@ -136,6 +168,21 @@ def test_low_evidence_state_does_not_emit_runtime_events():
     assert events == []
 
 
+def test_ambiguous_dialog_and_warning_text_does_not_emit_runtime_events():
+    adapter = RingCentralAdapter()
+    detector = EventDetector(confidence_threshold=0.75)
+    state = adapter.extract_state(
+        make_observation(["Permission settings", "Waiting room settings", "Reconnecting help"])
+    )
+
+    events = detector.detect(previous=None, current=state)
+
+    assert state.active_dialog is None
+    assert state.connection_warning is None
+    assert state.confidence < 0.75
+    assert events == []
+
+
 def test_happy_path_state_stays_above_runtime_threshold():
     adapter = RingCentralAdapter()
     detector = EventDetector(confidence_threshold=0.75)
@@ -145,3 +192,15 @@ def test_happy_path_state_stays_above_runtime_threshold():
 
     assert state.confidence >= 0.75
     assert [event.type for event in events] == ["meeting_joined"]
+
+
+def test_right_window_class_with_wrong_process_does_not_mark_joined():
+    adapter = RingCentralAdapter()
+    observation = make_observation(
+        ["Mute microphone", "Stop video"],
+        process="OtherProcess",
+    )
+
+    state = adapter.extract_state(observation)
+
+    assert state.meeting_joined is False

@@ -7,13 +7,18 @@ class RingCentralAdapter:
     def extract_state(self, observation: RawObservation) -> MeetingState:
         labels = tuple(observation.ui_text)
         text = " ".join(observation.ui_text)
-        meeting_joined = (
+        ringcentral_window = (
             observation.metadata.process == "RingCentralVideo"
             and observation.metadata.window_class == "RingCentralVideoClass"
         )
         mic_muted = self._mic_muted(labels)
         camera_off = self._camera_off(labels)
         participant_count = self._participant_count(text)
+        meeting_joined = ringcentral_window and self._has_in_meeting_evidence(
+            mic_muted=mic_muted,
+            camera_off=camera_off,
+            participant_count=participant_count,
+        )
         active_dialog = self._active_dialog(labels)
         connection_warning = self._connection_warning(labels)
         return MeetingState(
@@ -24,7 +29,7 @@ class RingCentralAdapter:
             participant_count=participant_count,
             connection_warning=connection_warning,
             confidence=self._confidence(
-                meeting_joined=meeting_joined,
+                ringcentral_window=ringcentral_window,
                 signals=(mic_muted, camera_off, participant_count, active_dialog, connection_warning),
             ),
         )
@@ -66,10 +71,19 @@ class RingCentralAdapter:
             return "connection issue"
         return None
 
-    def _confidence(self, *, meeting_joined: bool, signals: tuple[object, ...]) -> float:
+    def _has_in_meeting_evidence(
+        self,
+        *,
+        mic_muted: bool | None,
+        camera_off: bool | None,
+        participant_count: int | None,
+    ) -> bool:
+        return mic_muted is not None or camera_off is not None or participant_count is not None
+
+    def _confidence(self, *, ringcentral_window: bool, signals: tuple[object, ...]) -> float:
         has_explicit_signal = any(signal is not None for signal in signals)
-        if meeting_joined and has_explicit_signal:
+        if ringcentral_window and has_explicit_signal:
             return 0.85
-        if meeting_joined:
+        if ringcentral_window:
             return 0.45
         return 0.2

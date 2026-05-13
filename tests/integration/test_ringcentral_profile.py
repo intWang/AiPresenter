@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from ai_presenter.adapters.ringcentral import RingCentralAdapter
 from ai_presenter.config.loader import load_profile
 from ai_presenter.config.models import DesktopAppProfile
@@ -181,6 +183,31 @@ def test_ambiguous_dialog_and_warning_text_does_not_emit_runtime_events():
     assert state.connection_warning is None
     assert state.confidence < 0.75
     assert events == []
+
+
+@pytest.mark.parametrize(
+    ("label", "active_dialog"),
+    [
+        ("Waiting room", "waiting room"),
+        ("Waiting for host", "waiting room"),
+        ("Permission required", "permission"),
+        ("Permissions required", "permission"),
+    ],
+)
+def test_prejoin_dialogs_do_not_emit_initial_meeting_joined_event(
+    label: str,
+    active_dialog: str,
+):
+    adapter = RingCentralAdapter()
+    detector = EventDetector(confidence_threshold=0.75)
+    state = adapter.extract_state(make_observation([label]))
+
+    events = detector.detect(previous=None, current=state)
+
+    assert state.meeting_joined is False
+    assert state.active_dialog == active_dialog
+    assert state.confidence >= 0.75
+    assert [event.type for event in events] == ["dialog_appeared"]
 
 
 def test_happy_path_state_stays_above_runtime_threshold():

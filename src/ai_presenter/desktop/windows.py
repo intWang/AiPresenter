@@ -1,19 +1,45 @@
 from __future__ import annotations
 
+import importlib
 from io import BytesIO
 from time import monotonic, sleep
 from typing import Any
-import importlib
 
 from ai_presenter.desktop.base import WindowHandle
 from ai_presenter.domain.state import RawObservation, WindowMetadata
 
-Application: Any = importlib.import_module("pywinauto").Application
-Desktop: Any = importlib.import_module("pywinauto").Desktop
-uiautomation: Any = importlib.import_module("uiautomation")
-psutil: Any = importlib.import_module("psutil")
-mss: Any = importlib.import_module("mss")
-Image: Any = importlib.import_module("PIL.Image")
+_pywinauto: Any = None
+try:
+    _pywinauto = importlib.import_module("pywinauto")
+except ImportError:
+    pass
+
+Application: Any = getattr(_pywinauto, "Application", None)
+Desktop: Any = getattr(_pywinauto, "Desktop", None)
+uiautomation: Any = None
+psutil: Any = None
+mss: Any = None
+Image: Any = None
+
+try:
+    uiautomation = importlib.import_module("uiautomation")
+except ImportError:
+    pass
+
+try:
+    psutil = importlib.import_module("psutil")
+except ImportError:
+    pass
+
+try:
+    mss = importlib.import_module("mss")
+except ImportError:
+    pass
+
+try:
+    Image = importlib.import_module("PIL.Image")
+except ImportError:
+    pass
 
 _CONTROL_SEARCH_SECONDS = 5.0
 _CONTROL_SEARCH_INTERVAL_SECONDS = 0.25
@@ -47,22 +73,29 @@ def collect_ui_text(control: Any) -> list[str]:
 
 
 class WindowsDesktopDriver:
+    def __init__(self) -> None:
+        self._focused_window: Any | None = None
+
     def focus_window(self, process: str) -> None:
+        _require_dependency(Application, "pywinauto")
         executable = _process_executable(process)
         try:
             app = Application(backend="uia").connect(path=executable)
             window = app.top_window()
             _focus_window(window)
+            self._focused_window = window
         except Exception as exc:
             raise RuntimeError(f"Unable to focus {executable}: {exc}") from exc
 
     def click_tab(self, target: str) -> None:
-        _click_named_control(uiautomation.TabItemControl, target, "Tab")
+        _click_named_control(self._focused_window, target, "Tab", ("tab", "tabitem"))
 
     def click_button(self, target: str) -> None:
-        _click_named_control(uiautomation.ButtonControl, target, "Button")
+        _click_named_control(self._focused_window, target, "Button", ("button",))
 
     def wait_for_window(self, process: str, window_class: str, timeout_ms: int) -> WindowHandle:
+        _require_dependency(Desktop, "pywinauto")
+        _require_dependency(psutil, "psutil")
         deadline = monotonic() + max(timeout_ms, 0) / 1000
 
         while True:
@@ -133,18 +166,28 @@ def _focus_window(window: Any) -> None:
     raise RuntimeError("window does not expose a focus method")
 
 
-def _click_named_control(control_factory: Any, target: str, label: str) -> None:
+def _click_named_control(
+    focused_window: Any | None,
+    target: str,
+    label: str,
+    type_markers: tuple[str, ...],
+) -> None:
+    if focused_window is None:
+        raise RuntimeError(f"Cannot click {label.lower()} control before focusing a window")
+
+    root_control = _control_from_window(focused_window)
+    if root_control is None:
+        raise RuntimeError(f"Focused window does not expose UI Automation controls for {label}")
+
     try:
-        control = control_factory(Name=target)
-        if not bool(
-            control.Exists(
-                _CONTROL_SEARCH_SECONDS,
-                _CONTROL_SEARCH_INTERVAL_SECONDS,
-                False,
-            )
-        ):
+        control = _find_descendant_control(
+            root_control,
+            target=target,
+            type_markers=type_markers,
+        )
+        if control is None:
             raise RuntimeError(f"{label} control not found: {target}")
-        control.Click()
+        _click_control(control)
     except RuntimeError:
         raise
     except Exception as exc:
@@ -185,8 +228,10 @@ def _find_window(pid: int, window_class: str) -> Any | None:
         if callable(exists) and not bool(exists(timeout=0)):
             return None
         return _window_from_spec(window_spec)
-    except Exception:
-        return None
+    except Exception as exc:
+        raise RuntimeError(
+            f"Unable to query window class {window_class} for pid {pid}: {exc}"
+        ) from exc
 
 
 def _bind_window(pid: int, window_class: str) -> Any:
@@ -231,6 +276,7 @@ def _window_bounds(window: Any) -> tuple[int, int, int, int]:
 
 
 def _control_from_window(window: Any) -> Any | None:
+    _require_dependency(uiautomation, "uiautomation")
     handle = getattr(window, "handle", None)
     if not isinstance(handle, int):
         return None
@@ -239,6 +285,64 @@ def _control_from_window(window: Any) -> Any | None:
         return uiautomation.ControlFromHandle(handle)
     except Exception:
         return None
+
+
+def _find_descendant_control(
+    root: Any,
+    *,
+    target: str,
+    type_markers: tuple[str, ...],
+) -> Any | None:
+    normalized_target = target.strip()
+    if not normalized_target:
+        raise RuntimeError("Control target cannot be blank")
+
+    stack = [root]
+    while stack:
+        node = stack.pop()
+        if _control_name(node) == normalized_target and _matches_control_type(node, type_markers):
+            return node
+
+        get_children = getattr(node, "GetChildren", None)
+        if not callable(get_children):
+            continue
+        try:
+            children = get_children()
+        except Exception:
+            continue
+        stack.extend(reversed(list(children or [])))
+    return None
+
+
+def _control_name(control: Any) -> str:
+    name = getattr(control, "Name", "")
+    return name.strip() if isinstance(name, str) else ""
+
+
+def _matches_control_type(control: Any, type_markers: tuple[str, ...]) -> bool:
+    raw_markers = [
+        getattr(control, "ControlTypeName", ""),
+        getattr(control, "LocalizedControlType", ""),
+        control.__class__.__name__,
+    ]
+    normalized = [marker.casefold() for marker in raw_markers if isinstance(marker, str)]
+    if not normalized:
+        return True
+    return any(type_marker in marker for marker in normalized for type_marker in type_markers)
+
+
+def _click_control(control: Any) -> None:
+    click = getattr(control, "Click", None)
+    if callable(click):
+        click()
+        return
+
+    click = getattr(control, "ClickSimulation", None)
+    if callable(click):
+        click()
+        return
+
+    raise RuntimeError("control does not expose a click method")
 
 
 def _call_bool_window_method(window: Any, method_name: str) -> bool:
@@ -253,6 +357,8 @@ def _call_bool_window_method(window: Any, method_name: str) -> bool:
 
 
 def _capture_bounds_png(bounds: tuple[int, int, int, int]) -> bytes:
+    _require_dependency(mss, "mss")
+    _require_dependency(Image, "Pillow")
     left, top, right, bottom = bounds
     width = right - left
     height = bottom - top
@@ -270,3 +376,8 @@ def _capture_bounds_png(bounds: tuple[int, int, int, int]) -> bytes:
         return buffer.getvalue()
     except Exception as exc:
         raise RuntimeError(f"Unable to capture window screenshot: {exc}") from exc
+
+
+def _require_dependency(dependency: Any | None, package_name: str) -> None:
+    if dependency is None:
+        raise RuntimeError(f"Windows desktop dependency is not available: {package_name}")

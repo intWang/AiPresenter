@@ -34,6 +34,18 @@ class BuggySink(AudioSink):
         raise TypeError("programmer bug")
 
 
+class RecordingSinkFactory:
+    def __init__(self) -> None:
+        self.devices: list[str | int | None] = []
+        self.sinks: list[RecordingSink] = []
+
+    def create(self, device: str | int | None) -> RecordingSink:
+        sink = RecordingSink()
+        self.devices.append(device)
+        self.sinks.append(sink)
+        return sink
+
+
 def make_audio() -> SpeechAudio:
     return cast("SpeechAudio", object())
 
@@ -80,6 +92,42 @@ def test_both_output_routes_to_speaker_and_virtual_mic() -> None:
 
     assert len(speaker.calls) == 1
     assert len(virtual_mic.calls) == 1
+
+
+def test_default_factory_uses_configured_speaker_device() -> None:
+    sink_factory = RecordingSinkFactory()
+    config = AudioConfig(output=AudioOutputMode.SPEAKER, speakerDevice="Speakers")
+
+    output = MediaOutputFactory(sink_factory=sink_factory.create).create(config)
+    output.play(make_audio())
+
+    assert sink_factory.devices == ["Speakers"]
+    assert [len(sink.calls) for sink in sink_factory.sinks] == [1]
+
+
+def test_default_factory_maps_default_speaker_to_default_os_device() -> None:
+    sink_factory = RecordingSinkFactory()
+    config = AudioConfig(output=AudioOutputMode.SPEAKER, speakerDevice=" default ")
+
+    output = MediaOutputFactory(sink_factory=sink_factory.create).create(config)
+    output.play(make_audio())
+
+    assert sink_factory.devices == [None]
+
+
+def test_default_factory_uses_configured_virtual_mic_device_for_both_output() -> None:
+    sink_factory = RecordingSinkFactory()
+    config = AudioConfig(
+        output=AudioOutputMode.BOTH,
+        speakerDevice="default",
+        virtualMicDevice=" VB-CABLE Input ",
+    )
+
+    output = MediaOutputFactory(sink_factory=sink_factory.create).create(config)
+    output.play(make_audio())
+
+    assert sink_factory.devices == [None, "VB-CABLE Input"]
+    assert [len(sink.calls) for sink in sink_factory.sinks] == [1, 1]
 
 
 def test_both_output_logs_and_continues_when_speaker_fails(

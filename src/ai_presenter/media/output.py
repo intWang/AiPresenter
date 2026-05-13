@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import logging
+from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Protocol, cast
 
 import numpy as np
@@ -101,19 +102,47 @@ class CombinedOutput:
 
 
 class MediaOutputFactory:
-    def __init__(self, speaker_sink: AudioSink, virtual_mic_sink: AudioSink) -> None:
+    def __init__(
+        self,
+        speaker_sink: AudioSink | None = None,
+        virtual_mic_sink: AudioSink | None = None,
+        sink_factory: Callable[[str | int | None], AudioSink] = SoundDeviceSink,
+    ) -> None:
         self._speaker_sink = speaker_sink
         self._virtual_mic_sink = virtual_mic_sink
+        self._sink_factory = sink_factory
 
     def create(self, config: AudioConfig) -> MediaOutput:
         if config.output is AudioOutputMode.SPEAKER:
-            return SingleOutput(self._speaker_sink)
+            return SingleOutput(self._create_speaker_sink(config))
         if config.output is AudioOutputMode.VIRTUAL_MIC:
-            if not config.virtual_mic_device or not config.virtual_mic_device.strip():
-                raise ValueError("virtualMicDevice is required for virtual_mic output")
-            return SingleOutput(self._virtual_mic_sink)
+            return SingleOutput(self._create_virtual_mic_sink(config, "virtual_mic"))
         if config.output is AudioOutputMode.BOTH:
-            if not config.virtual_mic_device or not config.virtual_mic_device.strip():
-                raise ValueError("virtualMicDevice is required for both output")
-            return CombinedOutput([self._speaker_sink, self._virtual_mic_sink])
+            return CombinedOutput(
+                [
+                    self._create_speaker_sink(config),
+                    self._create_virtual_mic_sink(config, "both"),
+                ]
+            )
         raise ValueError(f"Unsupported audio output mode: {config.output}")
+
+    def _create_speaker_sink(self, config: AudioConfig) -> AudioSink:
+        if self._speaker_sink is not None:
+            return self._speaker_sink
+        return self._sink_factory(_speaker_device(config.speaker_device))
+
+    def _create_virtual_mic_sink(self, config: AudioConfig, output_name: str) -> AudioSink:
+        if not config.virtual_mic_device or not config.virtual_mic_device.strip():
+            raise ValueError(f"virtualMicDevice is required for {output_name} output")
+        if self._virtual_mic_sink is not None:
+            return self._virtual_mic_sink
+        return self._sink_factory(config.virtual_mic_device.strip())
+
+
+def _speaker_device(device: str | None) -> str | None:
+    if device is None:
+        return None
+    normalized = device.strip()
+    if not normalized or normalized.casefold() == "default":
+        return None
+    return normalized

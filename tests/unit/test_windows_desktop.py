@@ -21,6 +21,52 @@ class FakeControl:
         return self._children
 
 
+class FakeClickableControl(FakeControl):
+    def __init__(
+        self,
+        name: str,
+        control_type_name: str,
+        clicked: list[str],
+        children: list[FakeControl] | None = None,
+    ) -> None:
+        super().__init__(name, children)
+        self.ControlTypeName = control_type_name
+        self._clicked = clicked
+
+    def Click(self) -> None:
+        self._clicked.append(self.Name)
+
+
+class FakeFocusedWindow:
+    handle = 99
+
+    def __init__(self, focus_calls: list[str] | None = None) -> None:
+        self._focus_calls = focus_calls
+
+    def set_focus(self) -> None:
+        if self._focus_calls is not None:
+            self._focus_calls.append("focus")
+
+
+def focused_driver(monkeypatch: pytest.MonkeyPatch, root_control: FakeControl) -> WindowsDesktopDriver:
+    class FakeApplication:
+        def __init__(self, backend: str) -> None:
+            assert backend == "uia"
+
+        def connect(self, path: str) -> "FakeApplication":
+            assert path == "RingCentralDevelop.exe"
+            return self
+
+        def top_window(self) -> FakeFocusedWindow:
+            return FakeFocusedWindow()
+
+    monkeypatch.setattr(windows, "Application", FakeApplication)
+    monkeypatch.setattr(windows.uiautomation, "ControlFromHandle", lambda handle: root_control)
+    driver = WindowsDesktopDriver()
+    driver.focus_window("RingCentralDevelop")
+    return driver
+
+
 def test_collect_ui_text_walks_tree_and_strips_blanks() -> None:
     root = FakeControl(
         "  Root  ",
@@ -92,6 +138,8 @@ def test_focus_window_connects_to_process_executable_and_focuses(
     calls: list[tuple[str, str]] = []
 
     class FakeWindow:
+        handle = 99
+
         def set_focus(self) -> None:
             calls.append(("focus", ""))
 
@@ -119,48 +167,28 @@ def test_focus_window_connects_to_process_executable_and_focuses(
 
 def test_click_tab_clicks_named_tab(monkeypatch: pytest.MonkeyPatch) -> None:
     clicked: list[str] = []
+    root = FakeControl(
+        "RingCentral",
+        [
+            FakeClickableControl("Video", "ButtonControl", clicked),
+            FakeClickableControl("Video", "TabItemControl", clicked),
+        ],
+    )
 
-    class FakeTab:
-        def __init__(self, Name: str) -> None:
-            assert Name == "Video"
+    focused_driver(monkeypatch, root).click_tab("Video")
 
-        def Exists(
-            self,
-            maxSearchSeconds: float,
-            searchIntervalSeconds: float,
-            printIfNotExist: bool,
-        ) -> bool:
-            assert maxSearchSeconds == 5
-            assert searchIntervalSeconds == 0.25
-            assert printIfNotExist is False
-            return True
-
-        def Click(self) -> None:
-            clicked.append("tab")
-
-    monkeypatch.setattr(windows.uiautomation, "TabItemControl", FakeTab)
-
-    WindowsDesktopDriver().click_tab("Video")
-
-    assert clicked == ["tab"]
+    assert clicked == ["Video"]
 
 
 def test_click_button_raises_clear_error_when_missing(monkeypatch: pytest.MonkeyPatch) -> None:
-    class MissingButton:
-        def __init__(self, Name: str) -> None:
-            assert Name == "Start"
-
-        def Exists(
-            self,
-            maxSearchSeconds: float,
-            searchIntervalSeconds: float,
-            printIfNotExist: bool,
-        ) -> bool:
-            return False
-
-    monkeypatch.setattr(windows.uiautomation, "ButtonControl", MissingButton)
+    root = FakeControl("RingCentral", [FakeClickableControl("Video", "TabItemControl", [])])
 
     with pytest.raises(RuntimeError, match="Button control not found: Start"):
+        focused_driver(monkeypatch, root).click_button("Start")
+
+
+def test_click_button_requires_focused_window() -> None:
+    with pytest.raises(RuntimeError, match="before focusing a window"):
         WindowsDesktopDriver().click_button("Start")
 
 
@@ -207,6 +235,31 @@ def test_wait_for_window_raises_after_timeout(monkeypatch: pytest.MonkeyPatch) -
         match="Timed out after 0ms waiting for Missing.exe window class MissingClass",
     ):
         WindowsDesktopDriver().wait_for_window("Missing", "MissingClass", 0)
+
+
+def test_wait_for_window_fails_fast_on_binding_errors(monkeypatch: pytest.MonkeyPatch) -> None:
+    class FakeProcess:
+        info = {"pid": 4321, "name": "RingCentralVideo.exe"}
+
+    class FailingDesktop:
+        def __init__(self, backend: str) -> None:
+            assert backend == "uia"
+
+        def window(self, *, process: int, class_name: str) -> object:
+            raise RuntimeError(f"backend unavailable for {process}:{class_name}")
+
+    monkeypatch.setattr(windows.psutil, "process_iter", lambda attrs: [FakeProcess()])
+    monkeypatch.setattr(windows, "Desktop", FailingDesktop)
+
+    with pytest.raises(RuntimeError, match="backend unavailable"):
+        WindowsDesktopDriver().wait_for_window("RingCentralVideo", "VideoClass", 30_000)
+
+
+def test_focus_window_reports_missing_dependency(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(windows, "Application", None)
+
+    with pytest.raises(RuntimeError, match="pywinauto"):
+        WindowsDesktopDriver().focus_window("RingCentralDevelop")
 
 
 def test_capture_binds_window_and_builds_observation(monkeypatch: pytest.MonkeyPatch) -> None:

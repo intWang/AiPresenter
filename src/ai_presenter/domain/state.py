@@ -1,6 +1,9 @@
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from types import MappingProxyType
 from typing import Any
+from typing import Mapping
+from typing import Sequence
 
 
 def utc_now() -> datetime:
@@ -22,8 +25,11 @@ class WindowMetadata:
 class RawObservation:
     metadata: WindowMetadata
     screenshot_png: bytes | None = None
-    ui_text: list[str] = field(default_factory=list)
+    ui_text: Sequence[str] = field(default_factory=tuple)
     captured_at: datetime = field(default_factory=utc_now)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "ui_text", tuple(self.ui_text))
 
 
 @dataclass(frozen=True)
@@ -40,6 +46,9 @@ class MeetingState:
 @dataclass(frozen=True)
 class PresenterEvent:
     type: str
-    payload: dict[str, Any]
+    payload: Mapping[str, Any]
     confidence: float
     occurred_at: datetime = field(default_factory=utc_now)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "payload", MappingProxyType(dict(self.payload)))

@@ -62,10 +62,15 @@ class SynchronizedTimelineRunner:
         placement = step.narration.placement
         if placement == "before":
             self._speak(narration_text)
+            if self._stop_requested():
+                return _stopped_step(step.id, narration_text=narration_text)
             self._action_executor.execute(step.action)
             self._cleanup_pending_action()
         elif placement == "after":
             self._action_executor.execute(step.action)
+            if self._stop_requested():
+                self._cleanup_pending_action()
+                return _stopped_step(step.id, narration_text=narration_text)
             self._speak(narration_text)
             self._cleanup_pending_action()
         elif placement == "during":
@@ -73,9 +78,14 @@ class SynchronizedTimelineRunner:
             playback = _BackgroundPlayback(self._media_output, audio)
             playback.start()
             self._sleep(step.narration.action_offset_ms / 1000)
+            if self._stop_requested():
+                playback.join_and_raise()
+                return _stopped_step(step.id, narration_text=narration_text)
             self._action_executor.execute(step.action)
             playback.join_and_raise()
             self._cleanup_pending_action()
+            if self._stop_requested():
+                return _stopped_step(step.id, narration_text=narration_text)
         else:
             raise ValueError(f"Unsupported narration placement: {placement}")
 
@@ -89,6 +99,9 @@ class SynchronizedTimelineRunner:
         cleanup = getattr(self._action_executor, "cleanup_pending", None)
         if callable(cleanup):
             cleanup()
+
+    def _stop_requested(self) -> bool:
+        return self._control is not None and self._control.is_stop_requested
 
 
 class _BackgroundPlayback:
@@ -111,3 +124,12 @@ class _BackgroundPlayback:
             self._media_output.play(self._audio)
         except BaseException as exc:
             self._error = exc
+
+
+def _stopped_step(step_id: str, *, narration_text: str | None) -> StepRunResult:
+    return StepRunResult(
+        step_id=step_id,
+        skipped=True,
+        stopped=True,
+        narration_text=narration_text,
+    )

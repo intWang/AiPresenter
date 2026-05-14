@@ -1,5 +1,6 @@
 import threading
 import time
+from typing import Literal
 
 from ai_presenter.media.output import AudioSink
 from ai_presenter.packages.models import DemoStep, DemoStepAction, DemoStepNarration
@@ -25,6 +26,16 @@ class RecordingOutput(AudioSink):
         self._log.append("play")
 
 
+class StopRequestingOutput(AudioSink):
+    def __init__(self, log: list[str], control: DemoControl) -> None:
+        self._log = log
+        self._control = control
+
+    def play(self, audio: SpeechAudio) -> None:
+        self._log.append("play")
+        self._control.request_stop()
+
+
 class RecordingActionExecutor:
     def __init__(self, log: list[str]) -> None:
         self._log = log
@@ -33,12 +44,22 @@ class RecordingActionExecutor:
         self._log.append(f"action:{action.entrypoint_id}")
 
 
-def make_step() -> DemoStep:
+class StopRequestingActionExecutor:
+    def __init__(self, log: list[str], control: DemoControl) -> None:
+        self._log = log
+        self._control = control
+
+    def execute(self, action: DemoStepAction) -> None:
+        self._log.append(f"action:{action.entrypoint_id}")
+        self._control.request_stop()
+
+
+def make_step(placement: Literal["before", "during", "after"] = "before") -> DemoStep:
     return DemoStep(
         id="step-one",
         title="Step One",
         action=DemoStepAction(entrypointId="entrypoint", operation="open"),
-        narration=DemoStepNarration(text="Narration.", placement="before"),
+        narration=DemoStepNarration(text="Narration.", placement=placement),
     )
 
 
@@ -83,3 +104,37 @@ def test_timeline_runner_skips_step_when_control_requests_stop() -> None:
     assert result.skipped is True
     assert result.stopped is True
     assert log == []
+
+
+def test_timeline_runner_skips_action_when_stop_requested_after_before_narration() -> None:
+    log: list[str] = []
+    control = DemoControl()
+    runner = SynchronizedTimelineRunner(
+        speech_provider=RecordingSpeechProvider(log),
+        media_output=StopRequestingOutput(log, control),
+        action_executor=RecordingActionExecutor(log),
+        control=control,
+    )
+
+    result = runner.run_step(make_step(placement="before"))
+
+    assert result.skipped is True
+    assert result.stopped is True
+    assert log == ["synthesize:Narration.", "play"]
+
+
+def test_timeline_runner_skips_after_narration_when_stop_requested_after_action() -> None:
+    log: list[str] = []
+    control = DemoControl()
+    runner = SynchronizedTimelineRunner(
+        speech_provider=RecordingSpeechProvider(log),
+        media_output=RecordingOutput(log),
+        action_executor=StopRequestingActionExecutor(log, control),
+        control=control,
+    )
+
+    result = runner.run_step(make_step(placement="after"))
+
+    assert result.skipped is True
+    assert result.stopped is True
+    assert log == ["action:entrypoint"]

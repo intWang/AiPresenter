@@ -28,6 +28,12 @@ List available demo flows:
 .venv\Scripts\ai-presenter flows --package ringcentral-video
 ```
 
+List available package entrypoints, optionally filtered by area:
+
+```powershell
+.venv\Scripts\ai-presenter entrypoints --package ringcentral-video --area "Meeting toolbar"
+```
+
 Before a real demo, run the diagnostic command to catch profile, package, flow, presenter-context,
 and RingCentral capture-prerequisite issues early. When RingCentralVideo is already running,
 `doctor` will try to discover the executable directory automatically; pass `--ringcentral-config`

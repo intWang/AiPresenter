@@ -88,6 +88,19 @@ def test_flows_lists_material_package_demo_flows() -> None:
     assert "steps" in result.stdout
 
 
+def test_entrypoints_lists_material_package_entrypoints_by_area() -> None:
+    result = CliRunner().invoke(
+        app,
+        ["entrypoints", "--package", "ringcentral-video", "--area", "Meeting toolbar"],
+    )
+
+    assert result.exit_code == 0
+    assert "Package: ringcentral-video" in result.stdout
+    assert "ringcentral.video.toolbar.audio" in result.stdout
+    assert "ringcentral.video.toolbar.leave" in result.stdout
+    assert "ringcentral.video.top.meeting-info" not in result.stdout
+
+
 def test_doctor_loads_profile_package_and_flow(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(diagnostics, "_iter_process_executable_paths", lambda process_name: [])
 

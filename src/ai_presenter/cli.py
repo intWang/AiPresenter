@@ -151,6 +151,25 @@ def flows(
 
 
 @app.command()
+def entrypoints(
+    package: str = typer.Option(..., "--package", help="Material package id or YAML path."),
+    area: str | None = typer.Option(
+        None,
+        "--area",
+        help="Optional case-insensitive area filter.",
+    ),
+) -> None:
+    """List operation entrypoints available in a material package."""
+    loaded_package = load_material_package(resolve_material_package(package))
+    typer.echo(f"Package: {loaded_package.app_id}")
+    area_filter = None if area is None else area.strip().lower()
+    for entrypoint in loaded_package.operation_entrypoints:
+        if area_filter and area_filter not in entrypoint.area.lower():
+            continue
+        typer.echo(f"- {entrypoint.id}: {entrypoint.title} [{entrypoint.area}]")
+
+
+@app.command()
 def doctor(
     profile: str = typer.Option(..., "--profile", help="Profile id or YAML path."),
     package: str | None = typer.Option(

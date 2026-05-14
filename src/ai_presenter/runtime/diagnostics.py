@@ -1,7 +1,10 @@
 import configparser
+import importlib
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 from typing import Literal
 
 from ai_presenter.config.models import AppProfile
@@ -17,6 +20,12 @@ _SUPPORTED_SPEECH_PROVIDERS = frozenset(
     {"fake", "openai", "windows-sapi", "windows-sapi-en", "windows-sapi-zh"}
 )
 _SECTION_HEADER_PATTERN = re.compile(r"^\s*\[[^\]]+\]", re.MULTILINE)
+
+psutil: Any = None
+try:
+    psutil = importlib.import_module("psutil")
+except ImportError:
+    pass
 
 
 @dataclass(frozen=True)
@@ -180,11 +189,14 @@ def _is_ringcentral_video_profile(profile: AppProfile) -> bool:
 
 def _diagnose_ringcentral_config(path: Path | None) -> DiagnosticCheck:
     if path is None:
-        return DiagnosticCheck(
-            "WARN",
-            "RingCentral config",
-            "not checked; pass --ringcentral-config <RingCentralVideo config.ini>",
-        )
+        discovered = _discover_ringcentral_video_config()
+        if discovered is None:
+            return DiagnosticCheck(
+                "WARN",
+                "RingCentral config",
+                "not checked; pass --ringcentral-config <RingCentralVideo config.ini>",
+            )
+        path = discovered
 
     config_path = path.expanduser()
     if not config_path.is_file():
@@ -215,7 +227,7 @@ def _diagnose_ringcentral_config(path: Path | None) -> DiagnosticCheck:
 
 
 def _read_disable_affinity_mask(path: Path) -> bool | None:
-    content = path.read_text(encoding="utf-8")
+    content = path.read_text(encoding="utf-8-sig")
     parser = configparser.ConfigParser()
     parser.read_string(_ensure_ini_section(content))
 
@@ -229,3 +241,34 @@ def _ensure_ini_section(content: str) -> str:
     if _SECTION_HEADER_PATTERN.search(content):
         return content
     return f"[root]\n{content}"
+
+
+def _discover_ringcentral_video_config() -> Path | None:
+    for exe_path in _iter_process_executable_paths("RingCentralVideo"):
+        candidate = exe_path.parent / "config.ini"
+        if candidate.is_file():
+            return candidate
+    return None
+
+
+def _iter_process_executable_paths(process_name: str) -> Iterable[Path]:
+    if psutil is None:
+        return []
+
+    executable_paths: list[Path] = []
+    for process in psutil.process_iter(["name", "exe"]):
+        try:
+            info = process.info
+            name = info.get("name")
+            exe = info.get("exe")
+        except Exception:
+            continue
+        if not isinstance(name, str) or not _process_name_matches(name, process_name):
+            continue
+        if isinstance(exe, str) and exe.strip():
+            executable_paths.append(Path(exe))
+    return executable_paths
+
+
+def _process_name_matches(actual: str, expected: str) -> bool:
+    return Path(actual).stem.lower() == expected.lower()

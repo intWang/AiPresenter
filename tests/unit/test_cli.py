@@ -9,6 +9,7 @@ from ai_presenter.cli import PACKAGE_PROFILE_DIR
 from ai_presenter.cli import REPO_PROFILE_DIR
 from ai_presenter.cli import resolve_material_package
 from ai_presenter.cli import resolve_profile
+from ai_presenter.runtime import diagnostics
 
 
 def test_cli_help_renders() -> None:
@@ -78,7 +79,9 @@ def test_controller_dry_run_loads_profile_package_and_flow() -> None:
     assert "Controller dry run complete." in result.stdout
 
 
-def test_doctor_loads_profile_package_and_flow() -> None:
+def test_doctor_loads_profile_package_and_flow(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(diagnostics, "_iter_process_executable_paths", lambda process_name: [])
+
     result = CliRunner().invoke(
         app,
         [

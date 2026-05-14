@@ -13,7 +13,7 @@
 This uses the default fake providers. It verifies desktop automation, window binding, state detection, event filtering, and logging. It does not prove audible speech or OpenAI behavior.
 
 - [ ] Run `.venv\Scripts\ai-presenter run --profile ringcentral-video --dry-run` from the repo root.
-- [ ] Run `.venv\Scripts\ai-presenter doctor --profile ringcentral-video-bind-speaker --package ringcentral-video --flow meeting-control-map-demo --ringcentral-config "<RingCentralVideo>\config.ini"`.
+- [ ] Run `.venv\Scripts\ai-presenter doctor --profile ringcentral-video-bind-speaker --package ringcentral-video --flow meeting-control-map-demo`; if RingCentralVideo is not running, pass `--ringcentral-config "<RingCentralVideo>\config.ini"`.
 - [ ] Run `.venv\Scripts\ai-presenter demo --profile ringcentral-video --package ringcentral-video --flow meeting-control-map-demo --dry-run`.
 - [ ] Run `.venv\Scripts\ai-presenter controller --profile ringcentral-video --package ringcentral-video --flow meeting-control-map-demo --dry-run`.
 - [ ] From another directory, run `<repo>\.venv\Scripts\ai-presenter run --profile ringcentral-video --dry-run`.

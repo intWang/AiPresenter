@@ -8,6 +8,28 @@ from ai_presenter.desktop.base import WindowHandle
 from ai_presenter.packages.models import DemoFlow, DemoStepAction, MaterialPackage, PackageOpenStep
 
 
+class PackageActionExecutionError(RuntimeError):
+    def __init__(
+        self,
+        *,
+        entrypoint_id: str,
+        operation: str,
+        step_index: int,
+        open_step: PackageOpenStep,
+        cause: Exception,
+    ) -> None:
+        self.entrypoint_id = entrypoint_id
+        self.operation = operation
+        self.step_index = step_index
+        self.open_step_action = open_step.action
+        self.open_step_target = open_step.target
+        target = open_step.target or "<none>"
+        super().__init__(
+            f"Package action failed for entrypoint {entrypoint_id}, operation {operation}, "
+            f"open step {step_index} ({open_step.action}, target={target}): {cause}"
+        )
+
+
 class DemoWindowDriver(Protocol):
     def click_window_relative(self, handle: WindowHandle, x: int, y: int) -> None:
         ...
@@ -61,8 +83,17 @@ class PackageActionExecutor:
         if self._clear_before_action:
             self._clear_blockers()
 
-        for step in entrypoint.open_steps:
-            self._execute_open_step(step)
+        for index, step in enumerate(entrypoint.open_steps, start=1):
+            try:
+                self._execute_open_step(step)
+            except Exception as exc:
+                raise PackageActionExecutionError(
+                    entrypoint_id=entrypoint_id,
+                    operation=operation,
+                    step_index=index,
+                    open_step=step,
+                    cause=exc,
+                ) from exc
 
         if operation == "toggle":
             self._finish_or_defer_cleanup("toggle", entrypoint.open_steps)

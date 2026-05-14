@@ -1,6 +1,9 @@
+import pytest
+
 from ai_presenter.desktop.base import WindowHandle
 from ai_presenter.packages.models import MaterialPackage
 from ai_presenter.runtime.package_demo import PackageActionExecutor
+from ai_presenter.runtime.package_demo import PackageActionExecutionError
 
 
 class RecordingDemoDriver:
@@ -389,3 +392,28 @@ def test_package_action_executor_uses_alternate_window_control_targets() -> None
         "control:123:Lower hand:1:button",
         "key:Escape",
     ]
+
+
+def test_package_action_executor_adds_context_to_open_step_failures() -> None:
+    driver = RecordingDemoDriver()
+    driver.fail_controls.update({"Raise hand", "Lower hand"})
+    executor = PackageActionExecutor(
+        package=make_package(),
+        driver=driver,
+        handle=make_handle(),
+        clear_before_action=False,
+        action_hold_seconds=0,
+    )
+
+    with pytest.raises(PackageActionExecutionError) as exc_info:
+        executor.execute_action("ringcentral.video.toolbar.raise-hand-alternate", operation="open")
+
+    error = exc_info.value
+    assert error.entrypoint_id == "ringcentral.video.toolbar.raise-hand-alternate"
+    assert error.operation == "open"
+    assert error.step_index == 1
+    assert error.open_step_action == "clickWindowControl"
+    assert error.open_step_target == "Raise hand"
+    assert "ringcentral.video.toolbar.raise-hand-alternate" in str(error)
+    assert "clickWindowControl" in str(error)
+    assert "Raise hand" in str(error)

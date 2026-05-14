@@ -33,6 +33,19 @@ class DesktopDriver(Protocol):
     def click_window_relative(self, handle: WindowHandle, x: int, y: int) -> None:
         ...
 
+    def click_window_control(
+        self,
+        handle: WindowHandle,
+        target: str,
+        *,
+        occurrence: int = 1,
+        control_type: str | None = None,
+    ) -> None:
+        ...
+
+    def window_bounds(self, handle: WindowHandle) -> tuple[int, int, int, int]:
+        ...
+
     def press_key(self, key: str) -> None:
         ...
 

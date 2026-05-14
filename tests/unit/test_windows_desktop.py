@@ -38,6 +38,12 @@ class FakeClickableControl(FakeControl):
         self._clicked.append(self.Name)
 
 
+def set_bounds(control: FakeControl, bounds: tuple[int, int, int, int]) -> FakeControl:
+    left, top, right, bottom = bounds
+    control.BoundingRectangle = SimpleNamespace(left=left, top=top, right=right, bottom=bottom)
+    return control
+
+
 class FakeFocusedWindow:
     handle = 99
 
@@ -95,6 +101,31 @@ def test_collect_ui_text_treats_raising_children_as_leaf() -> None:
             raise RuntimeError("uia tree changed")
 
     assert collect_ui_text(RaisingControl()) == ["Camera"]
+
+
+def test_find_descendant_controls_orders_matches_left_to_right() -> None:
+    clicked: list[str] = []
+    audio_more = set_bounds(
+        FakeClickableControl("More", "ButtonControl", clicked),
+        (603, 962, 623, 981),
+    )
+    video_more = set_bounds(
+        FakeClickableControl("More", "ButtonControl", clicked),
+        (678, 962, 698, 981),
+    )
+    toolbar_more = set_bounds(
+        FakeClickableControl("More", "ButtonControl", clicked),
+        (1226, 958, 1302, 1030),
+    )
+    root = FakeControl("Root", [toolbar_more, audio_more, video_more])
+
+    matches = windows._find_descendant_controls(
+        root,
+        target="More",
+        type_markers=("button",),
+    )
+
+    assert matches == [audio_more, video_more, toolbar_more]
 
 
 def test_capture_bounds_png_uses_bounded_region(monkeypatch: pytest.MonkeyPatch) -> None:

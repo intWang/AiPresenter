@@ -38,6 +38,8 @@ operationEntrypoints:
   presenterNotes:
   - Use this as the narrative bridge before walking through specific controls.
   - No UI action is required for this step.
+  - In a two-person meeting, the center canvas shows participant tiles and the Participants badge shows the live
+    attendee count, so demos should inspect state before assuming an empty-room invite path.
 - id: ringcentral.video.top.meeting-info
   title: Meeting information
   area: Meeting top bar
@@ -78,7 +80,7 @@ operationEntrypoints:
   - action: clickWindowRelative
     target: Views
     match:
-      x: '683'
+      xFromRight: '237'
       y: '21'
       cleanup: escape
   presenterNotes:
@@ -94,7 +96,7 @@ operationEntrypoints:
   - action: clickWindowRelative
     target: Report
     match:
-      x: '752'
+      xFromRight: '168'
       y: '21'
       cleanup: modal
   presenterNotes:
@@ -115,17 +117,19 @@ operationEntrypoints:
   presenterNotes:
   - The dialog includes a name/email field, suggestions, Copy meeting link, Cancel, and Invite.
   - This is functionally similar to the Invite toolbar control.
+  - This callout only appears in the empty-room "first one here" state; skip it when participant tiles or a
+    Participants badge count show other attendees are already present.
   - Close using the dialog X or Cancel before touching other controls; the dialog blocks the toolbar.
 - id: ringcentral.video.toolbar.audio
   title: Microphone control
   area: Meeting toolbar
   purpose: Toggle mute and unmute in the live meeting.
   openSteps:
-  - action: clickWindowRelative
+  - action: clickWindowControl
     target: Mute
     match:
-      x: '119'
-      y: '613'
+      alternateTargets: Unmute
+      controlType: button
   presenterNotes:
   - Button text alternates between Unmute and Mute depending on current state.
   - Use this entry point to explain audio privacy and meeting readiness.
@@ -135,11 +139,11 @@ operationEntrypoints:
   purpose: Open microphone and speaker device controls, audio level indicators, leave-computer-audio, phone-audio,
     and more audio settings.
   openSteps:
-  - action: clickWindowRelative
-    target: Microphone caret
+  - action: clickWindowControl
+    target: More
     match:
-      x: '143'
-      y: '604'
+      occurrence: '1'
+      controlType: button
       cleanup: escape
   presenterNotes:
   - Observed menu sections include Microphone, Speaker, Leave computer audio, Use phone audio, and More audio settings.
@@ -151,11 +155,11 @@ operationEntrypoints:
   area: Meeting toolbar
   purpose: Toggle local camera on or off.
   openSteps:
-  - action: clickWindowRelative
+  - action: clickWindowControl
     target: Start video
     match:
-      x: '194'
-      y: '613'
+      alternateTargets: Stop video
+      controlType: button
   presenterNotes:
   - Button text alternates between Start video and Stop video.
   - The caret next to this button exposes camera and video settings.
@@ -164,11 +168,11 @@ operationEntrypoints:
   area: Meeting toolbar
   purpose: Open camera device selection and the More video settings shortcut.
   openSteps:
-  - action: clickWindowRelative
-    target: Start video caret
+  - action: clickWindowControl
+    target: More
     match:
-      x: '216'
-      y: '604'
+      occurrence: '2'
+      controlType: button
       cleanup: escape
   presenterNotes:
   - Observed menu includes the selected camera and More video settings.
@@ -205,11 +209,10 @@ operationEntrypoints:
   area: Meeting toolbar
   purpose: Start sharing a screen, window, or selected content.
   openSteps:
-  - action: clickWindowRelative
+  - action: clickWindowControl
     target: Share
     match:
-      x: '267'
-      y: '613'
+      controlType: button
       cleanup: escape
   presenterNotes:
   - Narration must not infer shared-screen content unless verified by an allowed source.
@@ -221,11 +224,10 @@ operationEntrypoints:
   area: Meeting toolbar
   purpose: Invite coworkers or copy meeting details.
   openSteps:
-  - action: clickWindowRelative
+  - action: clickWindowControl
     target: Invite
     match:
-      x: '345'
-      y: '613'
+      controlType: button
       cleanup: modal
   presenterNotes:
   - Useful when the presenter needs to explain how to bring people into an active room.
@@ -238,11 +240,10 @@ operationEntrypoints:
   area: Meeting toolbar
   purpose: Open participant list and meeting people controls.
   openSteps:
-  - action: clickWindowRelative
+  - action: clickWindowControl
     target: Participants
     match:
-      x: '421'
-      y: '613'
+      controlType: button
       cleanup: toggle
   presenterNotes:
   - Use this to answer questions about attendee count and meeting control.
@@ -254,11 +255,10 @@ operationEntrypoints:
   area: Meeting toolbar
   purpose: Open in-meeting chat.
   openSteps:
-  - action: clickWindowRelative
+  - action: clickWindowControl
     target: Chat
     match:
-      x: '494'
-      y: '613'
+      controlType: button
       cleanup: toggle
   presenterNotes:
   - Chat is a collaboration side panel for meeting messages.
@@ -270,11 +270,10 @@ operationEntrypoints:
   area: Meeting toolbar
   purpose: Send meeting reactions without interrupting speech.
   openSteps:
-  - action: clickWindowRelative
+  - action: clickWindowControl
     target: React
     match:
-      x: '569'
-      y: '613'
+      controlType: button
       cleanup: escape
   presenterNotes:
   - Reactions are lightweight feedback signals.
@@ -286,11 +285,11 @@ operationEntrypoints:
   area: Meeting toolbar
   purpose: Raise or lower hand to request attention.
   openSteps:
-  - action: clickWindowRelative
+  - action: clickWindowControl
     target: Raise hand
     match:
-      x: '645'
-      y: '613'
+      alternateTargets: onconf.reactions.REMOVE_RAISE_HAND
+      controlType: button
       cleanup: toggle
   presenterNotes:
   - Use this in moderated meeting demos.
@@ -301,15 +300,16 @@ operationEntrypoints:
   area: Meeting toolbar
   purpose: Open additional meeting actions.
   openSteps:
-  - action: clickWindowRelative
+  - action: clickWindowControl
     target: More
     match:
-      x: '719'
-      y: '613'
+      occurrence: '3'
+      controlType: button
       cleanup: escape
   presenterNotes:
   - This is the expansion point for less frequent meeting tools.
-  - Observed menu items include Start recording, Notes, Background, and Settings.
+  - In the current observed two-person meeting layout, Notes is a direct toolbar button, while More keeps Start
+    recording, Background, and Settings.
   - Close the menu with Escape before continuing.
 - id: ringcentral.video.more.recording
   title: Start recording
@@ -322,21 +322,17 @@ operationEntrypoints:
   - AiPresenter should explain this entry without clicking it unless the user explicitly asks to start recording.
 - id: ringcentral.video.more.notes
   title: Notes and transcript
-  area: More menu
+  area: Meeting toolbar
   purpose: Open the Notes and Transcript side panel.
   openSteps:
-  - action: clickWindowRelative
-    target: More
-    match:
-      x: '719'
-      y: '613'
-  - action: clickWindowRelative
+  - action: clickWindowControl
     target: Notes
     match:
-      x: '701'
-      y: '448'
-      cleanup: sidePanel
+      controlType: button
+      cleanup: toggle
   presenterNotes:
+  - In the current observed build, Notes is a direct toolbar button between Raise hand and More.
+  - In older layouts, Notes may be nested under More; prefer the visible direct Notes button when present.
   - Observed panel offers Start notes and Also record this meeting.
   - Starting notes or recording changes meeting state, so the default tour only explains the panel.
   - Close the panel before continuing.
@@ -345,16 +341,14 @@ operationEntrypoints:
   area: More menu
   purpose: Open the Settings dialog directly on the Background tab.
   openSteps:
-  - action: clickWindowRelative
+  - action: clickWindowControl
     target: More
     match:
-      x: '719'
-      y: '613'
-  - action: clickWindowRelative
+      occurrence: '3'
+      controlType: button
+  - action: clickWindowControl
     target: Background
     match:
-      x: '714'
-      y: '505'
       cleanup: settings
   presenterNotes:
   - Observed Settings dialog tabs include Audio, Video, Background, Translation, Join preferences, and General.
@@ -365,16 +359,14 @@ operationEntrypoints:
   area: More menu
   purpose: Open the Settings dialog.
   openSteps:
-  - action: clickWindowRelative
+  - action: clickWindowControl
     target: More
     match:
-      x: '719'
-      y: '613'
-  - action: clickWindowRelative
+      occurrence: '3'
+      controlType: button
+  - action: clickWindowControl
     target: Settings
     match:
-      x: '703'
-      y: '545'
       cleanup: settings
   presenterNotes:
   - Observed Settings dialog opens to the current or last selected section.
@@ -631,8 +623,8 @@ demoFlows:
       entrypointId: ringcentral.video.toolbar.more
       operation: open
     narration:
-      text: Finally, More is the expansion menu for deeper meeting tools. In this build it includes Start recording,
-        Notes, Background, and Settings.
+      text: Finally, More is the expansion menu for deeper meeting tools. In this build, Notes is already on the
+        toolbar, while More keeps Start recording, Background, and Settings.
       placement: during
       actionOffsetMs: 350
   - id: explain-recording
@@ -842,8 +834,8 @@ demoFlows:
       entrypointId: ringcentral.video.toolbar.more
       operation: open
     narration:
-      text: Finally, More is the advanced shelf. It gathers less frequent tools such as recording, notes,
-        background, and settings.
+      text: Finally, More is the advanced shelf. Since Notes is already on the toolbar here, More gathers riskier
+        or less frequent tools such as recording, background, and settings.
       placement: during
       actionOffsetMs: 350
   - id: control-map-recording

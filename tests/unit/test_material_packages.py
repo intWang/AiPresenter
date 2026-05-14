@@ -30,16 +30,16 @@ def test_loads_ringcentral_video_app_material_package() -> None:
     for step in controls_tour.steps:
         entrypoint = package.entrypoint_by_id(step.action.entrypoint_id)
         if step.action.operation in {"open", "toggle"}:
-            assert entrypoint.open_steps[0].action == "clickWindowRelative"
+            assert_supported_open_step(entrypoint.open_steps[0])
             assert step.narration.placement == "during"
             assert step.narration.action_offset_ms <= 500
         step.narration.text.encode("ascii")
     assert package.entrypoint_by_id("ringcentral.video.top.report-issue").presenter_notes[0].startswith(
         "This opens a foreground dialog"
     )
-    assert package.entrypoint_by_id("ringcentral.video.more.notes").open_steps[-1].match["cleanup"] == (
-        "sidePanel"
-    )
+    notes_entrypoint = package.entrypoint_by_id("ringcentral.video.more.notes")
+    assert notes_entrypoint.open_steps[-1].action == "clickWindowControl"
+    assert notes_entrypoint.open_steps[-1].match["cleanup"] == "toggle"
     assert package.entrypoint_by_id("ringcentral.video.toolbar.audio-menu").purpose.startswith(
         "Open microphone and speaker"
     )
@@ -87,7 +87,7 @@ def test_meeting_control_map_demo_is_directed_and_complete() -> None:
         step.narration.text.encode("ascii")
         entrypoint = package.entrypoint_by_id(step.action.entrypoint_id)
         if step.action.operation in {"open", "toggle"}:
-            assert entrypoint.open_steps[0].action == "clickWindowRelative"
+            assert_supported_open_step(entrypoint.open_steps[0])
             assert step.narration.placement == "during"
             assert step.narration.action_offset_ms <= 500
 
@@ -124,6 +124,19 @@ manualControls: []
 
     with pytest.raises(ValidationError, match="duplicate operation entrypoint id"):
         load_material_package(package_path)
+
+
+def assert_supported_open_step(step: object) -> None:
+    action = getattr(step, "action")
+    match = getattr(step, "match")
+    if action == "clickWindowRelative":
+        assert "x" in match or "xFromRight" in match
+        assert "y" in match or "yFromBottom" in match
+        return
+    if action == "clickWindowControl":
+        assert getattr(step, "target")
+        return
+    raise AssertionError(f"Unexpected package open step action: {action}")
 
 
 def test_rejects_demo_flow_references_to_unknown_entrypoint(tmp_path: Path) -> None:

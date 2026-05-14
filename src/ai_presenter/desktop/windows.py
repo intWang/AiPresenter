@@ -146,6 +146,49 @@ class WindowsDesktopDriver:
                 f"{handle.window_class} for pid {handle.pid}: {exc}"
             ) from exc
 
+    def click_window_control(
+        self,
+        handle: WindowHandle,
+        target: str,
+        *,
+        occurrence: int = 1,
+        control_type: str | None = None,
+    ) -> None:
+        if occurrence < 1:
+            raise RuntimeError("Control occurrence must be at least 1")
+        try:
+            window = _bind_window(handle.pid, handle.window_class)
+            _focus_window(window)
+            root_control = _control_from_window(window)
+            if root_control is None:
+                raise RuntimeError("window does not expose UI Automation controls")
+
+            markers = _normalize_type_markers(control_type)
+            controls = _find_descendant_controls(
+                root_control,
+                target=target,
+                type_markers=markers,
+            )
+            if len(controls) < occurrence:
+                raise RuntimeError(
+                    f"found {len(controls)} visible controls named {target}, "
+                    f"need occurrence {occurrence}"
+                )
+            _click_control(controls[occurrence - 1])
+        except Exception as exc:
+            raise RuntimeError(
+                f"Unable to click window control {target!r} occurrence {occurrence} in "
+                f"{handle.window_class} for pid {handle.pid}: {exc}"
+            ) from exc
+
+    def window_bounds(self, handle: WindowHandle) -> tuple[int, int, int, int]:
+        try:
+            return _window_bounds(_bind_window(handle.pid, handle.window_class))
+        except Exception as exc:
+            raise RuntimeError(
+                f"Unable to read bounds for {handle.window_class} pid {handle.pid}: {exc}"
+            ) from exc
+
     def press_key(self, key: str) -> None:
         _require_dependency(keyboard, "pywinauto")
         normalized = key.strip()
@@ -411,12 +454,59 @@ def _find_descendant_control(
     return None
 
 
+def _find_descendant_controls(
+    root: Any,
+    *,
+    target: str,
+    type_markers: tuple[str, ...],
+) -> list[Any]:
+    normalized_target = target.strip()
+    if not normalized_target:
+        raise RuntimeError("Control target cannot be blank")
+
+    matches: list[tuple[tuple[int, int, int, int], Any]] = []
+    stack = [root]
+    while stack:
+        node = stack.pop()
+        bounds = _control_bounds(node)
+        if (
+            _control_name(node) == normalized_target
+            and _matches_control_type(node, type_markers)
+            and bounds is not None
+        ):
+            matches.append((bounds, node))
+
+        get_children = getattr(node, "GetChildren", None)
+        if not callable(get_children):
+            continue
+        try:
+            children = get_children()
+        except Exception:
+            continue
+        stack.extend(reversed(list(children or [])))
+
+    matches.sort(key=lambda item: (item[0][0], item[0][1], item[0][2], item[0][3]))
+    return [control for _, control in matches]
+
+
 def _control_name(control: Any) -> str:
     name = getattr(control, "Name", "")
     return name.strip() if isinstance(name, str) else ""
 
 
+def _normalize_type_markers(control_type: str | None) -> tuple[str, ...]:
+    if control_type is None:
+        return ()
+    return tuple(
+        marker.strip().casefold()
+        for marker in control_type.split(",")
+        if marker.strip()
+    )
+
+
 def _matches_control_type(control: Any, type_markers: tuple[str, ...]) -> bool:
+    if not type_markers:
+        return True
     raw_markers = [
         getattr(control, "ControlTypeName", ""),
         getattr(control, "LocalizedControlType", ""),
@@ -426,6 +516,19 @@ def _matches_control_type(control: Any, type_markers: tuple[str, ...]) -> bool:
     if not normalized:
         return True
     return any(type_marker in marker for marker in normalized for type_marker in type_markers)
+
+
+def _control_bounds(control: Any) -> tuple[int, int, int, int] | None:
+    try:
+        rect = control.BoundingRectangle
+        bounds = (int(rect.left), int(rect.top), int(rect.right), int(rect.bottom))
+    except Exception:
+        return None
+
+    left, top, right, bottom = bounds
+    if right <= left or bottom <= top:
+        return None
+    return bounds
 
 
 def _click_control(control: Any) -> None:

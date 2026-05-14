@@ -6,9 +6,31 @@ from ai_presenter.runtime.package_demo import PackageActionExecutor
 class RecordingDemoDriver:
     def __init__(self) -> None:
         self.log: list[str] = []
+        self.bounds: tuple[int, int, int, int] = (10, 20, 930, 682)
+        self.fail_controls: set[str] = set()
 
     def click_window_relative(self, handle: WindowHandle, x: int, y: int) -> None:
         self.log.append(f"click:{handle.pid}:{x}:{y}")
+
+    def click_window_control(
+        self,
+        handle: WindowHandle,
+        target: str,
+        *,
+        occurrence: int = 1,
+        control_type: str | None = None,
+    ) -> None:
+        if target in self.fail_controls:
+            self.log.append(f"control-fail:{handle.pid}:{target}:{occurrence}")
+            raise RuntimeError(f"missing control: {target}")
+        detail = f"control:{handle.pid}:{target}:{occurrence}"
+        if control_type is not None:
+            detail = f"{detail}:{control_type}"
+        self.log.append(detail)
+
+    def window_bounds(self, handle: WindowHandle) -> tuple[int, int, int, int]:
+        self.log.append(f"bounds:{handle.pid}")
+        return self.bounds
 
     def press_key(self, key: str) -> None:
         self.log.append(f"key:{key}")
@@ -58,6 +80,66 @@ def make_package() -> MaterialPackage:
                             "action": "clickWindowRelative",
                             "target": "Leave",
                             "match": {"x": "794", "y": "613"},
+                        }
+                    ],
+                },
+                {
+                    "id": "ringcentral.video.toolbar.more-control",
+                    "title": "More actions",
+                    "area": "Meeting toolbar",
+                    "purpose": "Open toolbar More by its UI Automation button.",
+                    "openSteps": [
+                        {
+                            "action": "clickWindowControl",
+                            "target": "More",
+                            "match": {
+                                "occurrence": "3",
+                                "controlType": "button",
+                                "cleanup": "escape",
+                            },
+                        }
+                    ],
+                },
+                {
+                    "id": "ringcentral.video.toolbar.raise-hand-alternate",
+                    "title": "Raise hand",
+                    "area": "Meeting toolbar",
+                    "purpose": "Raise or lower hand with alternate active-state label.",
+                    "openSteps": [
+                        {
+                            "action": "clickWindowControl",
+                            "target": "Raise hand",
+                            "match": {
+                                "alternateTargets": "Lower hand",
+                                "controlType": "button",
+                                "cleanup": "escape",
+                            },
+                        }
+                    ],
+                },
+                {
+                    "id": "ringcentral.video.top.report-anchored",
+                    "title": "Report",
+                    "area": "Meeting top bar",
+                    "purpose": "Open report issue from the top-right toolbar.",
+                    "openSteps": [
+                        {
+                            "action": "clickWindowRelative",
+                            "target": "Report",
+                            "match": {"xFromRight": "168", "y": "21", "cleanup": "escape"},
+                        }
+                    ],
+                },
+                {
+                    "id": "ringcentral.video.toolbar.audio-menu-anchored",
+                    "title": "Audio menu",
+                    "area": "Meeting toolbar",
+                    "purpose": "Open audio menu using bottom-anchored coordinates.",
+                    "openSteps": [
+                        {
+                            "action": "clickWindowRelative",
+                            "target": "Microphone caret",
+                            "match": {"x": "143", "yFromBottom": "58", "cleanup": "escape"},
                         }
                     ],
                 },
@@ -182,7 +264,7 @@ def test_package_action_executor_closes_settings_dialogs() -> None:
     assert driver.log == [
         "click:123:719:613",
         "click:123:714:505",
-        "click:123:837:47",
+        "control:123:Close:1:button",
         "key:Escape",
     ]
 
@@ -210,7 +292,7 @@ def test_package_action_executor_can_defer_cleanup_until_narration_finishes() ->
     assert driver.log == [
         "click:123:719:613",
         "click:123:714:505",
-        "click:123:837:47",
+        "control:123:Close:1:button",
         "key:Escape",
     ]
 
@@ -246,4 +328,64 @@ def test_package_action_executor_clear_blockers_includes_side_panel_close() -> N
 
     executor.clear_blockers()
 
+    assert "control:123:Close:1:button" in driver.log
+    assert "control:123:Cancel:1:button" in driver.log
     assert "click:123:878:75" in driver.log
+
+
+def test_package_action_executor_clicks_window_control_occurrence() -> None:
+    driver = RecordingDemoDriver()
+    executor = PackageActionExecutor(
+        package=make_package(),
+        driver=driver,
+        handle=make_handle(),
+        clear_before_action=False,
+        action_hold_seconds=0,
+    )
+
+    executor.execute_action("ringcentral.video.toolbar.more-control", operation="open")
+
+    assert driver.log == ["control:123:More:3:button", "key:Escape"]
+
+
+def test_package_action_executor_resolves_coordinates_from_window_edges() -> None:
+    driver = RecordingDemoDriver()
+    executor = PackageActionExecutor(
+        package=make_package(),
+        driver=driver,
+        handle=make_handle(),
+        clear_before_action=False,
+        action_hold_seconds=0,
+    )
+
+    executor.execute_action("ringcentral.video.top.report-anchored", operation="open")
+    executor.execute_action("ringcentral.video.toolbar.audio-menu-anchored", operation="open")
+
+    assert driver.log == [
+        "bounds:123",
+        "click:123:752:21",
+        "key:Escape",
+        "bounds:123",
+        "click:123:143:604",
+        "key:Escape",
+    ]
+
+
+def test_package_action_executor_uses_alternate_window_control_targets() -> None:
+    driver = RecordingDemoDriver()
+    driver.fail_controls.add("Raise hand")
+    executor = PackageActionExecutor(
+        package=make_package(),
+        driver=driver,
+        handle=make_handle(),
+        clear_before_action=False,
+        action_hold_seconds=0,
+    )
+
+    executor.execute_action("ringcentral.video.toolbar.raise-hand-alternate", operation="open")
+
+    assert driver.log == [
+        "control-fail:123:Raise hand:1",
+        "control:123:Lower hand:1:button",
+        "key:Escape",
+    ]

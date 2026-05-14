@@ -68,6 +68,18 @@ def test_demo_flow_actions_use_supported_executor_steps() -> None:
     assert select_step.action.entrypoint_id == "ringcentral.video.settings.background.blur"
 
 
+def test_ringcentral_material_package_explains_every_entrypoint() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    entrypoint_ids = {entrypoint.id for entrypoint in package.operation_entrypoints}
+    explained_ids = {
+        related_id
+        for explainer in package.explainers.values()
+        for related_id in explainer.related_entrypoint_ids
+    }
+
+    assert sorted(entrypoint_ids - explained_ids) == []
+
+
 def test_meeting_control_map_demo_is_directed_and_complete() -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
     flow = next(flow for flow in package.demo_flows if flow.id == "meeting-control-map-demo")

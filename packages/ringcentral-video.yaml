@@ -925,6 +925,22 @@ demoFlows:
         actions.
       placement: before
 explainers:
+  ringcentralLaunch:
+    shortScript: The RingCentral desktop Video tab and Start button are the pre-meeting path into an instant
+      RingCentral Video session.
+    details:
+    - Use the Video tab to orient the user before the independent meeting window opens.
+    - Start creates or joins the RingCentralVideo meeting process, so confirm login state first.
+    relatedEntrypointIds:
+    - ringcentral.develop.video.tab
+    - ringcentral.develop.video.start
+  meetingOverview:
+    shortScript: Meeting overview frames the main surface before individual buttons are opened.
+    details:
+    - Use it as the bridge from overall layout to specific controls.
+    - Inspect participant count and visible tiles before assuming the meeting is empty.
+    relatedEntrypointIds:
+    - ringcentral.video.overview
   meetingInfo:
     shortScript: Meeting information opens meeting identity, link, dial-in, and encryption details.
     details:
@@ -940,6 +956,21 @@ explainers:
     - Summarize the status unless the user asks for exact diagnostics.
     relatedEntrypointIds:
     - ringcentral.video.top.network-quality
+  viewLayout:
+    shortScript: View layout controls how the meeting canvas is arranged, including gallery-style viewing and
+      full-screen presentation.
+    details:
+    - Use it when the user asks how to see more people or change the meeting view.
+    - Avoid changing full-screen state unless the demo flow expects it.
+    relatedEntrypointIds:
+    - ringcentral.video.top.views
+  reportIssue:
+    shortScript: Report issue opens a foreground troubleshooting dialog for reporting meeting problems.
+    details:
+    - Treat it as a support workflow, not a normal tour destination.
+    - Close or cancel the dialog before continuing with other controls.
+    relatedEntrypointIds:
+    - ringcentral.video.top.report-issue
   invite:
     shortScript: Invite and Add coworkers open the same invite dialog for searching people or copying the meeting
       link.
@@ -966,6 +997,36 @@ explainers:
     relatedEntrypointIds:
     - ringcentral.video.toolbar.video
     - ringcentral.video.toolbar.video-menu
+  videoSettings:
+    shortScript: More video settings opens camera-oriented configuration such as camera choice, background access,
+      and video behavior.
+    details:
+    - Use it when the user needs durable camera settings rather than a quick toolbar toggle.
+    - Close the settings window before returning to toolbar controls.
+    relatedEntrypointIds:
+    - ringcentral.video.settings.video
+  reactions:
+    shortScript: Reactions sends lightweight meeting feedback without interrupting the speaker.
+    details:
+    - Use it to explain nonverbal responses such as emoji reactions.
+    - Mention that reactions are visible meeting signals, not private notes.
+    relatedEntrypointIds:
+    - ringcentral.video.toolbar.react
+  raiseHand:
+    shortScript: Raise hand signals that the participant wants attention without speaking over the meeting.
+    details:
+    - Explain both raise and lower states because the same control toggles.
+    - Use it as the safer alternative to interrupting with audio.
+    relatedEntrypointIds:
+    - ringcentral.video.toolbar.raise-hand
+  moreMenu:
+    shortScript: More is the overflow hub for secondary meeting actions such as recording, notes, background,
+      settings, and leaving.
+    details:
+    - Open it as a navigation step, then choose the specific action intentionally.
+    - Treat destructive or state-changing actions inside More with confirmation.
+    relatedEntrypointIds:
+    - ringcentral.video.toolbar.more
   notes:
     shortScript: Notes opens the Notes and Transcript panel, but starting notes or recording changes meeting state.
     details:
@@ -991,6 +1052,14 @@ explainers:
     - ringcentral.video.settings.background
     - ringcentral.video.settings.background.blur
     - ringcentral.video.more.background
+  settingsHub:
+    shortScript: Settings is the full meeting configuration center for audio, video, background, translation, join
+      preferences, and general behavior.
+    details:
+    - Use settings when a durable preference needs explanation rather than a one-time control.
+    - Close the settings window before resuming the main control tour.
+    relatedEntrypointIds:
+    - ringcentral.video.more.settings
   participants:
     shortScript: Participants shows the live people context for the meeting and exposes attendee-oriented controls.
     details:
@@ -1014,6 +1083,14 @@ explainers:
     - Use chat status only as UI context unless the human asks for content.
     relatedEntrypointIds:
     - ringcentral.video.toolbar.chat
+  leaveMeeting:
+    shortScript: Leave is the exit path for the meeting and should be explained without clicking during a normal
+      demo.
+    details:
+    - Ask for explicit confirmation before clicking Leave.
+    - Distinguish leaving the meeting from ending a meeting for everyone when the UI exposes that choice.
+    relatedEntrypointIds:
+    - ringcentral.video.toolbar.leave
 qa:
 - question: How do I protect my real background?
   answer: Open Settings, choose Background, and select Blur or a virtual background. Blur is the safest default

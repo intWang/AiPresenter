@@ -683,6 +683,228 @@ demoFlows:
       text: Leave exits the meeting. It is a destructive control, so the presenter explains it but does not click
         it without explicit confirmation.
       placement: before
+- id: meeting-control-map-demo
+  title: Meeting Control Map
+  goal: >-
+    Teach RingCentral Video meeting controls as a coherent map: status, people, media, interaction,
+    advanced tools, and closeout.
+  steps:
+  - id: control-map-overview
+    title: Orient the meeting surface
+    action:
+      entrypointId: ringcentral.video.overview
+      operation: explain
+    narration:
+      text: Think of this meeting window as a control map. The top tells you status and health, the center is the
+        live meeting canvas, and the bottom is where you manage people, media, sharing, reactions, and exit.
+      placement: before
+  - id: control-map-meeting-info
+    title: Meeting information
+    action:
+      entrypointId: ringcentral.video.top.meeting-info
+      operation: open
+    narration:
+      text: Starting at the top, meeting information answers the identity question. It shows the meeting details,
+        link, dial-in options, and encryption information, so I summarize it without reading private values aloud.
+      placement: during
+      actionOffsetMs: 350
+  - id: control-map-network
+    title: Network quality
+    action:
+      entrypointId: ringcentral.video.top.network-quality
+      operation: open
+    narration:
+      text: Next is meeting health. Network quality is where you check whether audio, video, or sharing problems
+        are coming from packet loss, jitter, or latency.
+      placement: during
+      actionOffsetMs: 350
+  - id: control-map-views
+    title: View layout
+    action:
+      entrypointId: ringcentral.video.top.views
+      operation: open
+    narration:
+      text: Views controls how the meeting is arranged on your screen. It changes layout, like gallery or full
+        screen, without changing anyone's audio, video, or membership.
+      placement: during
+      actionOffsetMs: 350
+  - id: control-map-report
+    title: Report issue
+    action:
+      entrypointId: ringcentral.video.top.report-issue
+      operation: open
+    narration:
+      text: Report issue is the escalation path when something is wrong with audio, video, sharing, joining,
+        notes, or transcript. Because it opens a blocking dialog, I close it before continuing.
+      placement: during
+      actionOffsetMs: 400
+  - id: control-map-add-coworkers
+    title: Add coworkers
+    action:
+      entrypointId: ringcentral.video.main.add-coworkers
+      operation: open
+    narration:
+      text: Moving from status into people, Add coworkers opens the invite dialog from the empty room. This is the
+        fastest way to bring someone in when you are the first person here.
+      placement: during
+      actionOffsetMs: 350
+  - id: control-map-participants
+    title: Participants
+    action:
+      entrypointId: ringcentral.video.toolbar.participants
+      operation: open
+    narration:
+      text: Participants is the meeting roster. It helps you confirm who is present and exposes people controls
+        like invite, lock, mute, raise hand, and more options.
+      placement: during
+      actionOffsetMs: 350
+  - id: control-map-chat
+    title: Chat
+    action:
+      entrypointId: ringcentral.video.toolbar.chat
+      operation: open
+    narration:
+      text: Chat is the written side channel. Use it for links, follow-ups, and private messages, while keeping
+        chat content private unless you explicitly ask me to read it.
+      placement: during
+      actionOffsetMs: 350
+  - id: control-map-microphone
+    title: Microphone
+    action:
+      entrypointId: ringcentral.video.toolbar.audio
+      operation: point
+    narration:
+      text: Now we move into media readiness. The microphone button is the main privacy switch for speaking, so it
+        is the first control to check before you contribute.
+      placement: before
+  - id: control-map-audio-menu
+    title: Audio menu
+    action:
+      entrypointId: ringcentral.video.toolbar.audio-menu
+      operation: open
+    narration:
+      text: The audio menu is the recovery tool when sound is wrong. It lets you switch microphone and speaker,
+        leave computer audio, use phone audio, or open deeper audio settings.
+      placement: during
+      actionOffsetMs: 350
+  - id: control-map-camera
+    title: Camera
+    action:
+      entrypointId: ringcentral.video.toolbar.video
+      operation: point
+    narration:
+      text: The camera button controls whether others can see you. Once video is on, the same area becomes the
+        stop-video control.
+      placement: before
+  - id: control-map-camera-menu
+    title: Camera menu
+    action:
+      entrypointId: ringcentral.video.toolbar.video-menu
+      operation: open
+    narration:
+      text: The camera menu lets you choose the camera and jump to video settings. It is the practical route for
+        device changes and appearance setup.
+      placement: during
+      actionOffsetMs: 350
+  - id: control-map-share
+    title: Share
+    action:
+      entrypointId: ringcentral.video.toolbar.share
+      operation: open
+    narration:
+      text: Share opens the picker for screen or application sharing. I can explain the choices, but I do not press
+        the final Share button unless you confirm what should be shown.
+      placement: during
+      actionOffsetMs: 400
+  - id: control-map-reactions
+    title: Reactions
+    action:
+      entrypointId: ringcentral.video.toolbar.react
+      operation: open
+    narration:
+      text: For lightweight interaction, Reactions gives quick feedback such as approval, celebration, applause,
+        or be-right-back without interrupting the speaker.
+      placement: during
+      actionOffsetMs: 350
+  - id: control-map-raise-hand
+    title: Raise hand
+    action:
+      entrypointId: ringcentral.video.toolbar.raise-hand
+      operation: toggle
+    narration:
+      text: Raise hand is for moderated conversation. It signals that you want attention, and because it is a
+        toggle, I lower the hand again after showing it.
+      placement: during
+      actionOffsetMs: 350
+  - id: control-map-more
+    title: More actions
+    action:
+      entrypointId: ringcentral.video.toolbar.more
+      operation: open
+    narration:
+      text: Finally, More is the advanced shelf. It gathers less frequent tools such as recording, notes,
+        background, and settings.
+      placement: during
+      actionOffsetMs: 350
+  - id: control-map-recording
+    title: Recording
+    action:
+      entrypointId: ringcentral.video.more.recording
+      operation: explain
+    narration:
+      text: Recording changes the meeting state and may affect consent, so it is explain-only in this tour. I would
+        ask before starting or stopping it.
+      placement: before
+  - id: control-map-notes
+    title: Notes and transcript
+    action:
+      entrypointId: ringcentral.video.more.notes
+      operation: open
+    narration:
+      text: Notes and Transcript is where meeting notes can be started. It can also record the meeting, so I keep
+        the panel visible for explanation and avoid starting anything automatically.
+      placement: during
+      actionOffsetMs: 400
+  - id: control-map-background
+    title: Background settings
+    action:
+      entrypointId: ringcentral.video.more.background
+      operation: open
+    narration:
+      text: Background settings protect presentation quality and privacy. You can turn effects off, blur the room,
+        use a built-in image or video background, or upload your own.
+      placement: during
+      actionOffsetMs: 400
+  - id: control-map-settings
+    title: Settings
+    action:
+      entrypointId: ringcentral.video.more.settings
+      operation: open
+    narration:
+      text: Settings is the full configuration center for audio, video, background, translation, join preferences,
+        and general meeting behavior.
+      placement: during
+      actionOffsetMs: 400
+  - id: control-map-leave
+    title: Leave meeting
+    action:
+      entrypointId: ringcentral.video.toolbar.leave
+      operation: explain
+    narration:
+      text: Leave is the exit path. It can end your presence in the meeting, so I describe it but do not click it
+        without explicit confirmation.
+      placement: before
+  - id: control-map-summary
+    title: Control map summary
+    action:
+      entrypointId: ringcentral.video.overview
+      operation: explain
+    narration:
+      text: >-
+        That is the control map: top bar for status and troubleshooting, people controls for collaboration,
+        media controls for readiness, interaction controls for feedback, and More for deeper settings and riskier
+        actions.
+      placement: before
 explainers:
   meetingInfo:
     shortScript: Meeting information opens meeting identity, link, dial-in, and encryption details.

@@ -1,3 +1,4 @@
+import logging
 import time
 
 from ai_presenter.adapters.base import AppAdapter
@@ -5,6 +6,8 @@ from ai_presenter.adapters.ringcentral import RingCentralAdapter
 from ai_presenter.config.models import AppProfile
 from ai_presenter.config.models import DesktopAppProfile
 from ai_presenter.desktop.windows import WindowsDesktopDriver
+from ai_presenter.desktop.base import WindowHandle
+from ai_presenter.domain.state import MeetingState
 from ai_presenter.media.output import MediaOutputFactory
 from ai_presenter.media.output import MediaOutput
 from ai_presenter.packages.models import MaterialPackage
@@ -16,6 +19,8 @@ from ai_presenter.providers.fake import FakeVisionProvider
 from ai_presenter.providers.openai_provider import OpenAINarrationProvider
 from ai_presenter.providers.openai_provider import OpenAISpeechProvider
 from ai_presenter.providers.windows_speech import WindowsSapiSpeechProvider
+from ai_presenter.runtime.adaptive_demo import adjust_ringcentral_demo_step
+from ai_presenter.runtime.control import DemoControl
 from ai_presenter.runtime.events import EventDetector
 from ai_presenter.runtime.narration import NarrationEngine
 from ai_presenter.runtime.package_demo import PackageActionExecutor
@@ -24,6 +29,8 @@ from ai_presenter.runtime.presenter_context import load_presenter_context
 from ai_presenter.runtime.presenter import PresenterLoop
 from ai_presenter.runtime.profile_runner import ProfileRunner
 from ai_presenter.runtime.sync import SynchronizedTimelineRunner
+
+logger = logging.getLogger("ai_presenter.runtime.factory")
 
 
 def create_fake_provider_registry() -> ProviderRegistry:
@@ -128,11 +135,13 @@ def run_material_demo(
     flow_id: str,
     *,
     registry: ProviderRegistry | None = None,
+    control: DemoControl | None = None,
 ) -> None:
     flow = demo_flow_by_id(material_package, flow_id)
     desktop = WindowsDesktopDriver()
     providers = registry or create_provider_registry(profile)
     handle = create_profile_runner(profile, desktop).launch_and_bind()
+    adapter = create_adapter(profile)
     action_executor = PackageActionExecutor(
         package=material_package,
         driver=desktop,
@@ -146,6 +155,32 @@ def run_material_demo(
         speech_provider=providers.speech(profile.providers.speech),
         media_output=create_media_output(profile),
         action_executor=action_executor,
+        control=control,
     )
     for step in flow.steps:
-        runner.run_step(step)
+        state = _capture_demo_state(profile, desktop, adapter, handle)
+        adjusted_step = adjust_ringcentral_demo_step(step, state)
+        if adjusted_step is None:
+            logger.info(
+                "demo_step_skipped_by_state step=%s participant_count=%s",
+                step.id,
+                None if state is None else state.participant_count,
+            )
+            continue
+        result = runner.run_step(adjusted_step)
+        if result.stopped:
+            break
+
+
+def _capture_demo_state(
+    profile: DesktopAppProfile,
+    desktop: WindowsDesktopDriver,
+    adapter: AppAdapter,
+    handle: WindowHandle,
+) -> MeetingState | None:
+    try:
+        observation = desktop.capture(handle, profile.observe.sources)
+        return adapter.extract_state(observation)
+    except Exception as exc:
+        logger.warning("demo_state_capture_failed error=%s", exc)
+        return None

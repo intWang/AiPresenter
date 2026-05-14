@@ -5,11 +5,15 @@ import pytest
 from ai_presenter.config.loader import load_profile
 from ai_presenter.config.models import BrowserAppProfile, DesktopAppProfile
 from ai_presenter.domain.state import RawObservation, WindowMetadata
+from ai_presenter.desktop.base import WindowHandle
+from ai_presenter.packages.models import MaterialPackage
 from ai_presenter.runtime import factory as factory_module
 from ai_presenter.runtime.factory import create_adapter
 from ai_presenter.runtime.factory import create_fake_provider_registry
 from ai_presenter.runtime.factory import create_provider_registry
 from ai_presenter.runtime.factory import run_desktop_profile
+from ai_presenter.runtime.factory import run_material_demo
+from ai_presenter.runtime.sync import StepRunResult
 
 
 def test_fake_provider_registry_satisfies_ringcentral_profile() -> None:
@@ -147,3 +151,124 @@ def test_run_desktop_profile_launches_and_runs_presenter_iterations(
 
     assert calls == [handle, handle]
     assert sleeps == [profile.observe.interval_ms / 1000]
+
+
+def test_run_material_demo_captures_state_before_steps_and_skips_empty_room_step(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
+    assert isinstance(profile, DesktopAppProfile)
+    handle = WindowHandle("RingCentralVideo", 123, "RingCentralVideoClass", "RingCentral Video")
+    captures: list[tuple[str, ...]] = []
+    run_steps: list[str] = []
+
+    package = MaterialPackage.model_validate(
+        {
+            "appId": "ringcentral-video",
+            "appName": "RingCentral Video",
+            "version": 1,
+            "profileIds": ["ringcentral-video-bind-speaker"],
+            "operationEntrypoints": [
+                {
+                    "id": "ringcentral.video.main.add-coworkers",
+                    "title": "Add coworkers",
+                    "area": "Meeting canvas",
+                    "purpose": "Invite from an empty meeting.",
+                    "openSteps": [
+                        {
+                            "action": "clickWindowRelative",
+                            "target": "Add coworkers",
+                            "match": {"x": "1", "y": "2", "cleanup": "modal"},
+                        }
+                    ],
+                },
+                {
+                    "id": "ringcentral.video.toolbar.participants",
+                    "title": "Participants",
+                    "area": "Meeting toolbar",
+                    "purpose": "Open participants.",
+                    "openSteps": [
+                        {
+                            "action": "clickWindowRelative",
+                            "target": "Participants",
+                            "match": {"x": "3", "y": "4", "cleanup": "toggle"},
+                        }
+                    ],
+                },
+            ],
+            "demoFlows": [
+                {
+                    "id": "adaptive-demo",
+                    "title": "Adaptive Demo",
+                    "goal": "Verify state-aware execution.",
+                    "steps": [
+                        {
+                            "id": "add-coworkers",
+                            "title": "Add coworkers",
+                            "action": {
+                                "entrypointId": "ringcentral.video.main.add-coworkers",
+                                "operation": "open",
+                            },
+                            "narration": {"text": "Empty-room invite.", "placement": "before"},
+                        },
+                        {
+                            "id": "participants",
+                            "title": "Participants",
+                            "action": {
+                                "entrypointId": "ringcentral.video.toolbar.participants",
+                                "operation": "open",
+                            },
+                            "narration": {"text": "Open participants.", "placement": "before"},
+                        },
+                    ],
+                }
+            ],
+            "manualControls": [],
+        }
+    )
+
+    class FakeDesktop:
+        def capture(self, captured_handle: WindowHandle, sources: object) -> RawObservation:
+            captures.append(tuple(str(source) for source in sources))
+            return RawObservation(
+                metadata=WindowMetadata(
+                    process="RingCentralVideo",
+                    pid=captured_handle.pid,
+                    window_class="RingCentralVideoClass",
+                    title="RingCentral Video",
+                    bounds=(0, 0, 1000, 800),
+                ),
+                ui_text=["Participants (2)", "Mute microphone", "Start video"],
+                screenshot_png=b"png",
+            )
+
+        def click_window_relative(self, captured_handle: WindowHandle, x: int, y: int) -> None:
+            return None
+
+        def press_key(self, key: str) -> None:
+            return None
+
+    class FakeRunner:
+        def launch_and_bind(self) -> WindowHandle:
+            return handle
+
+    class FakeTimelineRunner:
+        def __init__(self, **kwargs: object) -> None:
+            return None
+
+        def run_step(self, step: object) -> StepRunResult:
+            run_steps.append(getattr(step, "id"))
+            return StepRunResult(step_id=getattr(step, "id"), skipped=False)
+
+    monkeypatch.setattr(factory_module, "WindowsDesktopDriver", FakeDesktop)
+    monkeypatch.setattr(
+        factory_module,
+        "create_profile_runner",
+        lambda _profile, _desktop: FakeRunner(),
+    )
+    monkeypatch.setattr(factory_module, "SynchronizedTimelineRunner", FakeTimelineRunner)
+
+    run_material_demo(profile, package, "adaptive-demo", registry=create_provider_registry(profile))
+
+    assert len(captures) == 2
+    assert run_steps == ["participants"]

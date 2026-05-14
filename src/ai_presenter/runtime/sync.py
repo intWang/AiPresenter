@@ -9,6 +9,7 @@ from typing import Protocol
 from ai_presenter.media.output import MediaOutput
 from ai_presenter.packages.models import DemoStep, DemoStepAction
 from ai_presenter.providers.base import SpeechAudio, SpeechProvider
+from ai_presenter.runtime.control import DemoControl
 from ai_presenter.runtime.manual import ManualDirectiveQueue
 
 
@@ -21,6 +22,7 @@ class ActionExecutor(Protocol):
 class StepRunResult:
     step_id: str
     skipped: bool
+    stopped: bool = False
     narration_text: str | None = None
 
 
@@ -32,15 +34,20 @@ class SynchronizedTimelineRunner:
         media_output: MediaOutput,
         action_executor: ActionExecutor,
         manual_directives: ManualDirectiveQueue | None = None,
+        control: DemoControl | None = None,
         sleep: Callable[[float], None] = time.sleep,
     ) -> None:
         self._speech_provider = speech_provider
         self._media_output = media_output
         self._action_executor = action_executor
         self._manual_directives = manual_directives
+        self._control = control
         self._sleep = sleep
 
     def run_step(self, step: DemoStep) -> StepRunResult:
+        if self._control is not None and not self._control.wait_before_step():
+            return StepRunResult(step_id=step.id, skipped=True, stopped=True)
+
         narration_text = step.narration.text.strip()
         directive = None
         if self._manual_directives is not None:

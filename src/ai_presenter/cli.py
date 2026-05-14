@@ -9,6 +9,7 @@ from ai_presenter.runtime.factory import run_desktop_profile
 from ai_presenter.runtime.factory import run_material_demo
 from ai_presenter.runtime.logging import configure_logging
 from ai_presenter.runtime.package_demo import demo_flow_by_id
+from ai_presenter.runtime.controller import run_controller
 
 app = typer.Typer(help="AI presenter CLI for configured app profiles.")
 
@@ -102,3 +103,35 @@ def demo(
     if not isinstance(loaded_profile, DesktopAppProfile):
         raise typer.BadParameter(f"Only desktop profiles can run in this MVP: {loaded_profile.id}")
     run_material_demo(loaded_profile, loaded_package, loaded_flow.id)
+
+
+@app.command()
+def controller(
+    profile: str = typer.Option(..., "--profile", help="Profile id or YAML path."),
+    package: str = typer.Option(..., "--package", help="Material package id or YAML path."),
+    flow: str = typer.Option(..., "--flow", help="Demo flow id from the material package."),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        help="Load profile, package, and flow without opening the controller UI.",
+    ),
+    debug: bool = typer.Option(False, "--debug", help="Enable debug logs."),
+) -> None:
+    """Open a small local controller for a synchronized demo flow."""
+    configure_logging(debug)
+    loaded_profile = load_profile(resolve_profile(profile))
+    loaded_package = load_material_package(resolve_material_package(package))
+    try:
+        loaded_flow = demo_flow_by_id(loaded_package, flow)
+    except KeyError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    typer.echo(f"Loaded profile: {loaded_profile.id}")
+    typer.echo(f"Loaded package: {loaded_package.app_id}")
+    typer.echo(f"Loaded flow: {loaded_flow.id}")
+    if dry_run:
+        typer.echo("Controller dry run complete.")
+        return
+    if not isinstance(loaded_profile, DesktopAppProfile):
+        raise typer.BadParameter(f"Only desktop profiles can run in this MVP: {loaded_profile.id}")
+    run_controller(loaded_profile, loaded_package, loaded_flow.id)

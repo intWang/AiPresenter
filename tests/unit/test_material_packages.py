@@ -48,6 +48,55 @@ def test_loads_ringcentral_video_app_material_package() -> None:
     assert package.qa[0].question == "How do I protect my real background?"
 
 
+def test_meeting_control_map_demo_is_directed_and_complete() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    flow = next(flow for flow in package.demo_flows if flow.id == "meeting-control-map-demo")
+
+    assert flow.title == "Meeting Control Map"
+    assert flow.steps[0].id == "control-map-overview"
+    assert flow.steps[-1].id == "control-map-summary"
+    assert flow.steps[-1].action.operation == "explain"
+
+    entrypoint_ids = [step.action.entrypoint_id for step in flow.steps]
+    assert entrypoint_ids == [
+        "ringcentral.video.overview",
+        "ringcentral.video.top.meeting-info",
+        "ringcentral.video.top.network-quality",
+        "ringcentral.video.top.views",
+        "ringcentral.video.top.report-issue",
+        "ringcentral.video.main.add-coworkers",
+        "ringcentral.video.toolbar.participants",
+        "ringcentral.video.toolbar.chat",
+        "ringcentral.video.toolbar.audio",
+        "ringcentral.video.toolbar.audio-menu",
+        "ringcentral.video.toolbar.video",
+        "ringcentral.video.toolbar.video-menu",
+        "ringcentral.video.toolbar.share",
+        "ringcentral.video.toolbar.react",
+        "ringcentral.video.toolbar.raise-hand",
+        "ringcentral.video.toolbar.more",
+        "ringcentral.video.more.recording",
+        "ringcentral.video.more.notes",
+        "ringcentral.video.more.background",
+        "ringcentral.video.more.settings",
+        "ringcentral.video.toolbar.leave",
+        "ringcentral.video.overview",
+    ]
+
+    for step in flow.steps:
+        step.narration.text.encode("ascii")
+        entrypoint = package.entrypoint_by_id(step.action.entrypoint_id)
+        if step.action.operation in {"open", "toggle"}:
+            assert entrypoint.open_steps[0].action == "clickWindowRelative"
+            assert step.narration.placement == "during"
+            assert step.narration.action_offset_ms <= 500
+
+    recording_step = next(step for step in flow.steps if step.id == "control-map-recording")
+    leave_step = next(step for step in flow.steps if step.id == "control-map-leave")
+    assert recording_step.action.operation == "explain"
+    assert leave_step.action.operation == "explain"
+
+
 def test_rejects_duplicate_operation_entrypoint_ids(tmp_path: Path) -> None:
     package_path = tmp_path / "duplicate-entrypoints.yaml"
     package_path.write_text(

@@ -55,6 +55,28 @@ def test_demo_dry_run_loads_profile_package_and_flow() -> None:
     assert "Loaded flow: meeting-controls-tour" in result.stdout
 
 
+def test_controller_dry_run_loads_profile_package_and_flow() -> None:
+    result = CliRunner().invoke(
+        app,
+        [
+            "controller",
+            "--profile",
+            "ringcentral-video-bind-speaker",
+            "--package",
+            "ringcentral-video",
+            "--flow",
+            "meeting-control-map-demo",
+            "--dry-run",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "Loaded profile: ringcentral-video-bind-speaker" in result.stdout
+    assert "Loaded package: ringcentral-video" in result.stdout
+    assert "Loaded flow: meeting-control-map-demo" in result.stdout
+    assert "Controller dry run complete." in result.stdout
+
+
 def test_resolve_profile_id_from_non_repo_working_directory(
     tmp_path: Path,
     monkeypatch,

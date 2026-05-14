@@ -44,16 +44,20 @@ class CleanupRecordingActionExecutor(RecordingActionExecutor):
 def make_step(
     *,
     placement: Literal["before", "during", "after"],
+    step_id: str = "step-one",
+    title: str = "Step One",
+    entrypoint_id: str = "ringcentral.video.toolbar.video",
+    target: str = "Start video",
     text: str = "Scripted narration.",
     action_offset_ms: int = 0,
 ) -> DemoStep:
     return DemoStep(
-        id="step-one",
-        title="Step One",
+        id=step_id,
+        title=title,
         action=DemoStepAction(
-            entrypointId="ringcentral.video.toolbar.video",
+            entrypointId=entrypoint_id,
             operation="click",
-            target="Start video",
+            target=target,
         ),
         narration=DemoStepNarration(
             text=text,
@@ -167,3 +171,67 @@ def test_skip_directive_skips_next_step_without_action_or_audio() -> None:
     assert result.skipped is True
     assert action_executor.actions == []
     assert log == []
+
+
+def test_targeted_skip_waits_for_matching_step() -> None:
+    log: list[str] = []
+    manual_directives = ManualDirectiveQueue()
+    manual_directives.submit("skip: participants")
+    runner, action_executor = make_runner(log, manual_directives=manual_directives)
+
+    first_result = runner.run_step(
+        make_step(
+            placement="before",
+            step_id="chat",
+            title="Chat panel",
+            entrypoint_id="ringcentral.video.toolbar.chat",
+            target="Chat",
+        )
+    )
+    second_result = runner.run_step(
+        make_step(
+            placement="before",
+            step_id="participants",
+            title="Participants panel",
+            entrypoint_id="ringcentral.video.toolbar.participants",
+            target="Participants",
+        )
+    )
+
+    assert first_result.skipped is False
+    assert second_result.skipped is True
+    assert [action.entrypoint_id for action in action_executor.actions] == [
+        "ringcentral.video.toolbar.chat"
+    ]
+
+
+def test_focus_directive_skips_until_matching_step() -> None:
+    log: list[str] = []
+    manual_directives = ManualDirectiveQueue()
+    manual_directives.submit("focus: chat")
+    runner, action_executor = make_runner(log, manual_directives=manual_directives)
+
+    first_result = runner.run_step(
+        make_step(
+            placement="before",
+            step_id="participants",
+            title="Participants panel",
+            entrypoint_id="ringcentral.video.toolbar.participants",
+            target="Participants",
+        )
+    )
+    second_result = runner.run_step(
+        make_step(
+            placement="before",
+            step_id="chat",
+            title="Chat panel",
+            entrypoint_id="ringcentral.video.toolbar.chat",
+            target="Chat",
+        )
+    )
+
+    assert first_result.skipped is True
+    assert second_result.skipped is False
+    assert [action.entrypoint_id for action in action_executor.actions] == [
+        "ringcentral.video.toolbar.chat"
+    ]

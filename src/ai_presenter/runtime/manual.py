@@ -26,6 +26,11 @@ class ManualDirectiveQueue:
             return None
         return self._directives.popleft()
 
+    def peek_next(self) -> ManualDirective | None:
+        if not self._directives:
+            return None
+        return self._directives[0]
+
 
 def _parse_directive(raw_text: str) -> ManualDirective | None:
     text = raw_text.strip()

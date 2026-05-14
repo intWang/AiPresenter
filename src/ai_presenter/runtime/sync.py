@@ -10,6 +10,7 @@ from ai_presenter.media.output import MediaOutput
 from ai_presenter.packages.models import DemoStep, DemoStepAction
 from ai_presenter.providers.base import SpeechAudio, SpeechProvider
 from ai_presenter.runtime.control import DemoControl
+from ai_presenter.runtime.manual import ManualDirective
 from ai_presenter.runtime.manual import ManualDirectiveQueue
 
 
@@ -49,14 +50,19 @@ class SynchronizedTimelineRunner:
             return StepRunResult(step_id=step.id, skipped=True, stopped=True)
 
         narration_text = step.narration.text.strip()
-        directive = None
-        if self._manual_directives is not None:
-            directive = self._manual_directives.consume_next()
-
+        directive = self._peek_manual_directive()
         if directive is not None:
             if directive.kind == "skip":
-                return StepRunResult(step_id=step.id, skipped=True)
-            if directive.kind == "say":
+                if not directive.text or _matches_step_directive(step, directive.text):
+                    self._consume_manual_directive()
+                    return StepRunResult(step_id=step.id, skipped=True)
+            elif directive.kind == "focus":
+                if _matches_step_directive(step, directive.text):
+                    self._consume_manual_directive()
+                else:
+                    return StepRunResult(step_id=step.id, skipped=True)
+            elif directive.kind == "say":
+                self._consume_manual_directive()
                 narration_text = directive.text
 
         placement = step.narration.placement
@@ -104,6 +110,15 @@ class SynchronizedTimelineRunner:
         if callable(cleanup):
             cleanup()
 
+    def _peek_manual_directive(self) -> ManualDirective | None:
+        if self._manual_directives is None:
+            return None
+        return self._manual_directives.peek_next()
+
+    def _consume_manual_directive(self) -> None:
+        if self._manual_directives is not None:
+            self._manual_directives.consume_next()
+
     def _wait_for_resume_or_stop(
         self,
         step_id: str,
@@ -145,3 +160,17 @@ def _stopped_step(step_id: str, *, narration_text: str | None) -> StepRunResult:
         stopped=True,
         narration_text=narration_text,
     )
+
+
+def _matches_step_directive(step: DemoStep, query: str) -> bool:
+    needle = query.strip().casefold()
+    if not needle:
+        return True
+    values = (
+        step.id,
+        step.title,
+        step.action.entrypoint_id,
+        step.action.operation,
+        step.action.target or "",
+    )
+    return any(needle in value.casefold() for value in values)

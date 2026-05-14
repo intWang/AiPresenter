@@ -12,7 +12,7 @@ def make_step(step_id: str, entrypoint_id: str, text: str = "Original narration.
     )
 
 
-def test_skips_empty_room_add_coworkers_when_multiple_participants_are_present() -> None:
+def test_rewrites_empty_room_add_coworkers_to_toolbar_invite_when_multiple_participants_are_present() -> None:
     step = make_step(
         "control-map-add-coworkers",
         "ringcentral.video.main.add-coworkers",
@@ -21,7 +21,12 @@ def test_skips_empty_room_add_coworkers_when_multiple_participants_are_present()
 
     adjusted = adjust_ringcentral_demo_step(step, MeetingState(participant_count=2))
 
-    assert adjusted is None
+    assert adjusted is not None
+    assert adjusted.action.entrypoint_id == "ringcentral.video.toolbar.invite"
+    assert adjusted.narration.text == (
+        "Because people are already in the meeting, Invite is for adding more participants or "
+        "copying meeting details without changing the current conversation."
+    )
 
 
 def test_rewrites_toolbar_invite_narration_for_active_multi_person_meeting() -> None:

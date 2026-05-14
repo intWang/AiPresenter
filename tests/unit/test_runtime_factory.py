@@ -154,14 +154,14 @@ def test_run_desktop_profile_launches_and_runs_presenter_iterations(
     assert sleeps == [profile.observe.interval_ms / 1000]
 
 
-def test_run_material_demo_captures_state_before_steps_and_skips_empty_room_step(
+def test_run_material_demo_captures_state_before_steps_and_rewrites_empty_room_invite(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
     assert isinstance(profile, DesktopAppProfile)
     handle = WindowHandle("RingCentralVideo", 123, "RingCentralVideoClass", "RingCentral Video")
     captures: list[tuple[str, ...]] = []
-    run_steps: list[str] = []
+    run_steps: list[tuple[str, str]] = []
 
     package = MaterialPackage.model_validate(
         {
@@ -193,6 +193,19 @@ def test_run_material_demo_captures_state_before_steps_and_skips_empty_room_step
                             "action": "clickWindowRelative",
                             "target": "Participants",
                             "match": {"x": "3", "y": "4", "cleanup": "toggle"},
+                        }
+                    ],
+                },
+                {
+                    "id": "ringcentral.video.toolbar.invite",
+                    "title": "Invite",
+                    "area": "Meeting toolbar",
+                    "purpose": "Invite more people.",
+                    "openSteps": [
+                        {
+                            "action": "clickWindowRelative",
+                            "target": "Invite",
+                            "match": {"x": "5", "y": "6", "cleanup": "modal"},
                         }
                     ],
                 },
@@ -262,7 +275,8 @@ def test_run_material_demo_captures_state_before_steps_and_skips_empty_room_step
             return None
 
         def run_step(self, step: object) -> StepRunResult:
-            run_steps.append(getattr(step, "id"))
+            action = getattr(step, "action")
+            run_steps.append((getattr(step, "id"), getattr(action, "entrypoint_id")))
             return StepRunResult(step_id=getattr(step, "id"), skipped=False)
 
     monkeypatch.setattr(factory_module, "WindowsDesktopDriver", FakeDesktop)
@@ -276,4 +290,7 @@ def test_run_material_demo_captures_state_before_steps_and_skips_empty_room_step
     run_material_demo(profile, package, "adaptive-demo", registry=create_provider_registry(profile))
 
     assert len(captures) == 2
-    assert run_steps == ["participants"]
+    assert run_steps == [
+        ("add-coworkers", "ringcentral.video.toolbar.invite"),
+        ("participants", "ringcentral.video.toolbar.participants"),
+    ]

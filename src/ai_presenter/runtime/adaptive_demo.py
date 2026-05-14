@@ -12,7 +12,16 @@ def adjust_ringcentral_demo_step(step: DemoStep, state: MeetingState | None) -> 
         return step
 
     if step.action.entrypoint_id == "ringcentral.video.main.add-coworkers":
-        return None
+        return step.model_copy(
+            update={
+                "action": step.action.model_copy(
+                    update={"entrypoint_id": "ringcentral.video.toolbar.invite"}
+                ),
+                "narration": step.narration.model_copy(
+                    update={"text": _ACTIVE_MEETING_INVITE_NARRATION}
+                ),
+            }
+        )
 
     if step.action.entrypoint_id == "ringcentral.video.toolbar.invite":
         return step.model_copy(

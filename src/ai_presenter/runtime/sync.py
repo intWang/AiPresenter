@@ -62,15 +62,17 @@ class SynchronizedTimelineRunner:
         placement = step.narration.placement
         if placement == "before":
             self._speak(narration_text)
-            if self._stop_requested():
-                return _stopped_step(step.id, narration_text=narration_text)
+            control_result = self._wait_for_resume_or_stop(step.id, narration_text)
+            if control_result is not None:
+                return control_result
             self._action_executor.execute(step.action)
             self._cleanup_pending_action()
         elif placement == "after":
             self._action_executor.execute(step.action)
-            if self._stop_requested():
+            control_result = self._wait_for_resume_or_stop(step.id, narration_text)
+            if control_result is not None:
                 self._cleanup_pending_action()
-                return _stopped_step(step.id, narration_text=narration_text)
+                return control_result
             self._speak(narration_text)
             self._cleanup_pending_action()
         elif placement == "during":
@@ -78,14 +80,16 @@ class SynchronizedTimelineRunner:
             playback = _BackgroundPlayback(self._media_output, audio)
             playback.start()
             self._sleep(step.narration.action_offset_ms / 1000)
-            if self._stop_requested():
+            control_result = self._wait_for_resume_or_stop(step.id, narration_text)
+            if control_result is not None:
                 playback.join_and_raise()
-                return _stopped_step(step.id, narration_text=narration_text)
+                return control_result
             self._action_executor.execute(step.action)
             playback.join_and_raise()
             self._cleanup_pending_action()
-            if self._stop_requested():
-                return _stopped_step(step.id, narration_text=narration_text)
+            control_result = self._wait_for_resume_or_stop(step.id, narration_text)
+            if control_result is not None:
+                return control_result
         else:
             raise ValueError(f"Unsupported narration placement: {placement}")
 
@@ -100,8 +104,16 @@ class SynchronizedTimelineRunner:
         if callable(cleanup):
             cleanup()
 
-    def _stop_requested(self) -> bool:
-        return self._control is not None and self._control.is_stop_requested
+    def _wait_for_resume_or_stop(
+        self,
+        step_id: str,
+        narration_text: str,
+    ) -> StepRunResult | None:
+        if self._control is None:
+            return None
+        if self._control.wait_before_step():
+            return None
+        return _stopped_step(step_id, narration_text=narration_text)
 
 
 class _BackgroundPlayback:

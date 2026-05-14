@@ -36,6 +36,16 @@ class StopRequestingOutput(AudioSink):
         self._control.request_stop()
 
 
+class PauseRequestingOutput(AudioSink):
+    def __init__(self, log: list[str], control: DemoControl) -> None:
+        self._log = log
+        self._control = control
+
+    def play(self, audio: SpeechAudio) -> None:
+        self._log.append("play")
+        self._control.pause()
+
+
 class RecordingActionExecutor:
     def __init__(self, log: list[str]) -> None:
         self._log = log
@@ -52,6 +62,16 @@ class StopRequestingActionExecutor:
     def execute(self, action: DemoStepAction) -> None:
         self._log.append(f"action:{action.entrypoint_id}")
         self._control.request_stop()
+
+
+class PauseRequestingActionExecutor:
+    def __init__(self, log: list[str], control: DemoControl) -> None:
+        self._log = log
+        self._control = control
+
+    def execute(self, action: DemoStepAction) -> None:
+        self._log.append(f"action:{action.entrypoint_id}")
+        self._control.pause()
 
 
 def make_step(placement: Literal["before", "during", "after"] = "before") -> DemoStep:
@@ -138,3 +158,59 @@ def test_timeline_runner_skips_after_narration_when_stop_requested_after_action(
     assert result.skipped is True
     assert result.stopped is True
     assert log == ["action:entrypoint"]
+
+
+def test_timeline_runner_pauses_between_before_narration_and_action() -> None:
+    log: list[str] = []
+    results: list[bool] = []
+    control = DemoControl()
+    runner = SynchronizedTimelineRunner(
+        speech_provider=RecordingSpeechProvider(log),
+        media_output=PauseRequestingOutput(log, control),
+        action_executor=RecordingActionExecutor(log),
+        control=control,
+    )
+    worker = threading.Thread(
+        target=lambda: results.append(runner.run_step(make_step(placement="before")).stopped),
+        daemon=True,
+    )
+
+    worker.start()
+    time.sleep(0.05)
+
+    assert results == []
+    assert log == ["synthesize:Narration.", "play"]
+
+    control.resume()
+    worker.join(timeout=1)
+
+    assert results == [False]
+    assert log == ["synthesize:Narration.", "play", "action:entrypoint"]
+
+
+def test_timeline_runner_pauses_between_after_action_and_narration() -> None:
+    log: list[str] = []
+    results: list[bool] = []
+    control = DemoControl()
+    runner = SynchronizedTimelineRunner(
+        speech_provider=RecordingSpeechProvider(log),
+        media_output=RecordingOutput(log),
+        action_executor=PauseRequestingActionExecutor(log, control),
+        control=control,
+    )
+    worker = threading.Thread(
+        target=lambda: results.append(runner.run_step(make_step(placement="after")).stopped),
+        daemon=True,
+    )
+
+    worker.start()
+    time.sleep(0.05)
+
+    assert results == []
+    assert log == ["action:entrypoint"]
+
+    control.resume()
+    worker.join(timeout=1)
+
+    assert results == [False]
+    assert log == ["action:entrypoint", "synthesize:Narration.", "play"]

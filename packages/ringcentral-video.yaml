@@ -183,10 +183,15 @@ operationEntrypoints:
   area: Video menu
   purpose: Open camera, quality, gallery, and related video settings.
   openSteps:
-  - action: clickMenu
-    target: Start video caret
-  - action: clickMenuItem
+  - action: clickWindowControl
+    target: More
+    match:
+      occurrence: '2'
+      controlType: button
+  - action: clickWindowControl
     target: More video settings
+    match:
+      cleanup: settings
   presenterNotes:
   - This route opens the Settings dialog directly on the Video panel.
   - Use it before explaining camera device selection and HD settings.
@@ -195,15 +200,37 @@ operationEntrypoints:
   area: Settings
   purpose: Configure blur, built-in virtual backgrounds, video backgrounds, or custom uploads.
   openSteps:
-  - action: clickMenu
-    target: Start video caret
-  - action: clickMenuItem
-    target: More video settings
-  - action: clickSettingsTab
+  - action: clickWindowControl
+    target: More
+    match:
+      occurrence: '3'
+      controlType: button
+  - action: clickWindowControl
     target: Background
+    match:
+      cleanup: settings
   presenterNotes:
   - Blur protects the real environment while keeping the presenter visible.
   - The plus tile adds a custom background asset.
+- id: ringcentral.video.settings.background.blur
+  title: Select blur background
+  area: Background settings
+  purpose: Select Blur from the Background settings panel.
+  openSteps:
+  - action: clickWindowControl
+    target: More
+    match:
+      occurrence: '3'
+      controlType: button
+  - action: clickWindowControl
+    target: Background
+  - action: clickWindowControl
+    target: Blur
+    match:
+      cleanup: settings
+  presenterNotes:
+  - This is the actual Blur selection action, not just the route to the Background panel.
+  - Use it only when the user wants the presenter to change the local background effect.
 - id: ringcentral.video.toolbar.share
   title: Screen sharing
   area: Meeting toolbar
@@ -407,7 +434,7 @@ demoFlows:
   - id: select-blur
     title: Select blur
     action:
-      entrypointId: ringcentral.video.settings.background
+      entrypointId: ringcentral.video.settings.background.blur
       operation: select
       target: Blur
     narration:
@@ -962,6 +989,7 @@ explainers:
     - Use a built-in or uploaded image when the demo needs a branded or neutral scene.
     relatedEntrypointIds:
     - ringcentral.video.settings.background
+    - ringcentral.video.settings.background.blur
     - ringcentral.video.more.background
   participants:
     shortScript: Participants shows the live people context for the meeting and exposes attendee-oriented controls.
@@ -992,6 +1020,7 @@ qa:
     for privacy because it hides room detail while keeping the person visible.
   relatedEntrypointIds:
   - ringcentral.video.settings.background
+  - ringcentral.video.settings.background.blur
 - question: Can the presenter describe shared-screen content?
   answer: Only after the content is captured by an approved observation source and the user allows it. The default
     policy is to avoid inferring or reading private shared content.

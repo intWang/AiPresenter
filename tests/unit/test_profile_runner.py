@@ -30,6 +30,25 @@ class FakeDesktopDriver(DesktopDriver):
         self.actions.append("read-text")
         return self._focused_text
 
+    def click_window_relative(self, handle: WindowHandle, x: int, y: int) -> None:
+        raise AssertionError("ProfileRunner should not click bound meeting windows")
+
+    def click_window_control(
+        self,
+        handle: WindowHandle,
+        target: str,
+        *,
+        occurrence: int = 1,
+        control_type: str | None = None,
+    ) -> None:
+        raise AssertionError("ProfileRunner should not click bound meeting window controls")
+
+    def window_bounds(self, handle: WindowHandle) -> tuple[int, int, int, int]:
+        raise AssertionError("ProfileRunner should not read bound meeting window bounds")
+
+    def press_key(self, key: str) -> None:
+        raise AssertionError("ProfileRunner should not press keys")
+
 
 def load_desktop_profile() -> DesktopAppProfile:
     profile = load_profile(Path("profiles/ringcentral-video.yaml"))

@@ -5,6 +5,8 @@ from pydantic import ValidationError
 
 from ai_presenter.packages.loader import load_material_package
 
+EXECUTABLE_DEMO_STEP_OPERATIONS = {"open", "toggle", "select"}
+
 
 def test_loads_ringcentral_video_app_material_package() -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
@@ -46,6 +48,24 @@ def test_loads_ringcentral_video_app_material_package() -> None:
     assert package.explainers["participants"].short_script.startswith("Participants")
     assert package.explainers["audio"].short_script.startswith("The audio controls")
     assert package.qa[0].question == "How do I protect my real background?"
+
+
+def test_demo_flow_actions_use_supported_executor_steps() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    for flow in package.demo_flows:
+        for step in flow.steps:
+            if step.action.operation not in EXECUTABLE_DEMO_STEP_OPERATIONS:
+                continue
+
+            entrypoint = package.entrypoint_by_id(step.action.entrypoint_id)
+            assert entrypoint.open_steps, f"{flow.id}:{step.id} has no executable steps"
+            for open_step in entrypoint.open_steps:
+                assert_supported_open_step(open_step)
+
+    vbg_flow = next(flow for flow in package.demo_flows if flow.id == "vbg-blur-demo")
+    select_step = next(step for step in vbg_flow.steps if step.id == "select-blur")
+    assert select_step.action.entrypoint_id == "ringcentral.video.settings.background.blur"
 
 
 def test_meeting_control_map_demo_is_directed_and_complete() -> None:

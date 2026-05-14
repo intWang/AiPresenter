@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any, cast
+
 import numpy as np
 import pytest
 
@@ -37,7 +39,8 @@ def test_sounddevice_sink_plays_decoded_wav_with_blocking_call(
     ) -> None:
         calls.append((samples, samplerate, device, blocking))
 
-    monkeypatch.setattr(output.sounddevice, "play", fake_play)
+    sounddevice = cast(Any, getattr(output, "sounddevice"))
+    monkeypatch.setattr(sounddevice, "play", fake_play)
 
     audio = FakeSpeechProvider().synthesize("Meeting joined.")
     output.SoundDeviceSink(device="VB-CABLE Input").play(audio)
@@ -68,7 +71,8 @@ def test_decode_wav_wraps_soundfile_decode_errors() -> None:
     with pytest.raises(output.AudioOutputError, match="Failed to decode WAV audio") as exc_info:
         output.decode_wav(audio)
 
-    assert isinstance(exc_info.value.__cause__, output.soundfile.SoundFileError)
+    soundfile = cast(Any, getattr(output, "soundfile"))
+    assert isinstance(exc_info.value.__cause__, soundfile.SoundFileError)
 
 
 def test_sounddevice_sink_wraps_portaudio_playback_errors(
@@ -81,15 +85,17 @@ def test_sounddevice_sink_wraps_portaudio_playback_errors(
         device: str | int | None,
         blocking: bool,
     ) -> None:
-        raise output.sounddevice.PortAudioError("device unavailable")
+        sounddevice = cast(Any, getattr(output, "sounddevice"))
+        raise sounddevice.PortAudioError("device unavailable")
 
-    monkeypatch.setattr(output.sounddevice, "play", fail_play)
+    sounddevice = cast(Any, getattr(output, "sounddevice"))
+    monkeypatch.setattr(sounddevice, "play", fail_play)
 
     audio = FakeSpeechProvider().synthesize("Meeting joined.")
     with pytest.raises(output.AudioOutputError, match="Audio playback failed") as exc_info:
         output.SoundDeviceSink(device=3).play(audio)
 
-    assert isinstance(exc_info.value.__cause__, output.sounddevice.PortAudioError)
+    assert isinstance(exc_info.value.__cause__, sounddevice.PortAudioError)
 
 
 def test_sounddevice_sink_does_not_wrap_programmer_errors(
@@ -104,7 +110,8 @@ def test_sounddevice_sink_does_not_wrap_programmer_errors(
     ) -> None:
         raise TypeError("programmer bug")
 
-    monkeypatch.setattr(output.sounddevice, "play", fail_play)
+    sounddevice = cast(Any, getattr(output, "sounddevice"))
+    monkeypatch.setattr(sounddevice, "play", fail_play)
 
     audio = FakeSpeechProvider().synthesize("Meeting joined.")
     with pytest.raises(TypeError, match="programmer bug"):

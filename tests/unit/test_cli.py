@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import pytest
 from typer.testing import CliRunner
 
 from ai_presenter.cli import app
@@ -79,7 +80,7 @@ def test_controller_dry_run_loads_profile_package_and_flow() -> None:
 
 def test_resolve_profile_id_from_non_repo_working_directory(
     tmp_path: Path,
-    monkeypatch,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.chdir(tmp_path)
 
@@ -90,7 +91,7 @@ def test_resolve_profile_id_from_non_repo_working_directory(
 
 def test_resolve_material_package_id_from_non_repo_working_directory(
     tmp_path: Path,
-    monkeypatch,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.chdir(tmp_path)
 

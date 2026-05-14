@@ -1,9 +1,10 @@
+from collections.abc import Iterable
 from pathlib import Path
 
 import pytest
 
 from ai_presenter.config.loader import load_profile
-from ai_presenter.config.models import BrowserAppProfile, DesktopAppProfile
+from ai_presenter.config.models import BrowserAppProfile, DesktopAppProfile, ObservationSource
 from ai_presenter.domain.state import RawObservation, WindowMetadata
 from ai_presenter.desktop.base import WindowHandle
 from ai_presenter.packages.models import MaterialPackage
@@ -145,7 +146,7 @@ def test_run_desktop_profile_launches_and_runs_presenter_iterations(
     monkeypatch.setattr(factory_module, "WindowsDesktopDriver", object)
     monkeypatch.setattr(factory_module, "create_profile_runner", lambda _profile, _desktop: FakeRunner())
     monkeypatch.setattr(factory_module, "create_presenter_loop", lambda *_args: FakePresenter())
-    monkeypatch.setattr(factory_module.time, "sleep", sleeps.append)
+    monkeypatch.setattr("ai_presenter.runtime.factory.time.sleep", sleeps.append)
 
     run_desktop_profile(profile, registry=create_fake_provider_registry(), iterations=2)
 
@@ -228,7 +229,11 @@ def test_run_material_demo_captures_state_before_steps_and_skips_empty_room_step
     )
 
     class FakeDesktop:
-        def capture(self, captured_handle: WindowHandle, sources: object) -> RawObservation:
+        def capture(
+            self,
+            captured_handle: WindowHandle,
+            sources: Iterable[ObservationSource],
+        ) -> RawObservation:
             captures.append(tuple(str(source) for source in sources))
             return RawObservation(
                 metadata=WindowMetadata(

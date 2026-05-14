@@ -1,5 +1,6 @@
 from dataclasses import FrozenInstanceError
 from datetime import datetime, timezone
+from typing import Any, cast
 
 import pytest
 
@@ -9,7 +10,7 @@ from ai_presenter.domain.state import PresenterEvent
 from ai_presenter.runtime.events import EventDetector, StateReducer
 
 
-def test_detects_initial_meeting_joined_event():
+def test_detects_initial_meeting_joined_event() -> None:
     detector = EventDetector()
     current = MeetingState(meeting_joined=True, confidence=0.9)
 
@@ -18,7 +19,7 @@ def test_detects_initial_meeting_joined_event():
     assert [event.type for event in events] == ["meeting_joined"]
 
 
-def test_detects_mic_state_change():
+def test_detects_mic_state_change() -> None:
     detector = EventDetector()
     previous = MeetingState(meeting_joined=True, mic_muted=False, confidence=0.9)
     current = MeetingState(meeting_joined=True, mic_muted=True, confidence=0.9)
@@ -30,7 +31,7 @@ def test_detects_mic_state_change():
     assert events[0].payload == {"micMuted": True}
 
 
-def test_detects_later_meeting_joined_transition():
+def test_detects_later_meeting_joined_transition() -> None:
     detector = EventDetector()
     previous = MeetingState(meeting_joined=False, confidence=0.9)
     current = MeetingState(meeting_joined=True, confidence=0.9)
@@ -40,7 +41,7 @@ def test_detects_later_meeting_joined_transition():
     assert [event.type for event in events] == ["meeting_joined"]
 
 
-def test_detects_camera_state_change():
+def test_detects_camera_state_change() -> None:
     detector = EventDetector()
     previous = MeetingState(meeting_joined=True, camera_off=False, confidence=0.9)
     current = MeetingState(meeting_joined=True, camera_off=True, confidence=0.9)
@@ -52,7 +53,7 @@ def test_detects_camera_state_change():
     assert events[0].payload == {"cameraOff": True}
 
 
-def test_detects_participant_count_change():
+def test_detects_participant_count_change() -> None:
     detector = EventDetector()
     previous = MeetingState(meeting_joined=True, participant_count=2, confidence=0.9)
     current = MeetingState(meeting_joined=True, participant_count=3, confidence=0.9)
@@ -64,7 +65,7 @@ def test_detects_participant_count_change():
     assert events[0].payload == {"participantCount": 3}
 
 
-def test_detects_dialog_appeared():
+def test_detects_dialog_appeared() -> None:
     detector = EventDetector()
     previous = MeetingState(meeting_joined=True, active_dialog=None, confidence=0.9)
     current = MeetingState(meeting_joined=True, active_dialog="share-screen", confidence=0.9)
@@ -76,7 +77,7 @@ def test_detects_dialog_appeared():
     assert events[0].payload == {"activeDialog": "share-screen"}
 
 
-def test_detects_connection_warning():
+def test_detects_connection_warning() -> None:
     detector = EventDetector()
     previous = MeetingState(meeting_joined=True, connection_warning=None, confidence=0.9)
     current = MeetingState(meeting_joined=True, connection_warning="unstable", confidence=0.9)
@@ -115,7 +116,7 @@ def test_empty_enabled_event_types_suppresses_all_events() -> None:
     assert detector.detect(previous=None, current=current) == []
 
 
-def test_uses_injected_clock_for_event_timestamps():
+def test_uses_injected_clock_for_event_timestamps() -> None:
     occurred_at = datetime(2026, 5, 13, 12, 0, tzinfo=timezone.utc)
     detector = EventDetector(clock=lambda: occurred_at)
     current = MeetingState(meeting_joined=True, confidence=0.9)
@@ -125,7 +126,7 @@ def test_uses_injected_clock_for_event_timestamps():
     assert events[0].occurred_at == occurred_at
 
 
-def test_can_override_event_timestamp_per_detection():
+def test_can_override_event_timestamp_per_detection() -> None:
     clock_time = datetime(2026, 5, 13, 12, 0, tzinfo=timezone.utc)
     explicit_time = datetime(2026, 5, 13, 12, 1, tzinfo=timezone.utc)
     detector = EventDetector(clock=lambda: clock_time)
@@ -136,7 +137,7 @@ def test_can_override_event_timestamp_per_detection():
     assert events[0].occurred_at == explicit_time
 
 
-def test_ignores_low_confidence_state():
+def test_ignores_low_confidence_state() -> None:
     detector = EventDetector(confidence_threshold=0.75)
     current = MeetingState(meeting_joined=True, confidence=0.4)
 
@@ -145,14 +146,14 @@ def test_ignores_low_confidence_state():
     assert events == []
 
 
-def test_reports_whether_state_meets_confidence_threshold():
+def test_reports_whether_state_meets_confidence_threshold() -> None:
     detector = EventDetector(confidence_threshold=0.75)
 
     assert detector.is_confident(MeetingState(confidence=0.75)) is True
     assert detector.is_confident(MeetingState(confidence=0.74)) is False
 
 
-def test_reducer_merges_latest_non_none_fields_with_conservative_confidence():
+def test_reducer_merges_latest_non_none_fields_with_conservative_confidence() -> None:
     reducer = StateReducer()
     current = MeetingState(
         meeting_joined=True,
@@ -175,7 +176,7 @@ def test_reducer_merges_latest_non_none_fields_with_conservative_confidence():
     )
 
 
-def test_reducer_handles_empty_candidates():
+def test_reducer_handles_empty_candidates() -> None:
     current = MeetingState(meeting_joined=True, confidence=0.9)
     reducer = StateReducer()
 
@@ -195,7 +196,7 @@ def test_reducer_ignores_confidence_from_states_without_field_evidence() -> None
     assert state.confidence == 0.9
 
 
-def test_raw_observation_stores_ui_text_immutably():
+def test_raw_observation_stores_ui_text_immutably() -> None:
     ui_text = ["Join", "Mute"]
     observation = RawObservation(
         metadata=WindowMetadata(
@@ -212,10 +213,10 @@ def test_raw_observation_stores_ui_text_immutably():
 
     assert observation.ui_text == ("Join", "Mute")
     with pytest.raises(FrozenInstanceError):
-        observation.ui_text = ("Changed",)
+        setattr(observation, "ui_text", ("Changed",))
 
 
-def test_presenter_event_stores_payload_immutably():
+def test_presenter_event_stores_payload_immutably() -> None:
     payload = {"micMuted": True}
     event = PresenterEvent("mic_state_changed", payload, 0.9)
 
@@ -223,4 +224,4 @@ def test_presenter_event_stores_payload_immutably():
 
     assert event.payload == {"micMuted": True}
     with pytest.raises(TypeError):
-        event.payload["micMuted"] = False
+        cast(Any, event.payload)["micMuted"] = False

@@ -1,3 +1,5 @@
+from typing import Literal
+
 from ai_presenter.media.output import AudioSink
 from ai_presenter.packages.models import DemoStep, DemoStepAction, DemoStepNarration
 from ai_presenter.providers.base import SpeechAudio
@@ -41,7 +43,7 @@ class CleanupRecordingActionExecutor(RecordingActionExecutor):
 
 def make_step(
     *,
-    placement: str,
+    placement: Literal["before", "during", "after"],
     text: str = "Scripted narration.",
     action_offset_ms: int = 0,
 ) -> DemoStep:

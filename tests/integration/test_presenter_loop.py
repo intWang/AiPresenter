@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from pathlib import Path
 
 import pytest
@@ -23,10 +24,10 @@ class FakeObservationDriver:
     def capture(
         self,
         handle: WindowHandle,
-        sources: tuple[ObservationSource, ...] | None = None,
+        sources: Iterable[ObservationSource] | None = None,
     ) -> RawObservation:
         self.handles.append(handle)
-        self.sources.append(sources)
+        self.sources.append(tuple(sources) if sources is not None else None)
         if not self._observations:
             raise AssertionError("capture called more times than expected")
         return self._observations.pop(0)
@@ -34,18 +35,18 @@ class FakeObservationDriver:
 
 class RecordingSink:
     def __init__(self) -> None:
-        self.audio: list[object] = []
+        self.audio: list[SpeechAudio] = []
 
-    def play(self, audio: object) -> None:
+    def play(self, audio: SpeechAudio) -> None:
         self.audio.append(audio)
 
 
 class FailingOnceSink:
     def __init__(self) -> None:
         self.failures_remaining = 1
-        self.audio: list[object] = []
+        self.audio: list[SpeechAudio] = []
 
-    def play(self, audio: object) -> None:
+    def play(self, audio: SpeechAudio) -> None:
         if self.failures_remaining > 0:
             self.failures_remaining -= 1
             raise RuntimeError("speaker unavailable")

@@ -4,7 +4,7 @@ import pytest
 from pydantic import ValidationError
 
 from ai_presenter.config.loader import load_profile, profile_to_public_dict
-from ai_presenter.config.models import AudioOutputMode, ProfileType
+from ai_presenter.config.models import AudioOutputMode, DesktopAppProfile, ProfileType
 
 
 def test_load_ringcentral_profile() -> None:
@@ -38,6 +38,7 @@ def test_load_ringcentral_codex_cli_speaker_profile() -> None:
 def test_load_ringcentral_bind_speaker_profile() -> None:
     profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
 
+    assert isinstance(profile, DesktopAppProfile)
     assert profile.id == "ringcentral-video-bind-speaker"
     assert profile.launch.steps == []
     assert profile.launch.require_already_logged_in is False

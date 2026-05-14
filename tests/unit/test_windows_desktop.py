@@ -35,12 +35,16 @@ class FakeClickableControl(FakeControl):
         self._clicked = clicked
 
     def Click(self) -> None:
-        self._clicked.append(self.Name)
+        self._clicked.append(self.Name or "")
 
 
 def set_bounds(control: FakeControl, bounds: tuple[int, int, int, int]) -> FakeControl:
     left, top, right, bottom = bounds
-    control.BoundingRectangle = SimpleNamespace(left=left, top=top, right=right, bottom=bottom)
+    setattr(
+        control,
+        "BoundingRectangle",
+        SimpleNamespace(left=left, top=top, right=right, bottom=bottom),
+    )
     return control
 
 
@@ -200,7 +204,7 @@ def test_focus_window_connects_to_process_executable_and_focuses(
 def test_focus_window_skips_matching_processes_without_top_windows(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    calls: list[tuple[str, int | str]] = []
+    calls: list[tuple[str, int | str | None]] = []
 
     class FakeProcessWithoutWindow:
         info = {"pid": 1111, "name": "RingCentralDevelop.exe"}

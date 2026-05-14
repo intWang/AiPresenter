@@ -27,7 +27,7 @@ def make_observation(
     )
 
 
-def test_ringcentral_profile_uses_expected_binding():
+def test_ringcentral_profile_uses_expected_binding() -> None:
     profile = load_profile(Path("profiles/ringcentral-video.yaml"))
 
     assert isinstance(profile, DesktopAppProfile)
@@ -35,7 +35,7 @@ def test_ringcentral_profile_uses_expected_binding():
     assert profile.bind.window_class == "RingCentralVideoClass"
 
 
-def test_ringcentral_adapter_extracts_mic_and_camera_from_ui_text():
+def test_ringcentral_adapter_extracts_mic_and_camera_from_ui_text() -> None:
     adapter = RingCentralAdapter()
     observation = make_observation(["Mute microphone", "Stop video", "Participants 3"])
 
@@ -47,7 +47,7 @@ def test_ringcentral_adapter_extracts_mic_and_camera_from_ui_text():
     assert state.participant_count == 3
 
 
-def test_ringcentral_adapter_treats_first_one_here_as_joined_meeting():
+def test_ringcentral_adapter_treats_first_one_here_as_joined_meeting() -> None:
     adapter = RingCentralAdapter()
     observation = make_observation(["You're the first one here"])
 
@@ -57,7 +57,7 @@ def test_ringcentral_adapter_treats_first_one_here_as_joined_meeting():
     assert state.confidence >= 0.75
 
 
-def test_connection_warning_does_not_create_active_dialog():
+def test_connection_warning_does_not_create_active_dialog() -> None:
     adapter = RingCentralAdapter()
     observation = make_observation(["Your connection is unstable"])
 
@@ -67,7 +67,7 @@ def test_connection_warning_does_not_create_active_dialog():
     assert state.connection_warning == "connection issue"
 
 
-def test_connection_settings_does_not_create_dialog_or_warning():
+def test_connection_settings_does_not_create_dialog_or_warning() -> None:
     adapter = RingCentralAdapter()
     observation = make_observation(["Connection settings"])
 
@@ -77,7 +77,7 @@ def test_connection_settings_does_not_create_dialog_or_warning():
     assert state.connection_warning is None
 
 
-def test_permission_settings_does_not_create_active_dialog():
+def test_permission_settings_does_not_create_active_dialog() -> None:
     adapter = RingCentralAdapter()
     observation = make_observation(["Permission settings"])
 
@@ -86,7 +86,7 @@ def test_permission_settings_does_not_create_active_dialog():
     assert state.active_dialog is None
 
 
-def test_waiting_room_settings_does_not_create_active_dialog():
+def test_waiting_room_settings_does_not_create_active_dialog() -> None:
     adapter = RingCentralAdapter()
     observation = make_observation(["Waiting room settings"])
 
@@ -95,7 +95,7 @@ def test_waiting_room_settings_does_not_create_active_dialog():
     assert state.active_dialog is None
 
 
-def test_reconnecting_help_does_not_create_connection_warning():
+def test_reconnecting_help_does_not_create_connection_warning() -> None:
     adapter = RingCentralAdapter()
     observation = make_observation(["Reconnecting help"])
 
@@ -104,7 +104,7 @@ def test_reconnecting_help_does_not_create_connection_warning():
     assert state.connection_warning is None
 
 
-def test_mute_participants_does_not_set_self_mic_state():
+def test_mute_participants_does_not_set_self_mic_state() -> None:
     adapter = RingCentralAdapter()
     observation = make_observation(["Mute participants"])
 
@@ -113,7 +113,7 @@ def test_mute_participants_does_not_set_self_mic_state():
     assert state.mic_muted is None
 
 
-def test_bare_mute_labels_do_not_set_self_mic_state():
+def test_bare_mute_labels_do_not_set_self_mic_state() -> None:
     adapter = RingCentralAdapter()
 
     muted_state = adapter.extract_state(make_observation(["Mute"]))
@@ -123,7 +123,7 @@ def test_bare_mute_labels_do_not_set_self_mic_state():
     assert unmuted_state.mic_muted is None
 
 
-def test_split_start_video_labels_do_not_set_camera_state():
+def test_split_start_video_labels_do_not_set_camera_state() -> None:
     adapter = RingCentralAdapter()
     observation = make_observation(["Start", "video"])
 
@@ -132,7 +132,7 @@ def test_split_start_video_labels_do_not_set_camera_state():
     assert state.camera_off is None
 
 
-def test_camera_settings_and_help_phrases_do_not_set_camera_state():
+def test_camera_settings_and_help_phrases_do_not_set_camera_state() -> None:
     adapter = RingCentralAdapter()
 
     start_settings = adapter.extract_state(make_observation(["Start video settings"]))
@@ -142,7 +142,7 @@ def test_camera_settings_and_help_phrases_do_not_set_camera_state():
     assert stop_help.camera_off is None
 
 
-def test_participant_count_supports_parentheses():
+def test_participant_count_supports_parentheses() -> None:
     adapter = RingCentralAdapter()
     observation = make_observation(["Participants (3)"])
 
@@ -151,7 +151,7 @@ def test_participant_count_supports_parentheses():
     assert state.participant_count == 3
 
 
-def test_participant_count_supports_colon():
+def test_participant_count_supports_colon() -> None:
     adapter = RingCentralAdapter()
     observation = make_observation(["Participants: 3"])
 
@@ -161,7 +161,7 @@ def test_participant_count_supports_colon():
 
 
 @pytest.mark.parametrize("label", ["Participant 3", "Participant 3 of 10"])
-def test_singular_participant_labels_do_not_create_in_meeting_evidence(label: str):
+def test_singular_participant_labels_do_not_create_in_meeting_evidence(label: str) -> None:
     adapter = RingCentralAdapter()
     detector = EventDetector(confidence_threshold=0.75)
     state = adapter.extract_state(make_observation([label]))
@@ -174,7 +174,7 @@ def test_singular_participant_labels_do_not_create_in_meeting_evidence(label: st
     assert events == []
 
 
-def test_no_useful_evidence_returns_lower_confidence_than_happy_path():
+def test_no_useful_evidence_returns_lower_confidence_than_happy_path() -> None:
     adapter = RingCentralAdapter()
     happy_path = adapter.extract_state(
         make_observation(["Mute microphone", "Stop video", "Participants 3"])
@@ -184,7 +184,7 @@ def test_no_useful_evidence_returns_lower_confidence_than_happy_path():
     assert no_signal.confidence < happy_path.confidence
 
 
-def test_low_evidence_state_does_not_emit_runtime_events():
+def test_low_evidence_state_does_not_emit_runtime_events() -> None:
     adapter = RingCentralAdapter()
     detector = EventDetector(confidence_threshold=0.75)
     state = adapter.extract_state(make_observation(["RingCentral Video"]))
@@ -194,7 +194,7 @@ def test_low_evidence_state_does_not_emit_runtime_events():
     assert events == []
 
 
-def test_ambiguous_dialog_and_warning_text_does_not_emit_runtime_events():
+def test_ambiguous_dialog_and_warning_text_does_not_emit_runtime_events() -> None:
     adapter = RingCentralAdapter()
     detector = EventDetector(confidence_threshold=0.75)
     state = adapter.extract_state(
@@ -221,7 +221,7 @@ def test_ambiguous_dialog_and_warning_text_does_not_emit_runtime_events():
 def test_prejoin_dialogs_do_not_emit_initial_meeting_joined_event(
     label: str,
     active_dialog: str,
-):
+) -> None:
     adapter = RingCentralAdapter()
     detector = EventDetector(confidence_threshold=0.75)
     state = adapter.extract_state(make_observation([label]))
@@ -246,7 +246,7 @@ def test_prejoin_dialogs_do_not_emit_initial_meeting_joined_event(
 def test_prejoin_dialogs_suppress_meeting_joined_with_other_evidence(
     label: str,
     active_dialog: str,
-):
+) -> None:
     adapter = RingCentralAdapter()
     detector = EventDetector(confidence_threshold=0.75)
     state = adapter.extract_state(make_observation([label, "Participants 3"]))
@@ -259,7 +259,7 @@ def test_prejoin_dialogs_suppress_meeting_joined_with_other_evidence(
     assert [event.type for event in events] == ["dialog_appeared"]
 
 
-def test_happy_path_state_stays_above_runtime_threshold():
+def test_happy_path_state_stays_above_runtime_threshold() -> None:
     adapter = RingCentralAdapter()
     detector = EventDetector(confidence_threshold=0.75)
     state = adapter.extract_state(make_observation(["Mute microphone", "Stop video"]))
@@ -270,7 +270,7 @@ def test_happy_path_state_stays_above_runtime_threshold():
     assert [event.type for event in events] == ["meeting_joined"]
 
 
-def test_right_window_class_with_wrong_process_does_not_mark_joined():
+def test_right_window_class_with_wrong_process_does_not_mark_joined() -> None:
     adapter = RingCentralAdapter()
     observation = make_observation(
         ["Mute microphone", "Stop video"],
@@ -282,7 +282,7 @@ def test_right_window_class_with_wrong_process_does_not_mark_joined():
     assert state.meeting_joined is False
 
 
-def test_right_process_with_wrong_window_class_does_not_mark_joined():
+def test_right_process_with_wrong_window_class_does_not_mark_joined() -> None:
     adapter = RingCentralAdapter()
     observation = make_observation(
         ["Mute microphone", "Stop video"],

@@ -25,7 +25,7 @@ class FakeInvalidNarrationResponseClient:
 
 
 class FakeSpeechResponse:
-    def __init__(self, content: bytes) -> None:
+    def __init__(self, content: bytes | bytearray | memoryview) -> None:
         self.content = content
 
 
@@ -50,7 +50,7 @@ class FakeSpeechClient:
 class FakeOpenAIClient:
     def __init__(
         self,
-        responses: FakeResponsesClient | None = None,
+        responses: FakeResponsesClient | FakeInvalidNarrationResponseClient | None = None,
         speech: FakeSpeechClient | None = None,
     ) -> None:
         self.responses = responses or FakeResponsesClient()

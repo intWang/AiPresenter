@@ -20,6 +20,18 @@ The RingCentral MVP assumes `RingCentralDevelop` is already open and logged in.
 The bundled `ringcentral-video` profile uses fake narration and speech providers for smoke testing.
 Use `profiles\ringcentral-video-openai.example.yaml` when manually accepting real OpenAI narration and audio output.
 
+## Run A Material Demo
+
+```powershell
+.venv\Scripts\ai-presenter demo --profile ringcentral-video --package ringcentral-video --flow meeting-control-map-demo
+```
+
+For a small local control surface with Start, Pause, and End:
+
+```powershell
+.venv\Scripts\ai-presenter controller --profile ringcentral-video --package ringcentral-video --flow meeting-control-map-demo
+```
+
 ## Manual Acceptance
 
 Use `docs/runbooks/ringcentral-manual-acceptance.md` for the RingCentral MVP checklist.

@@ -15,7 +15,11 @@
 
 - Report issue opens a foreground dialog and blocks other controls.
 - Add coworkers and Invite open an invite dialog that blocks the toolbar.
-- Notes opens a side panel with Start notes and Also record this meeting.
+- In a two-person meeting, the center canvas shows participant tiles and the Participants badge shows the live
+  attendee count; do not assume the empty-room Add coworkers path.
+- Notes is currently a direct toolbar button between Raise hand and More. It opens a side panel with Start notes
+  and Also record this meeting.
+- More currently contains Start recording, Background, and Settings.
 - Background and Settings open the Settings dialog.
 - Share opens a picker and should not press the final Share button without confirmation.
 - Raise hand is a toggle and should be restored after demonstration.

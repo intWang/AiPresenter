@@ -5,12 +5,16 @@
 - `RingCentralDevelop` is installed, open, and already logged in.
 - The profile `profiles/ringcentral-video.yaml` loads successfully.
 - A virtual audio device such as VB-CABLE or VoiceMeeter is installed when testing virtual microphone output.
+- In the RingCentralVideo executable directory, `config.ini` has `DisableAffinityMask=true` so meeting child
+  windows can be captured reliably.
 
 ## Smoke Checklist
 
 This uses the default fake providers. It verifies desktop automation, window binding, state detection, event filtering, and logging. It does not prove audible speech or OpenAI behavior.
 
 - [ ] Run `.venv\Scripts\ai-presenter run --profile ringcentral-video --dry-run` from the repo root.
+- [ ] Run `.venv\Scripts\ai-presenter demo --profile ringcentral-video --package ringcentral-video --flow meeting-control-map-demo --dry-run`.
+- [ ] Run `.venv\Scripts\ai-presenter controller --profile ringcentral-video --package ringcentral-video --flow meeting-control-map-demo --dry-run`.
 - [ ] From another directory, run `<repo>\.venv\Scripts\ai-presenter run --profile ringcentral-video --dry-run`.
 - [ ] Confirm the profile loads without validation errors.
 - [ ] Open `RingCentralDevelop` and confirm the user is logged in.

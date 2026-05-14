@@ -30,8 +30,31 @@ def test_provider_registry_does_not_require_openai_for_fake_profile(monkeypatch:
     assert registry.speech(profile.providers.speech)
 
 
+def test_provider_registry_supports_codex_cli_speaker_profile(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    profile = load_profile(Path("profiles/ringcentral-video-codex-cli-speaker.yaml"))
+
+    registry = create_provider_registry(profile)
+
+    assert registry.narration(profile.providers.narration).__class__.__name__ == (
+        "CodexCliNarrationProvider"
+    )
+    assert registry.speech(profile.providers.speech).__class__.__name__ == (
+        "WindowsSapiSpeechProvider"
+    )
+
+
 def test_create_adapter_returns_ringcentral_adapter_for_reference_profile() -> None:
     profile = load_profile(Path("profiles/ringcentral-video.yaml"))
+    adapter = create_adapter(profile)
+
+    assert adapter.__class__.__name__ == "RingCentralAdapter"
+
+
+def test_create_adapter_returns_ringcentral_adapter_for_openai_profile() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-openai.example.yaml"))
     adapter = create_adapter(profile)
 
     assert adapter.__class__.__name__ == "RingCentralAdapter"

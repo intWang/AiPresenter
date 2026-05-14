@@ -14,13 +14,17 @@ class RingCentralAdapter:
         camera_off = self._camera_off(labels)
         participant_count = self._participant_count(labels)
         active_dialog = self._active_dialog(labels)
+        first_one_here = self._first_one_here(labels)
         meeting_joined = (
             ringcentral_window
             and active_dialog is None
-            and self._has_in_meeting_evidence(
-                mic_muted=mic_muted,
-                camera_off=camera_off,
-                participant_count=participant_count,
+            and (
+                first_one_here
+                or self._has_in_meeting_evidence(
+                    mic_muted=mic_muted,
+                    camera_off=camera_off,
+                    participant_count=participant_count,
+                )
             )
         )
         connection_warning = self._connection_warning(labels)
@@ -33,7 +37,14 @@ class RingCentralAdapter:
             connection_warning=connection_warning,
             confidence=self._confidence(
                 ringcentral_window=ringcentral_window,
-                signals=(mic_muted, camera_off, participant_count, active_dialog, connection_warning),
+                signals=(
+                    mic_muted,
+                    camera_off,
+                    participant_count,
+                    active_dialog,
+                    connection_warning,
+                    first_one_here if first_one_here else None,
+                ),
             ),
         )
 
@@ -78,6 +89,10 @@ class RingCentralAdapter:
         if normalized & {"reconnecting", "your connection is unstable"}:
             return "connection issue"
         return None
+
+    def _first_one_here(self, labels: tuple[str, ...]) -> bool:
+        normalized = {label.strip().lower() for label in labels}
+        return "you're the first one here" in normalized
 
     def _has_in_meeting_evidence(
         self,

@@ -1,3 +1,5 @@
 .superpowers/
 .playwright-mcp/
 .worktrees/
+.venv/
+src/*.egg-info/

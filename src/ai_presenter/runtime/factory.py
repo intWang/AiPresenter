@@ -9,11 +9,13 @@ from ai_presenter.domain.state import MeetingState
 from ai_presenter.media.output import MediaOutputFactory
 from ai_presenter.media.output import MediaOutput
 from ai_presenter.providers.base import ProviderRegistry
+from ai_presenter.providers.codex_cli import CodexCliNarrationProvider
 from ai_presenter.providers.fake import FakeNarrationProvider
 from ai_presenter.providers.fake import FakeSpeechProvider
 from ai_presenter.providers.fake import FakeVisionProvider
 from ai_presenter.providers.openai_provider import OpenAINarrationProvider
 from ai_presenter.providers.openai_provider import OpenAISpeechProvider
+from ai_presenter.providers.windows_speech import WindowsSapiSpeechProvider
 from ai_presenter.runtime.events import EventDetector
 from ai_presenter.runtime.narration import NarrationEngine
 from ai_presenter.runtime.presenter import PresenterLoop
@@ -34,15 +36,23 @@ def create_default_provider_registry() -> ProviderRegistry:
 
 def create_provider_registry(profile: AppProfile) -> ProviderRegistry:
     registry = create_fake_provider_registry()
+    if profile.providers.narration == "codex-cli":
+        registry.register_narration("codex-cli", CodexCliNarrationProvider())
     if profile.providers.narration == "openai":
         registry.register_narration("openai", OpenAINarrationProvider())
     if profile.providers.speech == "openai":
         registry.register_speech("openai", OpenAISpeechProvider())
+    if profile.providers.speech == "windows-sapi":
+        registry.register_speech("windows-sapi", WindowsSapiSpeechProvider())
     return registry
 
 
 def create_adapter(profile: AppProfile) -> AppAdapter:
-    if profile.id == "ringcentral-video":
+    if (
+        isinstance(profile, DesktopAppProfile)
+        and profile.bind.process == "RingCentralVideo"
+        and profile.bind.window_class == "RingCentralVideoClass"
+    ):
         return RingCentralAdapter()
     raise ValueError(f"No adapter registered for profile: {profile.id}")
 

@@ -26,6 +26,15 @@ def test_load_ringcentral_openai_example_profile() -> None:
     assert profile.providers.speech == "openai"
 
 
+def test_load_ringcentral_codex_cli_speaker_profile() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-codex-cli-speaker.yaml"))
+
+    assert profile.id == "ringcentral-video-codex-cli-speaker"
+    assert profile.providers.narration == "codex-cli"
+    assert profile.providers.speech == "windows-sapi"
+    assert profile.audio.output.value == "speaker"
+
+
 def test_rejects_unknown_audio_mode(tmp_path: Path) -> None:
     profile_path = tmp_path / "bad.yaml"
     profile_path.write_text(

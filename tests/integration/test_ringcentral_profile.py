@@ -47,6 +47,16 @@ def test_ringcentral_adapter_extracts_mic_and_camera_from_ui_text():
     assert state.participant_count == 3
 
 
+def test_ringcentral_adapter_treats_first_one_here_as_joined_meeting():
+    adapter = RingCentralAdapter()
+    observation = make_observation(["You're the first one here"])
+
+    state = adapter.extract_state(observation)
+
+    assert state.meeting_joined is True
+    assert state.confidence >= 0.75
+
+
 def test_connection_warning_does_not_create_active_dialog():
     adapter = RingCentralAdapter()
     observation = make_observation(["Your connection is unstable"])

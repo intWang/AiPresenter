@@ -22,6 +22,13 @@ Use `profiles\ringcentral-video-openai.example.yaml` when manually accepting rea
 
 ## Run A Material Demo
 
+Before a real demo, run the diagnostic command to catch profile, package, flow, presenter-context,
+and RingCentral capture-prerequisite issues early:
+
+```powershell
+.venv\Scripts\ai-presenter doctor --profile ringcentral-video-bind-speaker --package ringcentral-video --flow meeting-control-map-demo --ringcentral-config "C:\Path\To\RingCentralVideo\config.ini"
+```
+
 ```powershell
 .venv\Scripts\ai-presenter demo --profile ringcentral-video --package ringcentral-video --flow meeting-control-map-demo
 ```

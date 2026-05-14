@@ -7,6 +7,8 @@ from ai_presenter.config.models import DesktopAppProfile
 from ai_presenter.packages.loader import load_material_package
 from ai_presenter.runtime.factory import run_desktop_profile
 from ai_presenter.runtime.factory import run_material_demo
+from ai_presenter.runtime.diagnostics import diagnose_configuration
+from ai_presenter.runtime.diagnostics import format_diagnostic_report
 from ai_presenter.runtime.logging import configure_logging
 from ai_presenter.runtime.package_demo import demo_flow_by_id
 from ai_presenter.runtime.controller import run_controller
@@ -135,3 +137,42 @@ def controller(
     if not isinstance(loaded_profile, DesktopAppProfile):
         raise typer.BadParameter(f"Only desktop profiles can run in this MVP: {loaded_profile.id}")
     run_controller(loaded_profile, loaded_package, loaded_flow.id)
+
+
+@app.command()
+def doctor(
+    profile: str = typer.Option(..., "--profile", help="Profile id or YAML path."),
+    package: str | None = typer.Option(
+        None,
+        "--package",
+        help="Optional material package id or YAML path.",
+    ),
+    flow: str | None = typer.Option(
+        None,
+        "--flow",
+        help="Optional demo flow id to validate inside the material package.",
+    ),
+    ringcentral_config: Path | None = typer.Option(
+        None,
+        "--ringcentral-config",
+        help="Optional RingCentralVideo config.ini path to validate DisableAffinityMask.",
+    ),
+    debug: bool = typer.Option(False, "--debug", help="Enable debug logs."),
+) -> None:
+    """Check profile, package, flow, and local RingCentral prerequisites."""
+    configure_logging(debug)
+    loaded_profile = load_profile(resolve_profile(profile))
+    loaded_package = None
+    if package is not None:
+        loaded_package = load_material_package(resolve_material_package(package))
+
+    report = diagnose_configuration(
+        profile=loaded_profile,
+        material_package=loaded_package,
+        flow_id=flow,
+        ringcentral_config=ringcentral_config,
+    )
+    for line in format_diagnostic_report(report):
+        typer.echo(line)
+    if report.failed_count:
+        raise typer.Exit(1)

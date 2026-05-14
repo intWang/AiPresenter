@@ -78,6 +78,100 @@ def test_controller_dry_run_loads_profile_package_and_flow() -> None:
     assert "Controller dry run complete." in result.stdout
 
 
+def test_doctor_loads_profile_package_and_flow() -> None:
+    result = CliRunner().invoke(
+        app,
+        [
+            "doctor",
+            "--profile",
+            "ringcentral-video-bind-speaker",
+            "--package",
+            "ringcentral-video",
+            "--flow",
+            "meeting-control-map-demo",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "[OK] profile: loaded ringcentral-video-bind-speaker" in result.stdout
+    assert "[OK] package: loaded ringcentral-video" in result.stdout
+    assert "[OK] package profile support" in result.stdout
+    assert "[OK] demo flow: meeting-control-map-demo" in result.stdout
+    assert "[OK] presenter context" in result.stdout
+    assert "[WARN] RingCentral config" in result.stdout
+    assert "Doctor completed:" in result.stdout
+
+
+def test_doctor_rejects_package_that_does_not_support_profile(tmp_path: Path) -> None:
+    package_path = tmp_path / "demo-package.yaml"
+    package_path.write_text(
+        """
+appId: demo
+appName: Demo
+version: 1
+profileIds: [other-profile]
+operationEntrypoints:
+  - id: demo.overview
+    title: Overview
+    area: Main
+    purpose: Explain the surface
+    openSteps: []
+demoFlows: []
+manualControls: []
+""",
+        encoding="utf-8",
+    )
+
+    result = CliRunner().invoke(
+        app,
+        ["doctor", "--profile", "ringcentral-video-bind-speaker", "--package", str(package_path)],
+    )
+
+    assert result.exit_code == 1
+    assert "[FAIL] package profile support" in result.stdout
+    assert "does not list profile ringcentral-video-bind-speaker" in result.stdout
+
+
+def test_doctor_accepts_ringcentral_config_with_disable_affinity_mask(tmp_path: Path) -> None:
+    config_path = tmp_path / "config.ini"
+    config_path.write_text("[General]\nDisableAffinityMask=true\n", encoding="utf-8")
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "doctor",
+            "--profile",
+            "ringcentral-video-bind-speaker",
+            "--ringcentral-config",
+            str(config_path),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "[OK] RingCentral config" in result.stdout
+    assert "DisableAffinityMask=true" in result.stdout
+
+
+def test_doctor_rejects_ringcentral_config_without_disable_affinity_mask(tmp_path: Path) -> None:
+    config_path = tmp_path / "config.ini"
+    config_path.write_text("DisableAffinityMask=false\n", encoding="utf-8")
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "doctor",
+            "--profile",
+            "ringcentral-video-bind-speaker",
+            "--ringcentral-config",
+            str(config_path),
+        ],
+    )
+
+    assert result.exit_code == 1
+    assert "[FAIL] RingCentral config" in result.stdout
+    assert "expected DisableAffinityMask=true" in result.stdout
+
+
 def test_resolve_profile_id_from_non_repo_working_directory(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

@@ -1,0 +1,302 @@
+appId: ringcentral-video
+appName: RingCentral Video
+version: 1
+profileIds:
+  - ringcentral-video
+  - ringcentral-video-openai
+  - ringcentral-video-codex-cli-speaker
+
+operationEntrypoints:
+  - id: ringcentral.develop.video.tab
+    title: Video tab in RingCentralDevelop
+    area: RingCentralDevelop
+    purpose: Open the Video meetings surface before starting or joining meetings.
+    openSteps:
+      - action: focusWindow
+        match:
+          process: RingCentralDevelop
+      - action: clickTab
+        target: Video
+    presenterNotes:
+      - Use this as the first entry point when the user asks to start from the desktop app.
+      - The app must already be logged in.
+
+  - id: ringcentral.develop.video.start
+    title: Start meeting
+    area: RingCentralDevelop Video tab
+    purpose: Start an instant RingCentral Video meeting.
+    openSteps:
+      - action: clickButton
+        target: Start
+    presenterNotes:
+      - Starting a meeting creates the independent RingCentralVideo process.
+      - Bind the meeting window by process RingCentralVideo and class RingCentralVideoClass.
+
+  - id: ringcentral.video.toolbar.audio
+    title: Microphone control
+    area: Meeting toolbar
+    purpose: Toggle mute and unmute in the live meeting.
+    openSteps:
+      - action: clickButton
+        target: Unmute
+    presenterNotes:
+      - Button text alternates between Unmute and Mute depending on current state.
+      - Use this entry point to explain audio privacy and meeting readiness.
+
+  - id: ringcentral.video.toolbar.video
+    title: Camera control
+    area: Meeting toolbar
+    purpose: Toggle local camera on or off.
+    openSteps:
+      - action: clickButton
+        target: Start video
+    presenterNotes:
+      - Button text alternates between Start video and Stop video.
+      - The caret next to this button exposes camera and video settings.
+
+  - id: ringcentral.video.settings.video
+    title: More video settings
+    area: Video menu
+    purpose: Open camera, quality, gallery, and related video settings.
+    openSteps:
+      - action: clickMenu
+        target: Start video caret
+      - action: clickMenuItem
+        target: More video settings
+    presenterNotes:
+      - This route opens the Settings dialog directly on the Video panel.
+      - Use it before explaining camera device selection and HD settings.
+
+  - id: ringcentral.video.settings.background
+    title: Background settings
+    area: Settings
+    purpose: Configure blur, built-in virtual backgrounds, video backgrounds, or custom uploads.
+    openSteps:
+      - action: clickMenu
+        target: Start video caret
+      - action: clickMenuItem
+        target: More video settings
+      - action: clickSettingsTab
+        target: Background
+    presenterNotes:
+      - Blur protects the real environment while keeping the presenter visible.
+      - The plus tile adds a custom background asset.
+
+  - id: ringcentral.video.toolbar.share
+    title: Screen sharing
+    area: Meeting toolbar
+    purpose: Start sharing a screen, window, or selected content.
+    openSteps:
+      - action: clickButton
+        target: Share
+    presenterNotes:
+      - Narration must not infer shared-screen content unless verified by an allowed source.
+      - Use this entry point to explain presenter handoff and collaboration.
+
+  - id: ringcentral.video.toolbar.invite
+    title: Invite participants
+    area: Meeting toolbar
+    purpose: Invite coworkers or copy meeting details.
+    openSteps:
+      - action: clickButton
+        target: Invite
+    presenterNotes:
+      - Useful when the presenter needs to explain how to bring people into an active room.
+      - Avoid reading private invite links aloud unless explicitly requested.
+
+  - id: ringcentral.video.toolbar.participants
+    title: Participants panel
+    area: Meeting toolbar
+    purpose: Open participant list and meeting people controls.
+    openSteps:
+      - action: clickButton
+        target: Participants
+    presenterNotes:
+      - Use this to answer questions about attendee count and meeting control.
+      - Do not identify participants unless the UI text is verified and allowed.
+
+  - id: ringcentral.video.toolbar.chat
+    title: Chat panel
+    area: Meeting toolbar
+    purpose: Open in-meeting chat.
+    openSteps:
+      - action: clickButton
+        target: Chat
+    presenterNotes:
+      - Chat is a collaboration side panel for meeting messages.
+      - Do not read private chat text aloud unless the user explicitly asks.
+
+  - id: ringcentral.video.toolbar.react
+    title: Reactions
+    area: Meeting toolbar
+    purpose: Send meeting reactions without interrupting speech.
+    openSteps:
+      - action: clickButton
+        target: React
+    presenterNotes:
+      - Reactions are lightweight feedback signals.
+      - This is a good fallback when the presenter wants to acknowledge without opening a panel.
+
+  - id: ringcentral.video.toolbar.raise-hand
+    title: Raise hand
+    area: Meeting toolbar
+    purpose: Raise or lower hand to request attention.
+    openSteps:
+      - action: clickButton
+        target: Raise hand
+    presenterNotes:
+      - Use this in moderated meeting demos.
+
+  - id: ringcentral.video.toolbar.more
+    title: More actions
+    area: Meeting toolbar
+    purpose: Open additional meeting actions.
+    openSteps:
+      - action: clickButton
+        target: More
+    presenterNotes:
+      - This is the expansion point for less frequent meeting tools.
+
+  - id: ringcentral.video.toolbar.leave
+    title: Leave meeting
+    area: Meeting toolbar
+    purpose: Leave or end the meeting.
+    openSteps:
+      - action: clickButton
+        target: Leave
+    presenterNotes:
+      - Confirm destructive leave/end actions before clicking final confirmation.
+
+demoFlows:
+  - id: vbg-blur-demo
+    title: Virtual background blur demo
+    goal: Show how to protect the real environment using blur and verify it in the live meeting.
+    steps:
+      - id: open-video-settings
+        title: Open video settings
+        action:
+          entrypointId: ringcentral.video.settings.video
+          operation: open
+        narration:
+          text: I am opening the video settings from the camera control so we can configure the visual presentation.
+          placement: before
+      - id: open-background-panel
+        title: Open background panel
+        action:
+          entrypointId: ringcentral.video.settings.background
+          operation: open
+        narration:
+          text: The Background panel contains blur, built-in virtual backgrounds, and custom background upload.
+          placement: during
+          actionOffsetMs: 400
+      - id: select-blur
+        title: Select blur
+        action:
+          entrypointId: ringcentral.video.settings.background
+          operation: select
+          target: Blur
+        narration:
+          text: Blur keeps the presenter visible while reducing detail from the real room.
+          placement: during
+          actionOffsetMs: 300
+      - id: verify-meeting-video
+        title: Verify live meeting video
+        action:
+          entrypointId: ringcentral.video.toolbar.video
+          operation: verify
+          target: Stop video
+        narration:
+          text: Back in the meeting, the live tile confirms video is on and the real background is blurred.
+          placement: after
+
+  - id: meeting-basics-demo
+    title: Meeting basics demo
+    goal: Show the core controls a presenter usually needs in a live meeting.
+    steps:
+      - id: show-mic
+        title: Show microphone control
+        action:
+          entrypointId: ringcentral.video.toolbar.audio
+          operation: point
+        narration:
+          text: The microphone control shows whether local audio is muted and lets the presenter quickly recover before speaking.
+          placement: before
+      - id: show-participants
+        title: Show participants
+        action:
+          entrypointId: ringcentral.video.toolbar.participants
+          operation: open
+        narration:
+          text: The Participants panel is the fastest way to confirm who is in the room and whether the meeting is still empty.
+          placement: during
+          actionOffsetMs: 300
+      - id: show-chat
+        title: Show chat
+        action:
+          entrypointId: ringcentral.video.toolbar.chat
+          operation: open
+        narration:
+          text: Chat supports side-channel collaboration while the spoken demo continues.
+          placement: during
+          actionOffsetMs: 300
+
+explainers:
+  background:
+    shortScript: Background controls let the presenter switch between no effect, blur, built-in backgrounds, and custom uploads.
+    details:
+      - Use Blur when privacy is more important than visual branding.
+      - Use a built-in or uploaded image when the demo needs a branded or neutral scene.
+    relatedEntrypointIds:
+      - ringcentral.video.settings.background
+  participants:
+    shortScript: Participants shows the live people context for the meeting and exposes attendee-oriented controls.
+    details:
+      - Mention participant count only when it is verified from the UI.
+      - Avoid naming attendees unless the user asks and the UI text is visible.
+    relatedEntrypointIds:
+      - ringcentral.video.toolbar.participants
+  sharing:
+    shortScript: Share starts content presentation, but the AI presenter should only describe shared content after verified observation.
+    details:
+      - Treat shared content as sensitive by default.
+      - Ask for confirmation before reading private content aloud.
+    relatedEntrypointIds:
+      - ringcentral.video.toolbar.share
+  chat:
+    shortScript: Chat gives the meeting a written backchannel that can be opened without changing the main video state.
+    details:
+      - Do not read private chat text by default.
+      - Use chat status only as UI context unless the human asks for content.
+    relatedEntrypointIds:
+      - ringcentral.video.toolbar.chat
+
+qa:
+  - question: How do I protect my real background?
+    answer: Open Settings, choose Background, and select Blur or a virtual background. Blur is the safest default for privacy because it hides room detail while keeping the person visible.
+    relatedEntrypointIds:
+      - ringcentral.video.settings.background
+  - question: Can the presenter describe shared-screen content?
+    answer: Only after the content is captured by an approved observation source and the user allows it. The default policy is to avoid inferring or reading private shared content.
+    relatedEntrypointIds:
+      - ringcentral.video.toolbar.share
+  - question: How can I bring people into the meeting?
+    answer: Use Invite to add coworkers or copy meeting details. The presenter should avoid reading private invite links aloud unless explicitly requested.
+    relatedEntrypointIds:
+      - ringcentral.video.toolbar.invite
+
+manualControls:
+  - name: say
+    examples:
+      - "say: explain privacy benefits"
+      - "say: summarize the background options"
+    handling: Replace the next scripted narration with the provided text.
+  - name: skip
+    examples:
+      - skip
+      - "skip: participants panel"
+    handling: Skip the current or matching upcoming demo step.
+  - name: focus
+    examples:
+      - "focus: chat"
+      - "focus: background"
+    handling: Prefer the matching entry point or explainer for the next response.

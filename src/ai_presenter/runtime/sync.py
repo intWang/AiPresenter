@@ -1,0 +1,98 @@
+from __future__ import annotations
+
+import threading
+import time
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import Protocol
+
+from ai_presenter.media.output import MediaOutput
+from ai_presenter.packages.models import DemoStep, DemoStepAction
+from ai_presenter.providers.base import SpeechAudio, SpeechProvider
+from ai_presenter.runtime.manual import ManualDirectiveQueue
+
+
+class ActionExecutor(Protocol):
+    def execute(self, action: DemoStepAction) -> None:
+        ...
+
+
+@dataclass(frozen=True)
+class StepRunResult:
+    step_id: str
+    skipped: bool
+    narration_text: str | None = None
+
+
+class SynchronizedTimelineRunner:
+    def __init__(
+        self,
+        *,
+        speech_provider: SpeechProvider,
+        media_output: MediaOutput,
+        action_executor: ActionExecutor,
+        manual_directives: ManualDirectiveQueue | None = None,
+        sleep: Callable[[float], None] = time.sleep,
+    ) -> None:
+        self._speech_provider = speech_provider
+        self._media_output = media_output
+        self._action_executor = action_executor
+        self._manual_directives = manual_directives
+        self._sleep = sleep
+
+    def run_step(self, step: DemoStep) -> StepRunResult:
+        narration_text = step.narration.text.strip()
+        directive = None
+        if self._manual_directives is not None:
+            directive = self._manual_directives.consume_next()
+
+        if directive is not None:
+            if directive.kind == "skip":
+                return StepRunResult(step_id=step.id, skipped=True)
+            if directive.kind == "say":
+                narration_text = directive.text
+
+        placement = step.narration.placement
+        if placement == "before":
+            self._speak(narration_text)
+            self._action_executor.execute(step.action)
+        elif placement == "after":
+            self._action_executor.execute(step.action)
+            self._speak(narration_text)
+        elif placement == "during":
+            audio = self._speech_provider.synthesize(narration_text)
+            playback = _BackgroundPlayback(self._media_output, audio)
+            playback.start()
+            self._sleep(step.narration.action_offset_ms / 1000)
+            self._action_executor.execute(step.action)
+            playback.join_and_raise()
+        else:
+            raise ValueError(f"Unsupported narration placement: {placement}")
+
+        return StepRunResult(step_id=step.id, skipped=False, narration_text=narration_text)
+
+    def _speak(self, text: str) -> None:
+        audio = self._speech_provider.synthesize(text)
+        self._media_output.play(audio)
+
+
+class _BackgroundPlayback:
+    def __init__(self, media_output: MediaOutput, audio: SpeechAudio) -> None:
+        self._media_output = media_output
+        self._audio = audio
+        self._error: BaseException | None = None
+        self._thread = threading.Thread(target=self._play, daemon=True)
+
+    def start(self) -> None:
+        self._thread.start()
+
+    def join_and_raise(self) -> None:
+        self._thread.join()
+        if self._error is not None:
+            raise RuntimeError("Timeline audio playback failed.") from self._error
+
+    def _play(self) -> None:
+        try:
+            self._media_output.play(self._audio)
+        except BaseException as exc:
+            self._error = exc

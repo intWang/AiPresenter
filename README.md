@@ -23,3 +23,17 @@ Use `profiles\ringcentral-video-openai.example.yaml` when manually accepting rea
 ## Manual Acceptance
 
 Use `docs/runbooks/ringcentral-manual-acceptance.md` for the RingCentral MVP checklist.
+
+## Material Packages
+
+App-level presenter knowledge lives under `packages/`. The first package is
+`packages/ringcentral-video.yaml`; it covers RingCentral Video surfaces, operation entry points,
+demo flows, concise explainers, anticipated Q&A, and manual control phrases.
+
+VBG is modeled as one demo flow inside the RingCentral Video package, not as a separate app package.
+
+## Synchronized Demo Flow
+
+`src/ai_presenter/runtime/sync.py` runs package demo steps with narration placement set to
+`before`, `during`, or `after`. `src/ai_presenter/runtime/manual.py` provides the first text
+directive queue for live adjustment, including `say:` narration overrides and `skip`.

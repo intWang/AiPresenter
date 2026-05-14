@@ -94,7 +94,7 @@ def demo(
     try:
         loaded_flow = demo_flow_by_id(loaded_package, flow)
     except KeyError as exc:
-        raise typer.BadParameter(str(exc)) from exc
+        raise typer.BadParameter(str(exc.args[0])) from exc
 
     typer.echo(f"Loaded profile: {loaded_profile.id}")
     typer.echo(f"Loaded package: {loaded_package.app_id}")
@@ -126,7 +126,7 @@ def controller(
     try:
         loaded_flow = demo_flow_by_id(loaded_package, flow)
     except KeyError as exc:
-        raise typer.BadParameter(str(exc)) from exc
+        raise typer.BadParameter(str(exc.args[0])) from exc
 
     typer.echo(f"Loaded profile: {loaded_profile.id}")
     typer.echo(f"Loaded package: {loaded_package.app_id}")

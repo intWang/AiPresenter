@@ -57,6 +57,27 @@ def test_demo_dry_run_loads_profile_package_and_flow() -> None:
     assert "Loaded flow: meeting-controls-tour" in result.stdout
 
 
+def test_demo_reports_available_flows_when_flow_is_missing() -> None:
+    result = CliRunner().invoke(
+        app,
+        [
+            "demo",
+            "--profile",
+            "ringcentral-video",
+            "--package",
+            "ringcentral-video",
+            "--flow",
+            "missing-flow",
+            "--dry-run",
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert "Unknown demo flow: missing-flow" in result.output
+    assert "Available flows:" in result.output
+    assert "meeting-control-map-demo" in result.output
+
+
 def test_controller_dry_run_loads_profile_package_and_flow() -> None:
     result = CliRunner().invoke(
         app,

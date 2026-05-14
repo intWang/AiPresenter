@@ -314,4 +314,5 @@ def demo_flow_by_id(package: MaterialPackage, flow_id: str) -> DemoFlow:
     for flow in package.demo_flows:
         if flow.id == flow_id:
             return flow
-    raise KeyError(f"Unknown demo flow: {flow_id}")
+    available = ", ".join(flow.id for flow in package.demo_flows) or "none"
+    raise KeyError(f"Unknown demo flow: {flow_id}. Available flows: {available}")

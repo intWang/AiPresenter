@@ -79,6 +79,15 @@ def test_controller_dry_run_loads_profile_package_and_flow() -> None:
     assert "Controller dry run complete." in result.stdout
 
 
+def test_flows_lists_material_package_demo_flows() -> None:
+    result = CliRunner().invoke(app, ["flows", "--package", "ringcentral-video"])
+
+    assert result.exit_code == 0
+    assert "Package: ringcentral-video" in result.stdout
+    assert "- meeting-control-map-demo: Meeting Control Map" in result.stdout
+    assert "steps" in result.stdout
+
+
 def test_doctor_loads_profile_package_and_flow(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(diagnostics, "_iter_process_executable_paths", lambda process_name: [])
 

@@ -140,6 +140,17 @@ def controller(
 
 
 @app.command()
+def flows(
+    package: str = typer.Option(..., "--package", help="Material package id or YAML path."),
+) -> None:
+    """List demo flows available in a material package."""
+    loaded_package = load_material_package(resolve_material_package(package))
+    typer.echo(f"Package: {loaded_package.app_id}")
+    for flow in loaded_package.demo_flows:
+        typer.echo(f"- {flow.id}: {flow.title} ({len(flow.steps)} steps)")
+
+
+@app.command()
 def doctor(
     profile: str = typer.Option(..., "--profile", help="Profile id or YAML path."),
     package: str | None = typer.Option(

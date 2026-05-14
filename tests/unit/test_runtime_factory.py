@@ -4,6 +4,7 @@ import pytest
 
 from ai_presenter.config.loader import load_profile
 from ai_presenter.config.models import BrowserAppProfile, DesktopAppProfile
+from ai_presenter.domain.state import RawObservation, WindowMetadata
 from ai_presenter.runtime import factory as factory_module
 from ai_presenter.runtime.factory import create_adapter
 from ai_presenter.runtime.factory import create_fake_provider_registry
@@ -18,6 +19,23 @@ def test_fake_provider_registry_satisfies_ringcentral_profile() -> None:
     assert registry.vision(profile.providers.vision)
     assert registry.narration(profile.providers.narration)
     assert registry.speech(profile.providers.speech)
+
+
+def test_fake_provider_registry_reports_joined_meeting_for_smoke_runs() -> None:
+    registry = create_fake_provider_registry()
+    observation = RawObservation(
+        metadata=WindowMetadata(
+            process="RingCentralVideo",
+            pid=10,
+            window_class="RingCentralVideoClass",
+            title="RingCentral Video",
+            bounds=(0, 0, 1000, 800),
+        )
+    )
+
+    state = registry.vision("fake").recognize(observation)
+
+    assert state.meeting_joined is True
 
 
 def test_provider_registry_does_not_require_openai_for_fake_profile(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -41,6 +59,17 @@ def test_provider_registry_supports_codex_cli_speaker_profile(
     assert registry.narration(profile.providers.narration).__class__.__name__ == (
         "CodexCliNarrationProvider"
     )
+    assert registry.speech(profile.providers.speech).__class__.__name__ == (
+        "WindowsSapiSpeechProvider"
+    )
+
+
+def test_provider_registry_supports_english_windows_sapi_profile() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
+
+    registry = create_provider_registry(profile)
+
+    assert profile.providers.speech == "windows-sapi-en"
     assert registry.speech(profile.providers.speech).__class__.__name__ == (
         "WindowsSapiSpeechProvider"
     )

@@ -5,6 +5,8 @@ from collections.abc import Callable, Sequence
 from pathlib import Path
 
 from ai_presenter.domain.state import MeetingState, PresenterEvent
+from ai_presenter.runtime.presenter_context import PresenterContext
+from ai_presenter.runtime.presenter_context import format_presenter_context
 
 Runner = Callable[..., subprocess.CompletedProcess[str]]
 
@@ -15,16 +17,18 @@ class CodexCliNarrationProvider:
         *,
         executable: str = "codex",
         model: str | None = None,
+        presenter_context: PresenterContext | None = None,
         timeout_seconds: float = 120,
         runner: Runner = subprocess.run,
     ) -> None:
         self._executable = _require_nonblank(executable, "Codex executable cannot be blank.")
         self._model = _normalize_optional(model)
+        self._presenter_context = presenter_context
         self._timeout_seconds = timeout_seconds
         self._runner = runner
 
     def narrate(self, state: MeetingState, events: list[PresenterEvent]) -> str:
-        prompt = _build_codex_prompt(state, events)
+        prompt = _build_codex_prompt(state, events, self._presenter_context)
         with tempfile.NamedTemporaryFile(delete=False, suffix=".txt") as output_file:
             output_path = Path(output_file.name)
 
@@ -67,7 +71,11 @@ class CodexCliNarrationProvider:
         return command
 
 
-def _build_codex_prompt(state: MeetingState, events: list[PresenterEvent]) -> str:
+def _build_codex_prompt(
+    state: MeetingState,
+    events: list[PresenterEvent],
+    presenter_context: PresenterContext | None = None,
+) -> str:
     payload: dict[str, object] = {
         "meeting_ui_state": {
             "meeting_joined": state.meeting_joined,
@@ -88,11 +96,14 @@ def _build_codex_prompt(state: MeetingState, events: list[PresenterEvent]) -> st
             for event in events
         ],
     }
+    context_text = format_presenter_context(presenter_context)
+    context_section = f"\n\n{context_text}" if context_text else ""
     return (
         "You are the narration voice for an AI presenter observing RingCentral meeting UI.\n"
         "Use only the verified UI state/events in the JSON payload. Do not infer shared-screen "
         "content, participant identity, meeting purpose, or private content. Return one concise "
-        "English narration sentence only, with no Markdown or explanation.\n\n"
+        "English narration sentence only, with no Markdown or explanation."
+        f"{context_section}\n\n"
         f"{json.dumps(payload, default=str, ensure_ascii=False, sort_keys=True)}"
     )
 

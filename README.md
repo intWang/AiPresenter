@@ -32,6 +32,19 @@ demo flows, concise explainers, anticipated Q&A, and manual control phrases.
 
 VBG is modeled as one demo flow inside the RingCentral Video package, not as a separate app package.
 
+## Presenter Soul And Memory
+
+Presenter identity and durable coaching live under `presenter/`:
+
+- `presenter/soul.md` defines the professional presenter role, voice, and safety boundaries.
+- `presenter/memory.md` records durable user feedback, such as English RingCentral Video narration,
+  tighter transitions, synchronized action timing, and complete Meeting coverage.
+- `presenter/skills/` extends professional capabilities. The initial skills cover app-demo
+  direction and live explanation behavior.
+
+Profiles load these files through `narration.soulPath`, `narration.memoryPath`, and
+`narration.skillPaths`.
+
 ## Synchronized Demo Flow
 
 `src/ai_presenter/runtime/sync.py` runs package demo steps with narration placement set to

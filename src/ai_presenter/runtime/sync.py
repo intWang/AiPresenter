@@ -56,9 +56,11 @@ class SynchronizedTimelineRunner:
         if placement == "before":
             self._speak(narration_text)
             self._action_executor.execute(step.action)
+            self._cleanup_pending_action()
         elif placement == "after":
             self._action_executor.execute(step.action)
             self._speak(narration_text)
+            self._cleanup_pending_action()
         elif placement == "during":
             audio = self._speech_provider.synthesize(narration_text)
             playback = _BackgroundPlayback(self._media_output, audio)
@@ -66,6 +68,7 @@ class SynchronizedTimelineRunner:
             self._sleep(step.narration.action_offset_ms / 1000)
             self._action_executor.execute(step.action)
             playback.join_and_raise()
+            self._cleanup_pending_action()
         else:
             raise ValueError(f"Unsupported narration placement: {placement}")
 
@@ -74,6 +77,11 @@ class SynchronizedTimelineRunner:
     def _speak(self, text: str) -> None:
         audio = self._speech_provider.synthesize(text)
         self._media_output.play(audio)
+
+    def _cleanup_pending_action(self) -> None:
+        cleanup = getattr(self._action_executor, "cleanup_pending", None)
+        if callable(cleanup):
+            cleanup()
 
 
 class _BackgroundPlayback:

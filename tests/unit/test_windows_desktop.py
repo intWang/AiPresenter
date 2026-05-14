@@ -166,6 +166,69 @@ def test_focus_window_connects_to_process_executable_and_focuses(
     ]
 
 
+def test_focus_window_skips_matching_processes_without_top_windows(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[tuple[str, int | str]] = []
+
+    class FakeProcessWithoutWindow:
+        info = {"pid": 1111, "name": "RingCentralDevelop.exe"}
+
+    class FakeProcessWithWindow:
+        info = {"pid": 2222, "name": "RingCentralDevelop.exe"}
+
+    class FakeWindow:
+        handle = 99
+
+        def set_focus(self) -> None:
+            calls.append(("focus", "window"))
+
+    class FakeConnectedApplication:
+        def __init__(self, pid: int | None = None) -> None:
+            self._pid = pid
+
+        def top_window(self) -> FakeWindow:
+            calls.append(("top_window", self._pid))
+            if self._pid is None or self._pid == 1111:
+                raise RuntimeError("No windows for that process could be found")
+            return FakeWindow()
+
+    class FakeApplication:
+        def __init__(self, backend: str) -> None:
+            calls.append(("backend", backend))
+
+        def connect(self, **kwargs: int | str) -> FakeConnectedApplication:
+            if "path" in kwargs:
+                calls.append(("path", str(kwargs["path"])))
+                return FakeConnectedApplication()
+            process = kwargs["process"]
+            assert isinstance(process, int)
+            calls.append(("process", process))
+            return FakeConnectedApplication(process)
+
+    monkeypatch.setattr(
+        windows.psutil,
+        "process_iter",
+        lambda attrs: [FakeProcessWithoutWindow(), FakeProcessWithWindow()],
+    )
+    monkeypatch.setattr(windows, "Application", FakeApplication)
+
+    WindowsDesktopDriver().focus_window("RingCentralDevelop")
+
+    assert calls == [
+        ("backend", "uia"),
+        ("path", "RingCentralDevelop.exe"),
+        ("top_window", None),
+        ("backend", "uia"),
+        ("process", 1111),
+        ("top_window", 1111),
+        ("backend", "uia"),
+        ("process", 2222),
+        ("top_window", 2222),
+        ("focus", "window"),
+    ]
+
+
 def test_failed_refocus_clears_previous_focused_window(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -318,6 +381,21 @@ def test_focus_window_reports_missing_dependency(monkeypatch: pytest.MonkeyPatch
 
     with pytest.raises(RuntimeError, match="pywinauto"):
         WindowsDesktopDriver().focus_window("RingCentralDevelop")
+
+
+def test_press_key_maps_escape_to_pywinauto_escape_code(monkeypatch: pytest.MonkeyPatch) -> None:
+    sent_keys: list[str] = []
+
+    class FakeKeyboard:
+        @staticmethod
+        def send_keys(keys: str) -> None:
+            sent_keys.append(keys)
+
+    monkeypatch.setattr(windows, "keyboard", FakeKeyboard)
+
+    WindowsDesktopDriver().press_key("Escape")
+
+    assert sent_keys == ["{ESC}"]
 
 
 def test_capture_reports_missing_pywinauto_dependency(monkeypatch: pytest.MonkeyPatch) -> None:

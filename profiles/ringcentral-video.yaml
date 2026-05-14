@@ -40,6 +40,11 @@ narration:
   repeatCooldownSeconds: 30
   confidenceThreshold: 0.75
   forbidSharedScreenInterpretation: true
+  soulPath: ../presenter/soul.md
+  memoryPath: ../presenter/memory.md
+  skillPaths:
+    - ../presenter/skills/app-director.md
+    - ../presenter/skills/live-explainer.md
 
 audio:
   output: both

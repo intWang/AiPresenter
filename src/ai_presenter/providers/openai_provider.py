@@ -8,11 +8,13 @@ from openai import OpenAI
 
 from ai_presenter.domain.state import MeetingState, PresenterEvent
 from ai_presenter.providers.base import SpeechAudio
+from ai_presenter.runtime.presenter_context import PresenterContext
+from ai_presenter.runtime.presenter_context import format_presenter_context
 
 _NARRATION_MODEL_ENV = "AI_PRESENTER_OPENAI_NARRATION_MODEL"
 _SPEECH_MODEL_ENV = "AI_PRESENTER_OPENAI_TTS_MODEL"
 
-_NARRATION_INSTRUCTIONS = (
+_BASE_NARRATION_INSTRUCTIONS = (
     "You are the narration voice for an AI presenter observing RingCentral meeting UI. "
     "Speak only about verified RingCentral meeting UI state and verified events supplied in "
     "the input. Do not infer shared-screen content, participant identity, meeting purpose, "
@@ -21,18 +23,24 @@ _NARRATION_INSTRUCTIONS = (
 
 
 class OpenAINarrationProvider:
-    def __init__(self, client: Any | None = None, model: str | None = None) -> None:
+    def __init__(
+        self,
+        client: Any | None = None,
+        model: str | None = None,
+        presenter_context: PresenterContext | None = None,
+    ) -> None:
         self._client = _resolve_client(client)
         model_value = model if model is not None else os.getenv(_NARRATION_MODEL_ENV)
         self._model = _require_nonblank(
             model_value,
             f"OpenAI narration model is required. Pass model or set {_NARRATION_MODEL_ENV}.",
         )
+        self._instructions = _build_narration_instructions(presenter_context)
 
     def narrate(self, state: MeetingState, events: list[PresenterEvent]) -> str:
         response = self._client.responses.create(
             model=self._model,
-            instructions=_NARRATION_INSTRUCTIONS,
+            instructions=self._instructions,
             input=_build_narration_input(state, events),
         )
         output_text: object = getattr(response, "output_text", None)
@@ -111,6 +119,13 @@ def _build_narration_input(state: MeetingState, events: list[PresenterEvent]) ->
         ],
     }
     return json.dumps(payload, default=str, sort_keys=True)
+
+
+def _build_narration_instructions(presenter_context: PresenterContext | None) -> str:
+    context_text = format_presenter_context(presenter_context)
+    if not context_text:
+        return _BASE_NARRATION_INSTRUCTIONS
+    return f"{_BASE_NARRATION_INSTRUCTIONS}\n\n{context_text}"
 
 
 def _read_binary_response(response: object) -> bytes:

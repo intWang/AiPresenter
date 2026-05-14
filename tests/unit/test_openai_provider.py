@@ -5,6 +5,8 @@ import pytest
 from ai_presenter.domain.state import MeetingState, PresenterEvent
 from ai_presenter.providers.base import ProviderLookupError, ProviderRegistrationError, ProviderRegistry
 from ai_presenter.providers.openai_provider import OpenAINarrationProvider, OpenAISpeechProvider
+from ai_presenter.runtime.presenter_context import PresenterContext
+from ai_presenter.runtime.presenter_context import PresenterSkill
 
 
 class FakeResponsesClient:
@@ -105,6 +107,31 @@ def test_narration_calls_responses_api_with_constrained_prompt(monkeypatch: pyte
     assert "mic_state_changed" in request_input
     assert "micMuted" in request_input
     assert "participant_count" in request_input
+
+
+def test_narration_instructions_include_presenter_soul_and_memory(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    responses = FakeResponsesClient()
+    provider = OpenAINarrationProvider(
+        client=FakeOpenAIClient(responses=responses),
+        model="gpt-4.1",
+        presenter_context=PresenterContext(
+            soul="Soul marker: professional presenter identity.",
+            memory="Memory marker: speak in English with tighter transitions.",
+            skills=(
+                PresenterSkill(name="app-director", content="Skill marker: plan app slices."),
+            ),
+        ),
+    )
+
+    provider.narrate(MeetingState(confidence=0.9), [PresenterEvent("meeting_joined", {}, 0.9)])
+
+    instructions = responses.calls[0]["instructions"]
+    assert "Soul marker: professional presenter identity." in instructions
+    assert "Memory marker: speak in English with tighter transitions." in instructions
+    assert "Skill marker: plan app slices." in instructions
 
 
 def test_narration_uses_env_model_with_fake_client_without_api_key(

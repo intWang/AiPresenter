@@ -1,4 +1,5 @@
 from enum import Enum
+from pathlib import Path
 from typing import Annotated, Any, Literal, TypeAlias
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -94,6 +95,9 @@ class NarrationConfig(CamelModel):
     repeat_cooldown_seconds: float = Field(alias="repeatCooldownSeconds", ge=0)
     confidence_threshold: float = Field(alias="confidenceThreshold", ge=0, le=1)
     forbid_shared_screen_interpretation: bool = Field(alias="forbidSharedScreenInterpretation")
+    soul_path: Path | None = Field(default=None, alias="soulPath")
+    memory_path: Path | None = Field(default=None, alias="memoryPath")
+    skill_paths: list[Path] = Field(default_factory=list, alias="skillPaths")
 
 
 class AudioConfig(CamelModel):

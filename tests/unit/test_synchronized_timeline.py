@@ -34,6 +34,11 @@ class RecordingActionExecutor:
         self._log.append(f"action:{action.entrypoint_id}:{action.operation}:{action.target}")
 
 
+class CleanupRecordingActionExecutor(RecordingActionExecutor):
+    def cleanup_pending(self) -> None:
+        self._log.append("cleanup")
+
+
 def make_step(
     *,
     placement: str,
@@ -110,6 +115,27 @@ def test_during_narration_starts_audio_then_offsets_action() -> None:
         "play:Scripted narration.",
         "sleep:0.3",
         "action:ringcentral.video.toolbar.video:click:Start video",
+    ]
+
+
+def test_during_narration_keeps_open_action_until_audio_finishes_before_cleanup() -> None:
+    log: list[str] = []
+    action_executor = CleanupRecordingActionExecutor(log)
+    runner = SynchronizedTimelineRunner(
+        speech_provider=RecordingSpeechProvider(log),
+        media_output=RecordingOutput(log),
+        action_executor=action_executor,
+        sleep=lambda seconds: log.append(f"sleep:{seconds:.1f}"),
+    )
+
+    runner.run_step(make_step(placement="during", action_offset_ms=300))
+
+    assert log == [
+        "synthesize:Scripted narration.",
+        "play:Scripted narration.",
+        "sleep:0.3",
+        "action:ringcentral.video.toolbar.video:click:Start video",
+        "cleanup",
     ]
 
 

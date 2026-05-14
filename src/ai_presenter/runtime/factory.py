@@ -5,9 +5,9 @@ from ai_presenter.adapters.ringcentral import RingCentralAdapter
 from ai_presenter.config.models import AppProfile
 from ai_presenter.config.models import DesktopAppProfile
 from ai_presenter.desktop.windows import WindowsDesktopDriver
-from ai_presenter.domain.state import MeetingState
 from ai_presenter.media.output import MediaOutputFactory
 from ai_presenter.media.output import MediaOutput
+from ai_presenter.packages.models import MaterialPackage
 from ai_presenter.providers.base import ProviderRegistry
 from ai_presenter.providers.codex_cli import CodexCliNarrationProvider
 from ai_presenter.providers.fake import FakeNarrationProvider
@@ -18,13 +18,17 @@ from ai_presenter.providers.openai_provider import OpenAISpeechProvider
 from ai_presenter.providers.windows_speech import WindowsSapiSpeechProvider
 from ai_presenter.runtime.events import EventDetector
 from ai_presenter.runtime.narration import NarrationEngine
+from ai_presenter.runtime.package_demo import PackageActionExecutor
+from ai_presenter.runtime.package_demo import demo_flow_by_id
+from ai_presenter.runtime.presenter_context import load_presenter_context
 from ai_presenter.runtime.presenter import PresenterLoop
 from ai_presenter.runtime.profile_runner import ProfileRunner
+from ai_presenter.runtime.sync import SynchronizedTimelineRunner
 
 
 def create_fake_provider_registry() -> ProviderRegistry:
     registry = ProviderRegistry()
-    registry.register_vision("fake", FakeVisionProvider(MeetingState(confidence=1.0)))
+    registry.register_vision("fake", FakeVisionProvider())
     registry.register_narration("fake", FakeNarrationProvider())
     registry.register_speech("fake", FakeSpeechProvider())
     return registry
@@ -36,14 +40,25 @@ def create_default_provider_registry() -> ProviderRegistry:
 
 def create_provider_registry(profile: AppProfile) -> ProviderRegistry:
     registry = create_fake_provider_registry()
+    presenter_context = load_presenter_context(profile.narration)
     if profile.providers.narration == "codex-cli":
-        registry.register_narration("codex-cli", CodexCliNarrationProvider())
+        registry.register_narration(
+            "codex-cli",
+            CodexCliNarrationProvider(presenter_context=presenter_context),
+        )
     if profile.providers.narration == "openai":
-        registry.register_narration("openai", OpenAINarrationProvider())
+        registry.register_narration(
+            "openai",
+            OpenAINarrationProvider(presenter_context=presenter_context),
+        )
     if profile.providers.speech == "openai":
         registry.register_speech("openai", OpenAISpeechProvider())
     if profile.providers.speech == "windows-sapi":
         registry.register_speech("windows-sapi", WindowsSapiSpeechProvider())
+    if profile.providers.speech == "windows-sapi-en":
+        registry.register_speech("windows-sapi-en", WindowsSapiSpeechProvider(voice="Zira"))
+    if profile.providers.speech == "windows-sapi-zh":
+        registry.register_speech("windows-sapi-zh", WindowsSapiSpeechProvider(voice="Huihui"))
     return registry
 
 
@@ -105,3 +120,32 @@ def run_desktop_profile(
         presenter.run_once(handle)
         if index + 1 < iterations:
             time.sleep(profile.observe.interval_ms / 1000)
+
+
+def run_material_demo(
+    profile: DesktopAppProfile,
+    material_package: MaterialPackage,
+    flow_id: str,
+    *,
+    registry: ProviderRegistry | None = None,
+) -> None:
+    flow = demo_flow_by_id(material_package, flow_id)
+    desktop = WindowsDesktopDriver()
+    providers = registry or create_provider_registry(profile)
+    handle = create_profile_runner(profile, desktop).launch_and_bind()
+    action_executor = PackageActionExecutor(
+        package=material_package,
+        driver=desktop,
+        handle=handle,
+        clear_before_action=False,
+        defer_cleanup=True,
+        action_hold_seconds=0.2,
+    )
+    action_executor.clear_blockers()
+    runner = SynchronizedTimelineRunner(
+        speech_provider=providers.speech(profile.providers.speech),
+        media_output=create_media_output(profile),
+        action_executor=action_executor,
+    )
+    for step in flow.steps:
+        runner.run_step(step)

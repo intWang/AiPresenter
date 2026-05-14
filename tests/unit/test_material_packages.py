@@ -22,7 +22,29 @@ def test_loads_ringcentral_video_app_material_package() -> None:
     assert package.demo_flows[0].steps[1].action.entrypoint_id == (
         "ringcentral.video.settings.background"
     )
+    controls_tour = next(flow for flow in package.demo_flows if flow.id == "meeting-controls-tour")
+    assert controls_tour.steps[-1].action.entrypoint_id == "ringcentral.video.toolbar.leave"
+    assert controls_tour.steps[-1].action.operation == "explain"
+    assert controls_tour.steps[0].id == "meeting-overview"
+    assert all(not step.id.endswith("-section") for step in controls_tour.steps)
+    for step in controls_tour.steps:
+        entrypoint = package.entrypoint_by_id(step.action.entrypoint_id)
+        if step.action.operation in {"open", "toggle"}:
+            assert entrypoint.open_steps[0].action == "clickWindowRelative"
+            assert step.narration.placement == "during"
+            assert step.narration.action_offset_ms <= 500
+        step.narration.text.encode("ascii")
+    assert package.entrypoint_by_id("ringcentral.video.top.report-issue").presenter_notes[0].startswith(
+        "This opens a foreground dialog"
+    )
+    assert package.entrypoint_by_id("ringcentral.video.more.notes").open_steps[-1].match["cleanup"] == (
+        "sidePanel"
+    )
+    assert package.entrypoint_by_id("ringcentral.video.toolbar.audio-menu").purpose.startswith(
+        "Open microphone and speaker"
+    )
     assert package.explainers["participants"].short_script.startswith("Participants")
+    assert package.explainers["audio"].short_script.startswith("The audio controls")
     assert package.qa[0].question == "How do I protect my real background?"
 
 

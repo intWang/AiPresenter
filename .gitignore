@@ -3,3 +3,8 @@
 .worktrees/
 .venv/
 src/*.egg-info/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+captures/
+logs/

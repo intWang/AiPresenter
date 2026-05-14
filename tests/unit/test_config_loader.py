@@ -35,6 +35,101 @@ def test_load_ringcentral_codex_cli_speaker_profile() -> None:
     assert profile.audio.output.value == "speaker"
 
 
+def test_load_ringcentral_bind_speaker_profile() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
+
+    assert profile.id == "ringcentral-video-bind-speaker"
+    assert profile.launch.steps == []
+    assert profile.launch.require_already_logged_in is False
+    assert profile.providers.speech == "windows-sapi-en"
+    assert profile.audio.output.value == "speaker"
+    assert profile.narration.soul_path == Path("presenter/soul.md").resolve()
+    assert profile.narration.memory_path == Path("presenter/memory.md").resolve()
+    assert profile.narration.skill_paths == [
+        Path("presenter/skills/app-director.md").resolve(),
+        Path("presenter/skills/live-explainer.md").resolve(),
+    ]
+
+
+def test_rejects_missing_presenter_skill_file(tmp_path: Path) -> None:
+    profile_path = tmp_path / "missing-skill.yaml"
+    profile_path.write_text(
+        """
+id: missing-skill
+type: desktop
+launch:
+  appProcess: App
+  requireAlreadyLoggedIn: true
+  steps: []
+bind:
+  process: Proc
+  windowClass: Class
+observe:
+  intervalMs: 1000
+  sources: [screenshot]
+events: []
+narration:
+  style: concise_presenter
+  maxSentences: 2
+  minSecondsBetweenUtterances: 4
+  repeatCooldownSeconds: 30
+  confidenceThreshold: 0.75
+  forbidSharedScreenInterpretation: true
+  skillPaths:
+    - missing-skill.md
+audio:
+  output: speaker
+providers:
+  vision: fake
+  narration: fake
+  speech: fake
+""",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="skillPaths"):
+        load_profile(profile_path)
+
+
+def test_rejects_missing_presenter_context_file(tmp_path: Path) -> None:
+    profile_path = tmp_path / "missing-context.yaml"
+    profile_path.write_text(
+        """
+id: missing-context
+type: desktop
+launch:
+  appProcess: App
+  requireAlreadyLoggedIn: true
+  steps: []
+bind:
+  process: Proc
+  windowClass: Class
+observe:
+  intervalMs: 1000
+  sources: [screenshot]
+events: []
+narration:
+  style: concise_presenter
+  maxSentences: 2
+  minSecondsBetweenUtterances: 4
+  repeatCooldownSeconds: 30
+  confidenceThreshold: 0.75
+  forbidSharedScreenInterpretation: true
+  soulPath: missing-soul.md
+audio:
+  output: speaker
+providers:
+  vision: fake
+  narration: fake
+  speech: fake
+""",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="soulPath"):
+        load_profile(profile_path)
+
+
 def test_rejects_unknown_audio_mode(tmp_path: Path) -> None:
     profile_path = tmp_path / "bad.yaml"
     profile_path.write_text(

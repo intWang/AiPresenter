@@ -1,17 +1,10 @@
-id: ringcentral-video-codex-cli-speaker
+id: ringcentral-video-bind-speaker
 type: desktop
 
 launch:
   appProcess: RingCentralDevelop
-  requireAlreadyLoggedIn: true
-  steps:
-    - action: focusWindow
-      match:
-        process: RingCentralDevelop
-    - action: clickTab
-      target: Video
-    - action: clickButton
-      target: Start
+  requireAlreadyLoggedIn: false
+  steps: []
 
 bind:
   process: RingCentralVideo
@@ -52,5 +45,5 @@ audio:
 
 providers:
   vision: fake
-  narration: codex-cli
-  speech: windows-sapi
+  narration: fake
+  speech: windows-sapi-en

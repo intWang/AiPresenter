@@ -40,7 +40,7 @@ ai-presenter = "ai_presenter.cli:app"
 where = ["src"]
 
 [tool.setuptools.package-data]
-ai_presenter = ["profiles/*.yaml"]
+ai_presenter = ["profiles/*.yaml", "presenter/*.md", "presenter/skills/*.md"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

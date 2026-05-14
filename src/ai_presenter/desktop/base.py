@@ -30,6 +30,12 @@ class DesktopDriver(Protocol):
     def read_focused_window_text(self) -> tuple[str, ...]:
         ...
 
+    def click_window_relative(self, handle: WindowHandle, x: int, y: int) -> None:
+        ...
+
+    def press_key(self, key: str) -> None:
+        ...
+
 
 class ObservationDriver(Protocol):
     def capture(

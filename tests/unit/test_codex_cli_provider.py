@@ -7,6 +7,8 @@ import pytest
 
 from ai_presenter.domain.state import MeetingState, PresenterEvent
 from ai_presenter.providers.codex_cli import CodexCliNarrationProvider
+from ai_presenter.runtime.presenter_context import PresenterContext
+from ai_presenter.runtime.presenter_context import PresenterSkill
 
 
 def test_codex_cli_narration_reads_last_message_file() -> None:
@@ -35,6 +37,33 @@ def test_codex_cli_narration_reads_last_message_file() -> None:
     ]
     assert calls[0]["command"][-1] == "-"
     assert "meeting_joined" in calls[0]["input"]
+
+
+def test_codex_cli_prompt_includes_presenter_soul_and_memory() -> None:
+    calls: list[dict[str, Any]] = []
+
+    def runner(command: Sequence[str], **kwargs: Any) -> subprocess.CompletedProcess[str]:
+        calls.append({"command": command, **kwargs})
+        output_path = Path(command[-2])
+        output_path.write_text("Meeting joined.", encoding="utf-8")
+        return subprocess.CompletedProcess(command, 0, stdout="", stderr="")
+
+    provider = CodexCliNarrationProvider(
+        runner=runner,
+        presenter_context=PresenterContext(
+            soul="Soul marker: professional presenter identity.",
+            memory="Memory marker: speak in English with tighter transitions.",
+            skills=(
+                PresenterSkill(name="live-explainer", content="Skill marker: recover gracefully."),
+            ),
+        ),
+    )
+
+    provider.narrate(MeetingState(confidence=0.9), [PresenterEvent("meeting_joined", {}, 0.9)])
+
+    assert "Soul marker: professional presenter identity." in calls[0]["input"]
+    assert "Memory marker: speak in English with tighter transitions." in calls[0]["input"]
+    assert "Skill marker: recover gracefully." in calls[0]["input"]
 
 
 def test_codex_cli_narration_raises_on_failure() -> None:

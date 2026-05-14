@@ -22,6 +22,8 @@ uiautomation: Any = None
 psutil: Any = None
 mss: Any = None
 Image: Any = None
+keyboard: Any = None
+mouse: Any = None
 
 try:
     uiautomation = importlib.import_module("uiautomation")
@@ -40,6 +42,16 @@ except ImportError:
 
 try:
     Image = importlib.import_module("PIL.Image")
+except ImportError:
+    pass
+
+try:
+    keyboard = importlib.import_module("pywinauto.keyboard")
+except ImportError:
+    pass
+
+try:
+    mouse = importlib.import_module("pywinauto.mouse")
 except ImportError:
     pass
 
@@ -82,13 +94,29 @@ class WindowsDesktopDriver:
         _require_dependency(Application, "pywinauto")
         self._focused_window = None
         executable = _process_executable(process)
+        failures: list[str] = []
         try:
             app = Application(backend="uia").connect(path=executable)
             window = app.top_window()
             _focus_window(window)
             self._focused_window = window
+            return
         except Exception as exc:
-            raise RuntimeError(f"Unable to focus {executable}: {exc}") from exc
+            failures.append(str(exc))
+
+        if psutil is not None:
+            for pid in _matching_process_ids(process):
+                try:
+                    app = Application(backend="uia").connect(process=pid)
+                    window = app.top_window()
+                    _focus_window(window)
+                    self._focused_window = window
+                    return
+                except Exception as exc:
+                    failures.append(f"pid {pid}: {exc}")
+
+        detail = "; ".join(failures) if failures else "no matching process"
+        raise RuntimeError(f"Unable to focus {executable}: {detail}")
 
     def click_tab(self, target: str) -> None:
         _click_named_control(self._focused_window, target, "Tab", ("tab", "tabitem"))
@@ -104,6 +132,30 @@ class WindowsDesktopDriver:
         if root_control is None:
             return ()
         return tuple(collect_ui_text(root_control))
+
+    def click_window_relative(self, handle: WindowHandle, x: int, y: int) -> None:
+        _require_dependency(mouse, "pywinauto")
+        try:
+            window = _bind_window(handle.pid, handle.window_class)
+            _focus_window(window)
+            left, top, _, _ = _window_bounds(window)
+            mouse.click(button="left", coords=(left + x, top + y))
+        except Exception as exc:
+            raise RuntimeError(
+                f"Unable to click relative point ({x}, {y}) in "
+                f"{handle.window_class} for pid {handle.pid}: {exc}"
+            ) from exc
+
+    def press_key(self, key: str) -> None:
+        _require_dependency(keyboard, "pywinauto")
+        normalized = key.strip()
+        if not normalized:
+            raise RuntimeError("Key cannot be blank")
+        normalized = _pywinauto_key_name(normalized)
+        try:
+            keyboard.send_keys(f"{{{normalized}}}")
+        except Exception as exc:
+            raise RuntimeError(f"Unable to press key {normalized}: {exc}") from exc
 
     def wait_for_window(self, process: str, window_class: str, timeout_ms: int) -> WindowHandle:
         _require_dependency(Desktop, "pywinauto")
@@ -399,6 +451,16 @@ def _call_bool_window_method(window: Any, method_name: str) -> bool:
         return bool(method())
     except Exception:
         return False
+
+
+def _pywinauto_key_name(key: str) -> str:
+    aliases = {
+        "escape": "ESC",
+        "esc": "ESC",
+        "enter": "ENTER",
+        "return": "ENTER",
+    }
+    return aliases.get(key.casefold(), key)
 
 
 def _capture_bounds_png(bounds: tuple[int, int, int, int]) -> bytes:

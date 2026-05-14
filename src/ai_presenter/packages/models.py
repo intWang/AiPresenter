@@ -2,6 +2,15 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+_PASSIVE_DEMO_OPERATIONS = frozenset({"explain", "point", "verify"})
+_EXECUTABLE_OPEN_STEP_ACTIONS = frozenset(
+    {
+        "clickWindowRelative",
+        "clickWindowControl",
+        "pressKey",
+    }
+)
+
 
 class CamelModel(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
@@ -88,10 +97,12 @@ class MaterialPackage(CamelModel):
     @model_validator(mode="after")
     def validate_entrypoint_references(self) -> "MaterialPackage":
         entrypoint_ids: set[str] = set()
+        entrypoints_by_id: dict[str, OperationEntrypoint] = {}
         for entrypoint in self.operation_entrypoints:
             if entrypoint.id in entrypoint_ids:
                 raise ValueError(f"duplicate operation entrypoint id: {entrypoint.id}")
             entrypoint_ids.add(entrypoint.id)
+            entrypoints_by_id[entrypoint.id] = entrypoint
 
         for flow in self.demo_flows:
             for step in flow.steps:
@@ -101,6 +112,11 @@ class MaterialPackage(CamelModel):
                         f"{flow.id} step {step.id} references unknown entrypoint: "
                         f"{step.action.entrypoint_id}"
                     )
+                _validate_demo_step_open_steps(
+                    flow=flow,
+                    step=step,
+                    entrypoint=entrypoints_by_id[step.action.entrypoint_id],
+                )
 
         for key, explainer in self.explainers.items():
             _validate_related_ids(
@@ -121,6 +137,29 @@ class MaterialPackage(CamelModel):
             if entrypoint.id == entrypoint_id:
                 return entrypoint
         raise KeyError(f"Unknown operation entrypoint: {entrypoint_id}")
+
+
+def _validate_demo_step_open_steps(
+    *,
+    flow: DemoFlow,
+    step: DemoStep,
+    entrypoint: OperationEntrypoint,
+) -> None:
+    if step.action.operation in _PASSIVE_DEMO_OPERATIONS:
+        return
+
+    if not entrypoint.open_steps:
+        raise ValueError(
+            f"demo flow {flow.id} step {step.id} operation {step.action.operation} "
+            f"has no executable open steps on entrypoint {entrypoint.id}"
+        )
+
+    for open_step in entrypoint.open_steps:
+        if open_step.action not in _EXECUTABLE_OPEN_STEP_ACTIONS:
+            raise ValueError(
+                f"demo flow {flow.id} step {step.id} uses unsupported executable "
+                f"open step action: {open_step.action}"
+            )
 
 
 def _validate_related_ids(

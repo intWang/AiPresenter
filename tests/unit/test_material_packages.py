@@ -192,3 +192,75 @@ manualControls: []
 
     with pytest.raises(ValidationError, match="unknown entrypoint"):
         load_material_package(package_path)
+
+
+def test_rejects_executable_demo_step_without_open_steps(tmp_path: Path) -> None:
+    package_path = tmp_path / "missing-open-steps.yaml"
+    package_path.write_text(
+        """
+appId: demo
+appName: Demo
+version: 1
+profileIds: [demo-profile]
+operationEntrypoints:
+  - id: demo.panel
+    title: Panel
+    area: Main
+    purpose: Open panel
+    openSteps: []
+demoFlows:
+  - id: demo-flow
+    title: Demo Flow
+    goal: Show the demo
+    steps:
+      - id: open-panel
+        title: Open Panel
+        action:
+          entrypointId: demo.panel
+          operation: open
+        narration:
+          text: Open the panel.
+manualControls: []
+""",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValidationError, match="has no executable open steps"):
+        load_material_package(package_path)
+
+
+def test_rejects_executable_demo_step_with_unsupported_open_action(tmp_path: Path) -> None:
+    package_path = tmp_path / "unsupported-open-action.yaml"
+    package_path.write_text(
+        """
+appId: demo
+appName: Demo
+version: 1
+profileIds: [demo-profile]
+operationEntrypoints:
+  - id: demo.panel
+    title: Panel
+    area: Main
+    purpose: Open panel
+    openSteps:
+      - action: clickMenu
+        target: Panel
+demoFlows:
+  - id: demo-flow
+    title: Demo Flow
+    goal: Show the demo
+    steps:
+      - id: open-panel
+        title: Open Panel
+        action:
+          entrypointId: demo.panel
+          operation: open
+        narration:
+          text: Open the panel.
+manualControls: []
+""",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValidationError, match="unsupported executable open step action"):
+        load_material_package(package_path)

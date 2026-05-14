@@ -198,6 +198,24 @@ def test_doctor_rejects_ringcentral_config_without_disable_affinity_mask(tmp_pat
     assert "expected DisableAffinityMask=true" in result.stdout
 
 
+def test_doctor_rejects_openai_profile_without_required_environment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("AI_PRESENTER_OPENAI_NARRATION_MODEL", raising=False)
+    monkeypatch.setattr(diagnostics, "_iter_process_executable_paths", lambda process_name: [])
+
+    result = CliRunner().invoke(
+        app,
+        ["doctor", "--profile", "profiles/ringcentral-video-openai.example.yaml"],
+    )
+
+    assert result.exit_code == 1
+    assert "[FAIL] provider environment" in result.stdout
+    assert "OPENAI_API_KEY" in result.stdout
+    assert "AI_PRESENTER_OPENAI_NARRATION_MODEL" in result.stdout
+
+
 def test_resolve_profile_id_from_non_repo_working_directory(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

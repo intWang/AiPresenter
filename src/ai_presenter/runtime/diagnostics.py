@@ -1,5 +1,6 @@
 import configparser
 import importlib
+import os
 import re
 from collections.abc import Iterable
 from dataclasses import dataclass
@@ -64,6 +65,9 @@ def diagnose_configuration(
         _diagnose_providers(profile),
         _diagnose_presenter_context(profile),
     ]
+    provider_environment = _diagnose_provider_environment(profile)
+    if provider_environment is not None:
+        checks.append(provider_environment)
 
     if material_package is None:
         if flow_id is not None:
@@ -115,6 +119,30 @@ def _diagnose_providers(profile: AppProfile) -> DiagnosticCheck:
         "configured "
         f"vision={profile.providers.vision}, narration={profile.providers.narration}, "
         f"speech={profile.providers.speech}",
+    )
+
+
+def _diagnose_provider_environment(profile: AppProfile) -> DiagnosticCheck | None:
+    required_env_vars: list[str] = []
+    if profile.providers.narration == "openai" or profile.providers.speech == "openai":
+        required_env_vars.append("OPENAI_API_KEY")
+    if profile.providers.narration == "openai":
+        required_env_vars.append("AI_PRESENTER_OPENAI_NARRATION_MODEL")
+
+    if not required_env_vars:
+        return None
+
+    missing = [name for name in required_env_vars if not os.getenv(name, "").strip()]
+    if missing:
+        return DiagnosticCheck(
+            "FAIL",
+            "provider environment",
+            f"missing required environment variables: {', '.join(missing)}",
+        )
+    return DiagnosticCheck(
+        "OK",
+        "provider environment",
+        f"required environment variables are set: {', '.join(required_env_vars)}",
     )
 
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import threading
+from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from ai_presenter.runtime.control import DemoControl
@@ -21,16 +22,20 @@ class PresenterController:
         material_package: MaterialPackage,
         flow_id: str,
         control: DemoControl | None = None,
+        runner: Callable[..., None] | None = None,
     ) -> None:
         self._profile = profile
         self._material_package = material_package
         self._flow_id = flow_id
         self._control = control or DemoControl()
+        self._runner = runner or run_material_demo
         self._thread: threading.Thread | None = None
+        self._last_error: Exception | None = None
 
     def start(self) -> None:
         if self._thread is not None and self._thread.is_alive():
             return
+        self._last_error = None
         self._control.reset()
         self._thread = threading.Thread(target=self._run_demo, daemon=True)
         self._thread.start()
@@ -45,13 +50,32 @@ class PresenterController:
     def end(self) -> None:
         self._control.request_stop()
 
+    def join(self, timeout: float | None = None) -> None:
+        if self._thread is not None:
+            self._thread.join(timeout=timeout)
+
+    @property
+    def is_running(self) -> bool:
+        return self._thread is not None and self._thread.is_alive()
+
+    @property
+    def is_paused(self) -> bool:
+        return self._control.is_paused
+
+    @property
+    def last_error(self) -> Exception | None:
+        return self._last_error
+
     def _run_demo(self) -> None:
-        run_material_demo(
-            self._profile,
-            self._material_package,
-            self._flow_id,
-            control=self._control,
-        )
+        try:
+            self._runner(
+                self._profile,
+                self._material_package,
+                self._flow_id,
+                control=self._control,
+            )
+        except Exception as exc:
+            self._last_error = exc
 
 
 def run_controller(
@@ -88,6 +112,16 @@ def run_controller(
         status.set("Ending")
         pause_label.set("Pause")
 
+    def refresh_status() -> None:
+        if controller.last_error is not None:
+            status.set(f"Error: {controller.last_error}")
+        elif controller.is_running:
+            status.set("Paused" if controller.is_paused else "Running")
+            pause_label.set("Resume" if controller.is_paused else "Pause")
+        elif status.get() == "Ending":
+            status.set("Ended")
+        root.after(500, refresh_status)
+
     frame = tk.Frame(root, padx=16, pady=16)
     frame.pack(fill="both", expand=True)
     tk.Label(frame, textvariable=status, anchor="w").pack(fill="x", pady=(0, 12))
@@ -102,6 +136,7 @@ def run_controller(
     tk.Button(button_row, text="End", command=end, width=10).pack(side="left")
 
     _center_window(root)
+    refresh_status()
     root.mainloop()
 
 

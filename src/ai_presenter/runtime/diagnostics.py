@@ -156,6 +156,7 @@ def _diagnose_material_package(
                 f"package {material_package.app_id} does not list profile {profile.id}",
             )
         )
+    checks.append(_diagnose_explainer_coverage(material_package))
 
     if flow_id is not None:
         try:
@@ -177,6 +178,29 @@ def _diagnose_material_package(
                 )
             )
     return checks
+
+
+def _diagnose_explainer_coverage(material_package: MaterialPackage) -> DiagnosticCheck:
+    entrypoint_ids = {entrypoint.id for entrypoint in material_package.operation_entrypoints}
+    explained_ids = {
+        related_id
+        for explainer in material_package.explainers.values()
+        for related_id in explainer.related_entrypoint_ids
+    }
+    missing = sorted(entrypoint_ids - explained_ids)
+    if missing:
+        preview = ", ".join(missing[:5])
+        suffix = "" if len(missing) <= 5 else f", and {len(missing) - 5} more"
+        return DiagnosticCheck(
+            "WARN",
+            "explainer coverage",
+            f"{len(missing)} entrypoints lack explainers: {preview}{suffix}",
+        )
+    return DiagnosticCheck(
+        "OK",
+        "explainer coverage",
+        f"{len(entrypoint_ids)}/{len(entrypoint_ids)} entrypoints covered",
+    )
 
 
 def _is_ringcentral_video_profile(profile: AppProfile) -> bool:

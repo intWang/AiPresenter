@@ -121,6 +121,7 @@ def test_doctor_loads_profile_package_and_flow(monkeypatch: pytest.MonkeyPatch) 
     assert "[OK] profile: loaded ringcentral-video-bind-speaker" in result.stdout
     assert "[OK] package: loaded ringcentral-video" in result.stdout
     assert "[OK] package profile support" in result.stdout
+    assert "[OK] explainer coverage" in result.stdout
     assert "[OK] demo flow: meeting-control-map-demo" in result.stdout
     assert "[OK] presenter context" in result.stdout
     assert "[WARN] RingCentral config" in result.stdout

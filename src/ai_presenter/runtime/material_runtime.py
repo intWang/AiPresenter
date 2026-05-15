@@ -43,5 +43,5 @@ class MaterialDemoRuntime:
             if self.is_complete:
                 break
 
-    def run_interrupt(self, step: DemoStep) -> None:
-        self._timeline.run_step(step)
+    def run_interrupt(self, step: DemoStep) -> object:
+        return self._timeline.run_step(step)

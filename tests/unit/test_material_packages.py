@@ -124,6 +124,10 @@ def test_meeting_control_map_demo_is_directed_and_complete() -> None:
 
     for step in flow.steps:
         step.narration.text.encode("ascii")
+        zh_text = step.narration.localized_text["zh"]
+        assert zh_text
+        assert any("\u4e00" <= character <= "\u9fff" for character in zh_text)
+        assert not zh_text.startswith("我来说明一下")
         entrypoint = package.entrypoint_by_id(step.action.entrypoint_id)
         if step.action.operation in {"open", "toggle"}:
             assert_supported_open_step(entrypoint.open_steps[0])

@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Literal
 
 from ai_presenter.config.models import AppProfile
+from ai_presenter.packages.models import DemoStepNarration
 
 PresenterLanguage = Literal["en", "zh"]
 PresenterTone = Literal["professional", "conversational", "concise"]
@@ -51,6 +52,13 @@ def render_presenter_text(text: str, settings: PresenterVoiceSettings) -> str:
     return text
 
 
+def render_narration_text(narration: DemoStepNarration, settings: PresenterVoiceSettings) -> str:
+    localized = narration.localized_text.get(settings.language)
+    if localized is not None and localized.strip():
+        return _apply_tone_to_localized_text(localized.strip(), settings)
+    return render_presenter_text(narration.text, settings)
+
+
 def validate_profile_voice(profile: AppProfile, settings: PresenterVoiceSettings) -> None:
     speech = resolve_speech_provider_name(profile, settings)
     if settings.language == "zh" and speech not in {"openai", "windows-sapi-zh"}:
@@ -71,6 +79,15 @@ def resolve_speech_provider_name(profile: AppProfile, settings: PresenterVoiceSe
     return speech
 
 
+def sapi_rate_for_voice(settings: PresenterVoiceSettings) -> int:
+    if settings.language == "zh":
+        if settings.tone == "conversational":
+            return -1
+        if settings.tone == "concise":
+            return 1
+    return 0
+
+
 def _render_chinese(text: str, settings: PresenterVoiceSettings) -> str:
     rendered = text
     for source, target in _CHINESE_REPLACEMENTS.items():
@@ -79,7 +96,17 @@ def _render_chinese(text: str, settings: PresenterVoiceSettings) -> str:
     return f"{prefix}{rendered}"
 
 
+def _apply_tone_to_localized_text(text: str, settings: PresenterVoiceSettings) -> str:
+    if settings.tone == "concise":
+        return _first_sentence(text)
+    return text
+
+
 def _first_sentence(text: str) -> str:
+    separators = (".", "。", "!", "！", "?", "？")
+    first_end = min((index for sep in separators if (index := text.find(sep)) >= 0), default=-1)
+    if first_end >= 0:
+        return text[: first_end + 1].strip()
     first = text.split(".")[0].strip()
     if not first:
         return text

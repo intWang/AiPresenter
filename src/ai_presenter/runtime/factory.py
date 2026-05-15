@@ -34,8 +34,9 @@ from ai_presenter.runtime.presenter import PresenterLoop
 from ai_presenter.runtime.profile_runner import ProfileRunner
 from ai_presenter.runtime.sync import SynchronizedTimelineRunner
 from ai_presenter.runtime.voice import PresenterVoiceSettings
-from ai_presenter.runtime.voice import render_presenter_text
+from ai_presenter.runtime.voice import render_narration_text
 from ai_presenter.runtime.voice import resolve_speech_provider_name
+from ai_presenter.runtime.voice import sapi_rate_for_voice
 from ai_presenter.runtime.voice import validate_profile_voice
 
 logger = logging.getLogger("ai_presenter.runtime.factory")
@@ -53,8 +54,13 @@ def create_default_provider_registry() -> ProviderRegistry:
     return create_fake_provider_registry()
 
 
-def create_provider_registry(profile: AppProfile) -> ProviderRegistry:
+def create_provider_registry(
+    profile: AppProfile,
+    *,
+    voice: PresenterVoiceSettings | None = None,
+) -> ProviderRegistry:
     registry = create_fake_provider_registry()
+    voice_settings = voice or PresenterVoiceSettings()
     presenter_context = load_presenter_context(profile.narration)
     if profile.providers.narration == "codex-cli":
         registry.register_narration(
@@ -70,17 +76,73 @@ def create_provider_registry(profile: AppProfile) -> ProviderRegistry:
         registry.register_speech("openai", OpenAISpeechProvider())
     if profile.providers.speech == "piper":
         registry.register_speech("piper", PiperSpeechProvider())
-        registry.register_speech("windows-sapi-zh", WindowsSapiSpeechProvider(voice="Huihui"))
+        registry.register_speech(
+            "windows-sapi-zh",
+            WindowsSapiSpeechProvider(
+                voice="Huihui",
+                rate=sapi_rate_for_voice(
+                    PresenterVoiceSettings(language="zh", tone=voice_settings.tone)
+                ),
+            ),
+        )
     if profile.providers.speech == "windows-sapi":
         registry.register_speech("windows-sapi", WindowsSapiSpeechProvider())
-        registry.register_speech("windows-sapi-en", WindowsSapiSpeechProvider(voice="Zira"))
-        registry.register_speech("windows-sapi-zh", WindowsSapiSpeechProvider(voice="Huihui"))
+        registry.register_speech(
+            "windows-sapi-en",
+            WindowsSapiSpeechProvider(
+                voice="Zira",
+                rate=sapi_rate_for_voice(
+                    PresenterVoiceSettings(language="en", tone=voice_settings.tone)
+                ),
+            ),
+        )
+        registry.register_speech(
+            "windows-sapi-zh",
+            WindowsSapiSpeechProvider(
+                voice="Huihui",
+                rate=sapi_rate_for_voice(
+                    PresenterVoiceSettings(language="zh", tone=voice_settings.tone)
+                ),
+            ),
+        )
     if profile.providers.speech == "windows-sapi-en":
-        registry.register_speech("windows-sapi-en", WindowsSapiSpeechProvider(voice="Zira"))
-        registry.register_speech("windows-sapi-zh", WindowsSapiSpeechProvider(voice="Huihui"))
+        registry.register_speech(
+            "windows-sapi-en",
+            WindowsSapiSpeechProvider(
+                voice="Zira",
+                rate=sapi_rate_for_voice(
+                    PresenterVoiceSettings(language="en", tone=voice_settings.tone)
+                ),
+            ),
+        )
+        registry.register_speech(
+            "windows-sapi-zh",
+            WindowsSapiSpeechProvider(
+                voice="Huihui",
+                rate=sapi_rate_for_voice(
+                    PresenterVoiceSettings(language="zh", tone=voice_settings.tone)
+                ),
+            ),
+        )
     if profile.providers.speech == "windows-sapi-zh":
-        registry.register_speech("windows-sapi-en", WindowsSapiSpeechProvider(voice="Zira"))
-        registry.register_speech("windows-sapi-zh", WindowsSapiSpeechProvider(voice="Huihui"))
+        registry.register_speech(
+            "windows-sapi-en",
+            WindowsSapiSpeechProvider(
+                voice="Zira",
+                rate=sapi_rate_for_voice(
+                    PresenterVoiceSettings(language="en", tone=voice_settings.tone)
+                ),
+            ),
+        )
+        registry.register_speech(
+            "windows-sapi-zh",
+            WindowsSapiSpeechProvider(
+                voice="Huihui",
+                rate=sapi_rate_for_voice(
+                    PresenterVoiceSettings(language="zh", tone=voice_settings.tone)
+                ),
+            ),
+        )
     return registry
 
 
@@ -154,7 +216,7 @@ def run_material_demo(
     voice: PresenterVoiceSettings | None = None,
 ) -> None:
     desktop = WindowsDesktopDriver()
-    providers = registry or create_provider_registry(profile)
+    providers = registry or create_provider_registry(profile, voice=voice)
     handle = create_profile_runner(profile, desktop).launch_and_bind()
     adapter = create_adapter(profile)
     _run_material_demo_on_handle(
@@ -183,7 +245,7 @@ def run_existing_window_material_demo(
     voice: PresenterVoiceSettings | None = None,
 ) -> None:
     desktop = WindowsDesktopDriver()
-    providers = registry or create_provider_registry(profile)
+    providers = registry or create_provider_registry(profile, voice=voice)
     _run_material_demo_on_handle(
         profile=profile,
         material_package=material_package,
@@ -254,7 +316,7 @@ def _apply_voice_to_adjusted_step(
     return step.model_copy(
         update={
             "narration": step.narration.model_copy(
-                update={"text": render_presenter_text(step.narration.text, voice)}
+                update={"text": render_narration_text(step.narration, voice)}
             )
         }
     )

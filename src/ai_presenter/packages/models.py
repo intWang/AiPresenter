@@ -39,6 +39,7 @@ class DemoStepAction(CamelModel):
 
 class DemoStepNarration(CamelModel):
     text: str
+    localized_text: dict[str, str] = Field(default_factory=dict, alias="localizedText")
     placement: Literal["before", "during", "after"] = "before"
     action_offset_ms: int = Field(default=0, alias="actionOffsetMs", ge=0)
 

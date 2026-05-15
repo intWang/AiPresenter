@@ -724,6 +724,8 @@ demoFlows:
     narration:
       text: Think of this meeting window as a control map. The top tells you status and health, the center is the
         live meeting canvas, and the bottom is where you manage people, media, sharing, reactions, and exit.
+      localizedText:
+        zh: 先把会议窗口看成一张控制地图。上方看状态和网络，中间是会议画面，下方负责成员、音视频、共享、互动和离开。
       placement: before
   - id: control-map-meeting-info
     title: Meeting information
@@ -733,6 +735,8 @@ demoFlows:
     narration:
       text: Starting at the top, meeting information answers the identity question. It shows the meeting details,
         link, dial-in options, and encryption information, so I summarize it without reading private values aloud.
+      localizedText:
+        zh: 先看顶部的会议信息。这里能确认会议身份、链接、拨入方式和加密状态；涉及隐私的数值，我只说明位置，不直接读出来。
       placement: during
       actionOffsetMs: 350
   - id: control-map-network
@@ -743,6 +747,8 @@ demoFlows:
     narration:
       text: Next is meeting health. Network quality is where you check whether audio, video, or sharing problems
         are coming from packet loss, jitter, or latency.
+      localizedText:
+        zh: 接着看会议健康状态。网络质量用来判断声音、视频或共享卡顿，是不是来自丢包、抖动或者延迟。
       placement: during
       actionOffsetMs: 350
   - id: control-map-views
@@ -753,6 +759,8 @@ demoFlows:
     narration:
       text: Views controls how the meeting is arranged on your screen. It changes layout, like gallery or full
         screen, without changing anyone's audio, video, or membership.
+      localizedText:
+        zh: 这里是视图布局。它只改变你看到会议的方式，比如宫格视图或全屏，不会影响别人的音频、视频，也不会改成员状态。
       placement: during
       actionOffsetMs: 350
   - id: control-map-report
@@ -763,6 +771,8 @@ demoFlows:
     narration:
       text: Report issue is the escalation path when something is wrong with audio, video, sharing, joining,
         notes, or transcript. Because it opens a blocking dialog, I close it before continuing.
+      localizedText:
+        zh: 如果音频、视频、共享、入会、笔记或转录出问题，可以从这里上报。它会弹出前置窗口，所以讲完我会先把它关闭。
       placement: during
       actionOffsetMs: 400
   - id: control-map-add-coworkers
@@ -773,6 +783,8 @@ demoFlows:
     narration:
       text: Moving from status into people, Add coworkers opens the invite dialog from the empty room. This is the
         fastest way to bring someone in when you are the first person here.
+      localizedText:
+        zh: 从状态区切到成员区。空会议里的 Add coworkers 会打开邀请窗口；当你一个人在会里时，这是最快的拉人入口。
       placement: during
       actionOffsetMs: 350
   - id: control-map-participants
@@ -783,6 +795,8 @@ demoFlows:
     narration:
       text: Participants is the meeting roster. It helps you confirm who is present and exposes people controls
         like invite, lock, mute, raise hand, and more options.
+      localizedText:
+        zh: Participants 是参会人列表。你可以确认谁在会议里，也能找到邀请、锁定会议、静音、举手和更多成员操作。
       placement: during
       actionOffsetMs: 350
   - id: control-map-chat
@@ -793,6 +807,8 @@ demoFlows:
     narration:
       text: Chat is the written side channel. Use it for links, follow-ups, and private messages, while keeping
         chat content private unless you explicitly ask me to read it.
+      localizedText:
+        zh: Chat 是会议里的文字侧边通道。适合发链接、补充信息或私聊；聊天内容默认保持隐私，除非你明确让我读。
       placement: during
       actionOffsetMs: 350
   - id: control-map-microphone
@@ -803,6 +819,8 @@ demoFlows:
     narration:
       text: Now we move into media readiness. The microphone button is the main privacy switch for speaking, so it
         is the first control to check before you contribute.
+      localizedText:
+        zh: 现在进入音视频准备区。麦克风是发言前最重要的隐私开关；开口前，先看这里是不是静音。
       placement: before
   - id: control-map-audio-menu
     title: Audio menu
@@ -812,6 +830,8 @@ demoFlows:
     narration:
       text: The audio menu is the recovery tool when sound is wrong. It lets you switch microphone and speaker,
         leave computer audio, use phone audio, or open deeper audio settings.
+      localizedText:
+        zh: 麦克风旁边的菜单是排查声音问题的入口。可以换麦克风和扬声器，也可以离开电脑音频、改用电话音频，或进入更完整的音频设置。
       placement: during
       actionOffsetMs: 350
   - id: control-map-camera
@@ -822,6 +842,8 @@ demoFlows:
     narration:
       text: The camera button controls whether others can see you. Once video is on, the same area becomes the
         stop-video control.
+      localizedText:
+        zh: 摄像头按钮决定别人能不能看到你。开启以后，同一个位置会变成停止视频，所以它既是入口也是状态提示。
       placement: before
   - id: control-map-camera-menu
     title: Camera menu
@@ -831,6 +853,8 @@ demoFlows:
     narration:
       text: The camera menu lets you choose the camera and jump to video settings. It is the practical route for
         device changes and appearance setup.
+      localizedText:
+        zh: 摄像头菜单用来切换摄像头，也能直接进入视频设置。换设备、调画面、处理背景效果，通常都从这里走。
       placement: during
       actionOffsetMs: 350
   - id: control-map-share
@@ -841,6 +865,8 @@ demoFlows:
     narration:
       text: Share opens the picker for screen or application sharing. I can explain the choices, but I do not press
         the final Share button unless you confirm what should be shown.
+      localizedText:
+        zh: Share 会打开屏幕或窗口选择器。我可以帮你说明每个选项，但不会替你点最终共享，除非你确认要展示哪一个内容。
       placement: during
       actionOffsetMs: 400
   - id: control-map-reactions
@@ -851,6 +877,8 @@ demoFlows:
     narration:
       text: For lightweight interaction, Reactions gives quick feedback such as approval, celebration, applause,
         or be-right-back without interrupting the speaker.
+      localizedText:
+        zh: Reactions 适合轻量互动。比如点赞、庆祝、鼓掌，或者提示马上回来；它能表达反馈，又不会打断正在说话的人。
       placement: during
       actionOffsetMs: 350
   - id: control-map-raise-hand
@@ -861,6 +889,8 @@ demoFlows:
     narration:
       text: Raise hand is for moderated conversation. It signals that you want attention, and because it is a
         toggle, I lower the hand again after showing it.
+      localizedText:
+        zh: Raise hand 适合有主持节奏的讨论。它表示你想发言；因为这是一个开关，我展示后会再把手放下。
       placement: during
       actionOffsetMs: 350
   - id: control-map-more
@@ -871,6 +901,8 @@ demoFlows:
     narration:
       text: Finally, More is the advanced shelf. Since Notes is already on the toolbar here, More gathers riskier
         or less frequent tools such as recording, background, and settings.
+      localizedText:
+        zh: 最后看 More。它像一个高级工具架；当前 Notes 已经在工具栏上，所以这里主要放录制、背景和设置这些低频或更谨慎的功能。
       placement: during
       actionOffsetMs: 350
   - id: control-map-recording
@@ -881,6 +913,8 @@ demoFlows:
     narration:
       text: Recording changes the meeting state and may affect consent, so it is explain-only in this tour. I would
         ask before starting or stopping it.
+      localizedText:
+        zh: 录制会改变会议状态，也可能涉及参会人的同意。所以这里我只解释入口，不会自动开始或停止录制。
       placement: before
   - id: control-map-notes
     title: Notes and transcript
@@ -890,6 +924,8 @@ demoFlows:
     narration:
       text: Notes and Transcript is where meeting notes can be started. It can also record the meeting, so I keep
         the panel visible for explanation and avoid starting anything automatically.
+      localizedText:
+        zh: Notes and Transcript 是会议笔记和转录面板。这里可以启动笔记，也可能触发录制相关动作，所以我只打开面板说明，不自动点开始。
       placement: during
       actionOffsetMs: 400
   - id: control-map-background
@@ -900,6 +936,8 @@ demoFlows:
     narration:
       text: Background settings protect presentation quality and privacy. You can turn effects off, blur the room,
         use a built-in image or video background, or upload your own.
+      localizedText:
+        zh: 背景设置关系到展示效果和隐私。你可以关闭效果、模糊房间、选择内置图片或视频背景，也可以上传自己的背景。
       placement: during
       actionOffsetMs: 400
   - id: control-map-settings
@@ -910,6 +948,8 @@ demoFlows:
     narration:
       text: Settings is the full configuration center for audio, video, background, translation, join preferences,
         and general meeting behavior.
+      localizedText:
+        zh: Settings 是完整配置中心。音频、视频、背景、翻译、入会偏好，以及通用会议行为，都可以在这里集中调整。
       placement: during
       actionOffsetMs: 400
   - id: control-map-leave
@@ -920,6 +960,8 @@ demoFlows:
     narration:
       text: Leave is the exit path. It can end your presence in the meeting, so I describe it but do not click it
         without explicit confirmation.
+      localizedText:
+        zh: Leave 是离开会议的入口。它会结束你在当前会议里的状态，所以我只说明作用，不会在没有确认时替你点击。
       placement: before
   - id: control-map-summary
     title: Control map summary
@@ -931,6 +973,8 @@ demoFlows:
         That is the control map: top bar for status and troubleshooting, people controls for collaboration,
         media controls for readiness, interaction controls for feedback, and More for deeper settings and riskier
         actions.
+      localizedText:
+        zh: 这就是会议控制地图：上方看状态和排障，成员区负责协作，音视频区负责准备，共享和互动区负责表达，More 里放更深层或更谨慎的操作。
       placement: before
 explainers:
   ringcentralLaunch:

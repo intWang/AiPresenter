@@ -16,6 +16,7 @@ class FakeControl:
         control_type: str | list["FakeControl"] | None = None,
         bounds: SimpleNamespace | None = None,
         children: list["FakeControl"] | None = None,
+        is_offscreen: bool | None = None,
     ) -> None:
         self.Name = name
         if isinstance(control_type, list):
@@ -24,6 +25,8 @@ class FakeControl:
             self.ControlTypeName = control_type or ""
             if bounds is not None:
                 self.BoundingRectangle = bounds
+            if is_offscreen is not None:
+                self.IsOffscreen = is_offscreen
             self._children = children or []
 
     def GetChildren(self) -> list["FakeControl"]:
@@ -126,6 +129,56 @@ class FakePsutil:
     def Process(self, pid: int) -> Any:
         process_name = self._process_names_by_pid[pid]
         return SimpleNamespace(name=lambda: process_name)
+
+
+class StaleNameControl:
+    @property
+    def Name(self) -> str:
+        raise RuntimeError("stale name")
+
+    @property
+    def BoundingRectangle(self) -> SimpleNamespace:
+        return SimpleNamespace(left=20, top=20, right=120, bottom=50)
+
+    def GetChildren(self) -> list[FakeControl]:
+        return []
+
+
+class StaleTypeControl:
+    Name = "Stale Type"
+
+    @property
+    def ControlTypeName(self) -> str:
+        raise RuntimeError("stale type")
+
+    @property
+    def BoundingRectangle(self) -> SimpleNamespace:
+        return SimpleNamespace(left=20, top=60, right=120, bottom=90)
+
+    def GetChildren(self) -> list[FakeControl]:
+        return []
+
+
+class StaleChildrenControl:
+    Name = "Stale Children"
+    ControlTypeName = "Button"
+    BoundingRectangle = SimpleNamespace(left=20, top=100, right=120, bottom=130)
+
+    def GetChildren(self) -> list[FakeControl]:
+        raise RuntimeError("stale children")
+
+
+class StaleOffscreenControl:
+    Name = "Stale Offscreen"
+    ControlTypeName = "Button"
+    BoundingRectangle = SimpleNamespace(left=20, top=140, right=120, bottom=170)
+
+    @property
+    def IsOffscreen(self) -> bool:
+        raise RuntimeError("stale visibility")
+
+    def GetChildren(self) -> list[FakeControl]:
+        return []
 
 
 def focused_driver(monkeypatch: pytest.MonkeyPatch, root_control: FakeControl) -> WindowsDesktopDriver:
@@ -399,7 +452,9 @@ def test_read_focused_window_text_requires_focused_window() -> None:
         WindowsDesktopDriver().read_focused_window_text()
 
 
-def test_list_visible_windows_returns_metadata(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_list_visible_windows_returns_metadata_and_filters_noise(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     root = FakeWindow(
         title="Demo App",
         class_name="DemoWindow",
@@ -408,15 +463,78 @@ def test_list_visible_windows_returns_metadata(monkeypatch: pytest.MonkeyPatch) 
         visible=True,
         minimized=False,
     )
-    monkeypatch.setattr(windows, "Desktop", lambda backend: FakeDesktop([root]))
+    hidden = FakeWindow(
+        title="Hidden App",
+        class_name="HiddenWindow",
+        pid=43,
+        rectangle=SimpleNamespace(left=10, top=20, right=410, bottom=320),
+        visible=False,
+        minimized=False,
+    )
+    minimized = FakeWindow(
+        title="Minimized App",
+        class_name="MinimizedWindow",
+        pid=44,
+        rectangle=SimpleNamespace(left=10, top=20, right=410, bottom=320),
+        visible=True,
+        minimized=True,
+    )
+    blank_title = FakeWindow(
+        title="   ",
+        class_name="BlankTitleWindow",
+        pid=45,
+        rectangle=SimpleNamespace(left=10, top=20, right=410, bottom=320),
+        visible=True,
+        minimized=False,
+    )
+    blank_class = FakeWindow(
+        title="Blank Class App",
+        class_name="",
+        pid=46,
+        rectangle=SimpleNamespace(left=10, top=20, right=410, bottom=320),
+        visible=True,
+        minimized=False,
+    )
+    invalid_bounds = FakeWindow(
+        title="Invalid App",
+        class_name="InvalidWindow",
+        pid=47,
+        rectangle=SimpleNamespace(left=10, top=20, right=10, bottom=320),
+        visible=True,
+        minimized=False,
+    )
+    monkeypatch.setattr(
+        windows,
+        "Desktop",
+        lambda backend: FakeDesktop(
+            [hidden, minimized, blank_title, blank_class, invalid_bounds, root]
+        ),
+    )
     monkeypatch.setattr(windows, "psutil", FakePsutil({"Demo.exe": [42]}))
 
     discovered = WindowsDesktopDriver().list_visible_windows()
 
+    assert len(discovered) == 1
     assert discovered[0].process == "Demo"
     assert discovered[0].pid == 42
     assert discovered[0].window_class == "DemoWindow"
     assert discovered[0].title == "Demo App"
+    assert discovered[0].bounds == (10, 20, 410, 320)
+
+
+def test_list_visible_windows_returns_empty_when_enumeration_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class FailingDesktop:
+        def __init__(self, backend: str) -> None:
+            assert backend == "uia"
+
+        def windows(self) -> list[FakeWindow]:
+            raise RuntimeError("desktop changed")
+
+    monkeypatch.setattr(windows, "Desktop", FailingDesktop)
+
+    assert WindowsDesktopDriver().list_visible_windows() == ()
 
 
 def test_list_visible_controls_returns_named_controls(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -445,6 +563,102 @@ def test_list_visible_controls_returns_named_controls(monkeypatch: pytest.Monkey
 
     assert [control.name for control in controls] == ["Settings", "Delete"]
     assert controls[0].control_type == "Button"
+
+
+def test_list_visible_controls_returns_empty_for_missing_root(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    handle = WindowHandle("Demo", 42, "DemoWindow", "Demo App")
+    monkeypatch.setattr(windows, "_bind_window", lambda pid, window_class: FakeBoundWindow(handle))
+    monkeypatch.setattr(windows, "_control_from_window", lambda window: None)
+
+    assert WindowsDesktopDriver().list_visible_controls(handle) == ()
+
+
+def test_list_visible_controls_returns_empty_for_stale_binding(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    handle = WindowHandle("Demo", 42, "DemoWindow", "Demo App")
+    monkeypatch.setattr(
+        windows,
+        "_bind_window",
+        lambda pid, window_class: (_ for _ in ()).throw(RuntimeError("window closed")),
+    )
+
+    assert WindowsDesktopDriver().list_visible_controls(handle) == ()
+
+
+def test_list_visible_controls_returns_empty_for_stale_root(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    handle = WindowHandle("Demo", 42, "DemoWindow", "Demo App")
+    monkeypatch.setattr(windows, "_bind_window", lambda pid, window_class: FakeBoundWindow(handle))
+    monkeypatch.setattr(
+        windows,
+        "_control_from_window",
+        lambda window: (_ for _ in ()).throw(RuntimeError("uia unavailable")),
+    )
+
+    assert WindowsDesktopDriver().list_visible_controls(handle) == ()
+
+
+def test_list_visible_controls_filters_offscreen_controls(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    handle = WindowHandle("Demo", 42, "DemoWindow", "Demo App")
+    root_control = FakeControl(
+        name="root",
+        control_type="Window",
+        bounds=SimpleNamespace(left=0, top=0, right=500, bottom=500),
+        children=[
+            FakeControl(
+                "Hidden",
+                "Button",
+                SimpleNamespace(left=10, top=10, right=100, bottom=40),
+                is_offscreen=True,
+            ),
+            FakeControl(
+                "Shown",
+                "Button",
+                SimpleNamespace(left=10, top=50, right=100, bottom=80),
+                is_offscreen=False,
+            ),
+        ],
+    )
+    monkeypatch.setattr(windows, "_bind_window", lambda pid, window_class: FakeBoundWindow(handle))
+    monkeypatch.setattr(windows, "_control_from_window", lambda window: root_control)
+
+    controls = WindowsDesktopDriver().list_visible_controls(handle)
+
+    assert [control.name for control in controls] == ["Shown"]
+
+
+def test_list_visible_controls_skips_stale_controls_and_continues(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    handle = WindowHandle("Demo", 42, "DemoWindow", "Demo App")
+    root_control = FakeControl(
+        name="root",
+        control_type="Window",
+        bounds=SimpleNamespace(left=0, top=0, right=500, bottom=500),
+        children=[
+            StaleNameControl(),
+            StaleTypeControl(),
+            StaleChildrenControl(),
+            StaleOffscreenControl(),
+            FakeControl(
+                "Settings",
+                "Button",
+                SimpleNamespace(left=10, top=10, right=100, bottom=40),
+            ),
+        ],
+    )
+    monkeypatch.setattr(windows, "_bind_window", lambda pid, window_class: FakeBoundWindow(handle))
+    monkeypatch.setattr(windows, "_control_from_window", lambda window: root_control)
+
+    controls = WindowsDesktopDriver().list_visible_controls(handle)
+
+    assert [control.name for control in controls] == ["Settings"]
 
 
 def test_wait_for_window_uses_process_and_class(monkeypatch: pytest.MonkeyPatch) -> None:

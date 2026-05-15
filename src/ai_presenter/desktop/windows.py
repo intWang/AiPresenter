@@ -135,8 +135,13 @@ class WindowsDesktopDriver:
 
     def list_visible_windows(self) -> tuple[VisibleWindow, ...]:
         _require_dependency(Desktop, "pywinauto")
+        try:
+            root_windows = Desktop(backend="uia").windows()
+        except Exception:
+            return ()
+
         visible_windows: list[VisibleWindow] = []
-        for window in Desktop(backend="uia").windows():
+        for window in root_windows:
             try:
                 if not _window_is_visible(window) or _call_bool_window_method(
                     window, "is_minimized"
@@ -154,11 +159,17 @@ class WindowsDesktopDriver:
         return tuple(visible_windows)
 
     def list_visible_controls(self, handle: WindowHandle) -> tuple[VisibleControl, ...]:
-        window = _bind_window(handle.pid, handle.window_class)
-        root_control = _control_from_window(window)
+        try:
+            window = _bind_window(handle.pid, handle.window_class)
+            root_control = _control_from_window(window)
+        except Exception:
+            return ()
         if root_control is None:
             return ()
-        return tuple(_collect_visible_controls(root_control))
+        try:
+            return tuple(_collect_visible_controls(root_control))
+        except Exception:
+            return ()
 
     def click_window_relative(self, handle: WindowHandle, x: int, y: int) -> None:
         _require_dependency(mouse, "pywinauto")
@@ -536,39 +547,65 @@ def _find_descendant_controls(
 
 def _collect_visible_controls(root: Any) -> list[VisibleControl]:
     controls: list[VisibleControl] = []
-    stack = list(reversed(_control_children(root)))
+    root_children = _control_children(root)
+    if root_children is None:
+        return controls
+
+    stack = list(reversed(root_children))
     while stack:
         node = stack.pop()
-        name = _control_name(node)
-        bounds = _control_bounds(node)
-        control_type = _control_type_name(node)
-        if name and bounds is not None:
+        children = _control_children(node)
+        if children is None or not _control_is_visible(node):
+            continue
+        try:
+            name = _control_name(node)
+            bounds = _control_bounds(node)
+            control_type = _control_type_name(node)
+        except Exception:
+            continue
+        if name and bounds is not None and control_type:
             controls.append(VisibleControl(name=name, control_type=control_type, bounds=bounds))
-        stack.extend(reversed(_control_children(node)))
+        stack.extend(reversed(children))
     return controls
 
 
-def _control_children(control: Any) -> list[Any]:
+def _control_children(control: Any) -> list[Any] | None:
     get_children = getattr(control, "GetChildren", None)
     if not callable(get_children):
         return []
     try:
         return list(get_children() or [])
     except Exception:
-        return []
+        return None
 
 
 def _control_name(control: Any) -> str:
-    name = getattr(control, "Name", "")
+    try:
+        name = getattr(control, "Name", "")
+    except Exception:
+        return ""
     return name.strip() if isinstance(name, str) else ""
 
 
-def _control_type_name(control: Any) -> str:
+def _control_type_name(control: Any) -> str | None:
     for attr in ("ControlTypeName", "LocalizedControlType"):
-        value = getattr(control, attr, "")
+        try:
+            value = getattr(control, attr, "")
+        except Exception:
+            return None
         if isinstance(value, str) and value.strip():
             return value.strip()
     return control.__class__.__name__
+
+
+def _control_is_visible(control: Any) -> bool:
+    try:
+        is_offscreen = getattr(control, "IsOffscreen", False)
+        if callable(is_offscreen):
+            is_offscreen = is_offscreen()
+    except Exception:
+        return False
+    return not bool(is_offscreen)
 
 
 def _process_name_from_pid(pid: int) -> str:

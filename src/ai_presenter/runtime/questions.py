@@ -1,9 +1,29 @@
 from dataclasses import dataclass
+import re
 
-from ai_presenter.packages.models import MaterialPackage, OperationEntrypoint
+from ai_presenter.packages.models import MaterialPackage, OperationEntrypoint, QuestionAnswer
 from ai_presenter.runtime.voice import PresenterVoiceSettings
 
 _RISKY_ENTRYPOINT_WORDS = {"leave", "recording", "record", "share", "delete", "send", "pay"}
+_STOPWORDS = {
+    "a",
+    "can",
+    "control",
+    "could",
+    "do",
+    "how",
+    "i",
+    "in",
+    "meeting",
+    "open",
+    "please",
+    "show",
+    "the",
+    "to",
+    "where",
+}
+_GENERIC_ENTRYPOINT_TOKENS = {"people"}
+_TOKEN_PATTERN = re.compile(r"[a-z0-9]+")
 
 
 @dataclass(frozen=True)
@@ -41,25 +61,76 @@ def answer_question(
     )
 
 
-def _match_qa(package: MaterialPackage, normalized_question: str):
+def _match_qa(package: MaterialPackage, normalized_question: str) -> QuestionAnswer | None:
     for item in package.qa:
         if normalized_question and normalized_question in item.question.casefold():
             return item
         if item.question.casefold() in normalized_question:
             return item
+    query_tokens = _meaningful_tokens(normalized_question)
+    if not query_tokens:
+        return None
+
+    best_match: QuestionAnswer | None = None
+    best_score = 0
+    for item in package.qa:
+        question_tokens = _meaningful_tokens(item.question)
+        overlap = query_tokens & question_tokens
+        if not overlap:
+            continue
+        score = len(overlap)
+        if score > best_score:
+            best_match = item
+            best_score = score
+    if best_score >= 2:
+        return best_match
     return None
 
 
 def _match_entrypoint(package: MaterialPackage, normalized_question: str) -> OperationEntrypoint | None:
-    best: OperationEntrypoint | None = None
+    query_tokens = _meaningful_tokens(normalized_question)
+    if not query_tokens:
+        return None
+
+    best_entrypoint: OperationEntrypoint | None = None
+    best_score = 0
     for entrypoint in package.operation_entrypoints:
-        haystack = " ".join([entrypoint.id, entrypoint.title, entrypoint.area, entrypoint.purpose]).casefold()
-        if normalized_question and normalized_question in haystack:
-            return entrypoint
-        for token in normalized_question.split():
-            if len(token) >= 3 and token in haystack:
-                best = entrypoint
-    return best
+        score = _score_entrypoint_match(entrypoint, query_tokens)
+        if score > best_score:
+            best_entrypoint = entrypoint
+            best_score = score
+    return best_entrypoint
+
+
+def _score_entrypoint_match(entrypoint: OperationEntrypoint, query_tokens: set[str]) -> int:
+    title_tokens = _field_tokens(entrypoint.title)
+    id_tokens = _field_tokens(entrypoint.id)
+    area_tokens = _field_tokens(entrypoint.area)
+    purpose_tokens = _field_tokens(entrypoint.purpose)
+
+    title_or_id_matches = query_tokens & (title_tokens | id_tokens)
+    area_matches = query_tokens & area_tokens
+    purpose_matches = query_tokens & purpose_tokens
+    all_matches = title_or_id_matches | area_matches | purpose_matches
+    if not all_matches or all_matches <= _GENERIC_ENTRYPOINT_TOKENS:
+        return 0
+
+    score = 0
+    score += len(query_tokens & id_tokens) * 6
+    score += len(query_tokens & title_tokens) * 5
+    score += len(area_matches) * 2
+    score += len(purpose_matches)
+    if query_tokens <= (title_tokens | id_tokens):
+        score += 3
+    return score
+
+
+def _meaningful_tokens(text: str) -> set[str]:
+    return {token for token in _field_tokens(text) if token not in _STOPWORDS and len(token) >= 3}
+
+
+def _field_tokens(text: str) -> set[str]:
+    return set(_TOKEN_PATTERN.findall(text.casefold()))
 
 
 def _render_entrypoint_answer(entrypoint: OperationEntrypoint, voice: PresenterVoiceSettings) -> str:

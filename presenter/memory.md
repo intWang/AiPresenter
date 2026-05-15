@@ -17,7 +17,8 @@
 - Add coworkers and Invite open an invite dialog that blocks the toolbar.
 - In a two-person meeting, the center canvas shows participant tiles and the Participants badge shows the live
   attendee count; do not assume the empty-room Add coworkers path.
-- Notes is currently nested under the More menu. It opens a side panel with Start notes and Also record this meeting.
+- Notes is currently nested under the More menu. UI Automation exposes the clickable menu item as
+  `onconf.controls.NOTES`, while `Notes` is visible text. It opens a side panel with Start notes and Also record this meeting.
 - More currently contains Start recording, Notes, Background, and Settings.
 - Background and Settings open the Settings dialog.
 - Share opens a picker and should not press the final Share button without confirmation.

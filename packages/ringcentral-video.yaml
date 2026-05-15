@@ -359,12 +359,14 @@ operationEntrypoints:
       occurrence: '3'
       controlType: button
   - action: clickWindowControl
-    target: Notes
+    target: onconf.controls.NOTES
     match:
+      alternateTargets: Notes
       controlType: menuitem
       cleanup: sidePanel
   presenterNotes:
   - In the current observed build, Notes is nested under the More menu.
+  - The clickable menu item is exposed to UI Automation as onconf.controls.NOTES, while Notes is visible text.
   - Older layouts may expose Notes directly on the toolbar; prefer the More menu route when a direct Notes button is absent.
   - Observed panel offers Start notes and Also record this meeting.
   - Starting notes or recording changes meeting state, so the default tour only explains the panel.

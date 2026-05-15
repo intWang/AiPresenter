@@ -41,9 +41,13 @@ def test_loads_ringcentral_video_app_material_package() -> None:
         "This opens a foreground dialog"
     )
     notes_entrypoint = package.entrypoint_by_id("ringcentral.video.more.notes")
-    assert [step.target for step in notes_entrypoint.open_steps] == ["More", "Notes"]
+    assert [step.target for step in notes_entrypoint.open_steps] == [
+        "More",
+        "onconf.controls.NOTES",
+    ]
     assert notes_entrypoint.open_steps[0].match["controlType"] == "button"
     assert notes_entrypoint.open_steps[1].match["controlType"] == "menuitem"
+    assert notes_entrypoint.open_steps[1].match["alternateTargets"] == "Notes"
     assert notes_entrypoint.open_steps[-1].match["cleanup"] == "sidePanel"
     assert package.entrypoint_by_id("ringcentral.video.toolbar.audio-menu").purpose.startswith(
         "Open microphone and speaker"

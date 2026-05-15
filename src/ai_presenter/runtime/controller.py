@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING
 
 from ai_presenter.runtime.control import DemoControl
 from ai_presenter.runtime.factory import run_material_demo
+from ai_presenter.runtime.questions import answer_question
+from ai_presenter.runtime.voice import PresenterTone, PresenterVoiceSettings
 
 if TYPE_CHECKING:
     from tkinter import Tk
@@ -31,6 +33,7 @@ class PresenterController:
         self._runner = runner or run_material_demo
         self._thread: threading.Thread | None = None
         self._last_error: Exception | None = None
+        self._voice = PresenterVoiceSettings()
 
     def start(self) -> None:
         if self._thread is not None and self._thread.is_alive():
@@ -49,6 +52,17 @@ class PresenterController:
 
     def end(self) -> None:
         self._control.request_stop()
+
+    def set_voice(self, voice: PresenterVoiceSettings) -> None:
+        self._voice = voice
+
+    def submit_question(self, question: str) -> str:
+        response = answer_question(
+            package=self._material_package,
+            question=question,
+            voice=self._voice,
+        )
+        return response.answer_text
 
     def join(self, timeout: float | None = None) -> None:
         if self._thread is not None:
@@ -92,10 +106,19 @@ def run_controller(
     )
     root = tk.Tk()
     root.title("AiPresenter Controller")
-    root.geometry("360x140")
+    root.geometry("640x360")
 
     status = tk.StringVar(value="Ready")
     pause_label = tk.StringVar(value="Pause")
+    language = tk.StringVar(value="English")
+    tone = tk.StringVar(value="Professional")
+    question = tk.StringVar(value="")
+    answer = tk.StringVar(value="")
+    tone_values: dict[str, PresenterTone] = {
+        "Professional": "professional",
+        "Conversational": "conversational",
+        "Concise": "concise",
+    }
 
     def start() -> None:
         controller.start()
@@ -111,6 +134,21 @@ def run_controller(
         controller.end()
         status.set("Ending")
         pause_label.set("Pause")
+
+    def submit_question() -> None:
+        text = question.get().strip()
+        if not text:
+            return
+        try:
+            controller.set_voice(
+                PresenterVoiceSettings(
+                    language="zh" if language.get() == "Chinese" else "en",
+                    tone=tone_values[tone.get()],
+                )
+            )
+            answer.set(controller.submit_question(text))
+        except Exception as exc:
+            answer.set(f"Question error: {exc}")
 
     def refresh_status() -> None:
         if controller.last_error is not None:
@@ -134,6 +172,17 @@ def run_controller(
         padx=(0, 8),
     )
     tk.Button(button_row, text="End", command=end, width=10).pack(side="left")
+
+    voice_row = tk.Frame(frame)
+    voice_row.pack(fill="x", pady=(24, 12))
+    tk.OptionMenu(voice_row, language, "English", "Chinese").pack(side="left", padx=(0, 8))
+    tk.OptionMenu(voice_row, tone, "Professional", "Conversational", "Concise").pack(side="left")
+
+    question_row = tk.Frame(frame)
+    question_row.pack(fill="x", pady=(12, 8))
+    tk.Entry(question_row, textvariable=question).pack(side="left", fill="x", expand=True, padx=(0, 8))
+    tk.Button(question_row, text="Submit", command=submit_question, width=10).pack(side="left")
+    tk.Label(frame, textvariable=answer, anchor="w", wraplength=580, justify="left").pack(fill="x")
 
     _center_window(root)
     refresh_status()

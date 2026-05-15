@@ -53,6 +53,10 @@ For a small local control surface with Start, Pause, and End:
 .venv\Scripts\ai-presenter controller --profile ringcentral-video --package ringcentral-video --flow meeting-control-map-demo
 ```
 
+The controller includes language and tone selectors plus a text question box. Text questions are
+answered from the active material package. Safe matched controls can later be demonstrated as
+interrupt steps; risky controls are answer-only.
+
 ## Manual Acceptance
 
 Use `docs/runbooks/ringcentral-manual-acceptance.md` for the RingCentral MVP checklist.

@@ -77,3 +77,16 @@ def test_presenter_controller_records_runner_errors() -> None:
     assert controller.is_running is False
     assert isinstance(controller.last_error, RuntimeError)
     assert str(controller.last_error) == "demo exploded"
+
+
+def test_controller_session_answers_question_text() -> None:
+    profile, package = _controller_inputs()
+    controller = PresenterController(
+        profile=profile,
+        material_package=package,
+        flow_id="meeting-control-map-demo",
+    )
+
+    answer = controller.submit_question("chat")
+
+    assert "Chat" in answer or "chat" in answer

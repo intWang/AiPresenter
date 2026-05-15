@@ -10,6 +10,7 @@ from ai_presenter.desktop.base import WindowHandle
 from ai_presenter.domain.state import MeetingState
 from ai_presenter.media.output import MediaOutputFactory
 from ai_presenter.media.output import MediaOutput
+from ai_presenter.packages.models import DemoStep
 from ai_presenter.packages.models import MaterialPackage
 from ai_presenter.providers.base import ProviderRegistry
 from ai_presenter.providers.codex_cli import CodexCliNarrationProvider
@@ -22,6 +23,7 @@ from ai_presenter.providers.windows_speech import WindowsSapiSpeechProvider
 from ai_presenter.runtime.adaptive_demo import adjust_ringcentral_demo_step
 from ai_presenter.runtime.control import DemoControl
 from ai_presenter.runtime.events import EventDetector
+from ai_presenter.runtime.material_runtime import MaterialDemoRuntime
 from ai_presenter.runtime.narration import NarrationEngine
 from ai_presenter.runtime.package_demo import PackageActionExecutor
 from ai_presenter.runtime.package_demo import demo_flow_by_id
@@ -157,19 +159,30 @@ def run_material_demo(
         action_executor=action_executor,
         control=control,
     )
-    for step in flow.steps:
-        state = _capture_demo_state(profile, desktop, adapter, handle)
-        adjusted_step = adjust_ringcentral_demo_step(step, state)
-        if adjusted_step is None:
-            logger.info(
-                "demo_step_skipped_by_state step=%s participant_count=%s",
-                step.id,
-                None if state is None else state.participant_count,
-            )
-            continue
-        result = runner.run_step(adjusted_step)
-        if result.stopped:
-            break
+    runtime = MaterialDemoRuntime(
+        flow_steps=flow.steps,
+        timeline=runner,
+        state_adjuster=lambda step: _adjust_demo_step(profile, desktop, adapter, handle, step),
+    )
+    runtime.run_to_completion()
+
+
+def _adjust_demo_step(
+    profile: DesktopAppProfile,
+    desktop: WindowsDesktopDriver,
+    adapter: AppAdapter,
+    handle: WindowHandle,
+    step: DemoStep,
+) -> DemoStep | None:
+    state = _capture_demo_state(profile, desktop, adapter, handle)
+    adjusted_step = adjust_ringcentral_demo_step(step, state)
+    if adjusted_step is None:
+        logger.info(
+            "demo_step_skipped_by_state step=%s participant_count=%s",
+            step.id,
+            None if state is None else state.participant_count,
+        )
+    return adjusted_step
 
 
 def _capture_demo_state(

@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 from ai_presenter.config.models import DesktopAppProfile
 from ai_presenter.desktop.base import VisibleControl, VisibleWindow
+from ai_presenter.packages.models import DemoStep, DemoStepAction, DemoStepNarration
 from ai_presenter.packages.models import MaterialPackage
 from ai_presenter.runtime.questions import QuestionResponse, answer_question
 from ai_presenter.runtime.temporary_package import build_temporary_package
@@ -63,6 +64,23 @@ class ControllerSession:
             package=self._active_package,
             question=question,
             voice=self._voice,
+        )
+
+    def create_interrupt_step(self, response: QuestionResponse) -> DemoStep | None:
+        if self._active_package is None or response.entrypoint_id is None or not response.can_operate:
+            return None
+        entrypoint = self._active_package.entrypoint_by_id(response.entrypoint_id)
+        if not entrypoint.open_steps:
+            return None
+        return DemoStep(
+            id=f"question-{entrypoint.id}",
+            title=f"Question: {entrypoint.title}",
+            action=DemoStepAction(entrypointId=entrypoint.id, operation="open"),
+            narration=DemoStepNarration(
+                text=response.answer_text,
+                placement="during",
+                actionOffsetMs=300,
+            ),
         )
 
     def mark_running_for_test(self) -> None:

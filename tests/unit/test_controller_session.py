@@ -104,3 +104,37 @@ def test_session_rejects_incompatible_target_without_changing_current_state() ->
     response = session.answer_question("chat")
 
     assert "聊天" in response.answer_text
+
+
+def test_session_creates_interrupt_step_for_safe_answer() -> None:
+    session = ControllerSession()
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    target = MaterialPackageTarget(
+        profile=load_desktop_profile(),
+        package=package,
+        flow_id="meeting-control-map-demo",
+    )
+    session.select_target(target)
+
+    response = session.answer_question("chat")
+    interrupt = session.create_interrupt_step(response)
+
+    assert interrupt is not None
+    assert interrupt.action.entrypoint_id == "ringcentral.video.toolbar.chat"
+    assert interrupt.narration.text == response.answer_text
+
+
+def test_session_does_not_create_interrupt_for_risky_answer() -> None:
+    session = ControllerSession()
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    session.select_target(
+        MaterialPackageTarget(
+            profile=load_desktop_profile(),
+            package=package,
+            flow_id="meeting-control-map-demo",
+        )
+    )
+
+    response = session.answer_question("leave meeting")
+
+    assert session.create_interrupt_step(response) is None

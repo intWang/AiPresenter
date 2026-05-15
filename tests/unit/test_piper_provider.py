@@ -1,4 +1,5 @@
 import subprocess
+import sys
 import wave
 from pathlib import Path
 
@@ -26,6 +27,7 @@ def test_piper_provider_returns_wav_audio(tmp_path: Path) -> None:
 
     provider = PiperSpeechProvider(
         voice="en_US-lessac-medium",
+        data_dir=tmp_path / "voices",
         runner=runner,
         temp_dir=tmp_path,
     )
@@ -34,8 +36,10 @@ def test_piper_provider_returns_wav_audio(tmp_path: Path) -> None:
 
     assert audio.mime_type == "audio/wav"
     assert len(audio.data) > 46
-    assert calls[0][0:3] == ["python", "-m", "piper"]
+    assert calls[0][0:3] == [sys.executable, "-m", "piper"]
     assert "en_US-lessac-medium" in calls[0]
+    assert "--data-dir" in calls[0]
+    assert str(tmp_path / "voices") in calls[0]
     assert calls[0][-1] == "Hello from Piper."
 
 

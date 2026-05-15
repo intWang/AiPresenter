@@ -1,6 +1,8 @@
 import subprocess
+import sys
 import tempfile
 from collections.abc import Callable
+from os import environ
 from pathlib import Path
 
 from ai_presenter.providers.base import SpeechAudio
@@ -20,7 +22,7 @@ class PiperSpeechProvider:
         temp_dir: Path | None = None,
     ) -> None:
         self._voice = _require_nonblank(voice, "Piper voice cannot be blank.")
-        self._data_dir = data_dir
+        self._data_dir = data_dir or _default_data_dir()
         self._download_dir = download_dir
         self._timeout_seconds = timeout_seconds
         self._runner = runner or _run_piper
@@ -57,7 +59,7 @@ class PiperSpeechProvider:
             output_path.unlink(missing_ok=True)
 
     def _command(self, output_path: Path, text: str) -> list[str]:
-        command = ["python", "-m", "piper", "-m", self._voice, "-f", str(output_path)]
+        command = [sys.executable, "-m", "piper", "-m", self._voice, "-f", str(output_path)]
         if self._data_dir is not None:
             command.extend(["--data-dir", str(self._data_dir)])
         if self._download_dir is not None:
@@ -86,3 +88,10 @@ def _require_nonblank(value: str, message: str) -> str:
     if not normalized:
         raise ValueError(message)
     return normalized
+
+
+def _default_data_dir() -> Path:
+    configured = environ.get("AI_PRESENTER_PIPER_DATA_DIR")
+    if configured is not None and configured.strip():
+        return Path(configured.strip())
+    return Path.home() / ".cache" / "ai-presenter" / "piper-voices"

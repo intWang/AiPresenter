@@ -59,6 +59,18 @@ window's visible controls, and the controller creates a temporary package for te
 Safe matched controls can be answered as operable entrypoints; risky controls remain answer-only.
 The controller also includes language and tone selectors plus a text question box.
 
+## Piper TTS
+
+For a free local neural TTS test:
+
+```powershell
+.venv\Scripts\python -m pip install piper-tts
+.venv\Scripts\python -m piper.download_voices --download-dir "$env:USERPROFILE\.cache\ai-presenter\piper-voices" en_US-lessac-medium
+.venv\Scripts\ai-presenter controller --profile ringcentral-video-piper-speaker --package ringcentral-video --flow meeting-control-map-demo
+```
+
+The first Piper voice download can take a little while. The profile outputs to the configured speaker device.
+
 ## Manual Acceptance
 
 Use `docs/runbooks/ringcentral-manual-acceptance.md` for the RingCentral MVP checklist,

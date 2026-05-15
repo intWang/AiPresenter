@@ -42,3 +42,17 @@ This uses `profiles/ringcentral-video-openai.example.yaml`, which switches narra
 - [ ] From the repo root, run `.venv\Scripts\ai-presenter run --profile profiles\ringcentral-video-openai.example.yaml --iterations 1`.
 - [ ] Confirm local speaker playback contains audible presenter speech.
 - [ ] Confirm RingCentral receives audio from the configured virtual microphone device.
+
+## Controller Acceptance Checklist
+
+This verifies the controller shell, target selection, text questions, voice controls, and quick scanning for apps that do not yet have a curated material package.
+
+- [ ] Open controller and verify the Target section shows Material package mode.
+- [ ] Start `meeting-control-map-demo`, Pause, Resume, and End.
+- [ ] Ask `What does Invite do?` and verify the answer area updates.
+- [ ] Switch language to Chinese and ask `chat`; verify Chinese answer text.
+- [ ] Switch tone to Conversational and verify the answer is warmer but still accurate.
+- [ ] Switch to Running desktop app mode, refresh windows, select a harmless app, and scan.
+- [ ] Verify generated package status reports entrypoints.
+- [ ] Ask about a safe visible control and verify answer plus safe action.
+- [ ] Ask about a risky visible control and verify no click happens.

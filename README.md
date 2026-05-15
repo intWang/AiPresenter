@@ -61,7 +61,8 @@ The controller also includes language and tone selectors plus a text question bo
 
 ## Manual Acceptance
 
-Use `docs/runbooks/ringcentral-manual-acceptance.md` for the RingCentral MVP checklist.
+Use `docs/runbooks/ringcentral-manual-acceptance.md` for the RingCentral MVP checklist,
+including the controller target, question, language, tone, and running-app scan acceptance path.
 
 ## Material Packages
 

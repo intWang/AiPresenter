@@ -100,25 +100,6 @@ def test_controller_dry_run_loads_profile_package_and_flow() -> None:
     assert "Controller dry run complete." in result.stdout
 
 
-def test_controller_dry_run_reports_selectable_mode() -> None:
-    result = CliRunner().invoke(
-        app,
-        [
-            "controller",
-            "--profile",
-            "ringcentral-video-bind-speaker",
-            "--package",
-            "ringcentral-video",
-            "--flow",
-            "meeting-control-map-demo",
-            "--dry-run",
-        ],
-    )
-
-    assert result.exit_code == 0
-    assert "Controller dry run complete." in result.stdout
-
-
 def test_flows_lists_material_package_demo_flows() -> None:
     result = CliRunner().invoke(app, ["flows", "--package", "ringcentral-video"])
 

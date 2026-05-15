@@ -82,6 +82,15 @@ def test_provider_registry_supports_english_windows_sapi_profile() -> None:
     )
 
 
+def test_provider_registry_supports_piper_profile() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-piper-speaker.yaml"))
+
+    registry = create_provider_registry(profile)
+
+    assert profile.providers.speech == "piper"
+    assert registry.speech(profile.providers.speech).__class__.__name__ == "PiperSpeechProvider"
+
+
 def test_create_adapter_returns_ringcentral_adapter_for_reference_profile() -> None:
     profile = load_profile(Path("profiles/ringcentral-video.yaml"))
     adapter = create_adapter(profile)

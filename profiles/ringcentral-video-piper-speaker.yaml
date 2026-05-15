@@ -1,0 +1,49 @@
+id: ringcentral-video-piper-speaker
+type: desktop
+
+launch:
+  appProcess: RingCentralDevelop
+  requireAlreadyLoggedIn: false
+  steps: []
+
+bind:
+  process: RingCentralVideo
+  windowClass: RingCentralVideoClass
+  timeoutMs: 30000
+
+observe:
+  intervalMs: 1000
+  sources:
+    - screenshot
+    - windowsUiAutomation
+    - windowMetadata
+
+events:
+  - meeting_joined
+  - mic_state_changed
+  - camera_state_changed
+  - participant_count_changed
+  - dialog_appeared
+  - connection_warning
+
+narration:
+  style: concise_presenter
+  maxSentences: 2
+  minSecondsBetweenUtterances: 4
+  repeatCooldownSeconds: 30
+  confidenceThreshold: 0.75
+  forbidSharedScreenInterpretation: true
+  soulPath: ../presenter/soul.md
+  memoryPath: ../presenter/memory.md
+  skillPaths:
+    - ../presenter/skills/app-director.md
+    - ../presenter/skills/live-explainer.md
+
+audio:
+  output: speaker
+  speakerDevice: default
+
+providers:
+  vision: fake
+  narration: fake
+  speech: piper

@@ -20,6 +20,7 @@ from ai_presenter.providers.fake import FakeSpeechProvider
 from ai_presenter.providers.fake import FakeVisionProvider
 from ai_presenter.providers.openai_provider import OpenAINarrationProvider
 from ai_presenter.providers.openai_provider import OpenAISpeechProvider
+from ai_presenter.providers.piper_provider import PiperSpeechProvider
 from ai_presenter.providers.windows_speech import WindowsSapiSpeechProvider
 from ai_presenter.runtime.adaptive_demo import adjust_ringcentral_demo_step
 from ai_presenter.runtime.control import DemoControl
@@ -66,6 +67,8 @@ def create_provider_registry(profile: AppProfile) -> ProviderRegistry:
         )
     if profile.providers.speech == "openai":
         registry.register_speech("openai", OpenAISpeechProvider())
+    if profile.providers.speech == "piper":
+        registry.register_speech("piper", PiperSpeechProvider())
     if profile.providers.speech == "windows-sapi":
         registry.register_speech("windows-sapi", WindowsSapiSpeechProvider())
     if profile.providers.speech == "windows-sapi-en":

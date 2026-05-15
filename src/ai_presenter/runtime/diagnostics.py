@@ -18,7 +18,7 @@ DiagnosticStatus = Literal["OK", "WARN", "FAIL"]
 _SUPPORTED_VISION_PROVIDERS = frozenset({"fake"})
 _SUPPORTED_NARRATION_PROVIDERS = frozenset({"fake", "codex-cli", "openai"})
 _SUPPORTED_SPEECH_PROVIDERS = frozenset(
-    {"fake", "openai", "windows-sapi", "windows-sapi-en", "windows-sapi-zh"}
+    {"fake", "openai", "piper", "windows-sapi", "windows-sapi-en", "windows-sapi-zh"}
 )
 _SECTION_HEADER_PATTERN = re.compile(r"^\s*\[[^\]]+\]", re.MULTILINE)
 

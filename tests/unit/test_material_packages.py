@@ -14,6 +14,7 @@ def test_loads_ringcentral_video_app_material_package() -> None:
     assert package.app_id == "ringcentral-video"
     assert package.app_name == "RingCentral Video"
     assert "ringcentral-video-codex-cli-speaker" in package.profile_ids
+    assert "ringcentral-video-piper-speaker" in package.profile_ids
     assert package.operation_entrypoints[0].id == "ringcentral.develop.video.tab"
     assert package.entrypoint_by_id("ringcentral.video.settings.background").area == "Settings"
     assert package.entrypoint_by_id("ringcentral.video.toolbar.share").area == "Meeting toolbar"

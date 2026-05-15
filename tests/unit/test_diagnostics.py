@@ -48,3 +48,13 @@ def test_ringcentral_config_accepts_utf8_bom_ini(tmp_path: Path) -> None:
         check for check in report.checks if check.name == "RingCentral config"
     )
     assert ringcentral_check.status == "OK"
+
+
+def test_diagnostics_accept_piper_provider() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-piper-speaker.yaml"))
+
+    report = diagnostics.diagnose_configuration(profile=profile)
+
+    providers_check = next(check for check in report.checks if check.name == "providers")
+    assert providers_check.status == "OK"
+    assert "speech=piper" in providers_check.detail

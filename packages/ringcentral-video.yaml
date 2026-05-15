@@ -6,6 +6,7 @@ profileIds:
 - ringcentral-video-openai
 - ringcentral-video-codex-cli-speaker
 - ringcentral-video-bind-speaker
+- ringcentral-video-piper-speaker
 operationEntrypoints:
 - id: ringcentral.develop.video.tab
   title: Video tab in RingCentralDevelop

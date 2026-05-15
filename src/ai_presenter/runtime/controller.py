@@ -110,6 +110,10 @@ def run_controller(
 
     status = tk.StringVar(value="Ready")
     pause_label = tk.StringVar(value="Pause")
+    source = tk.StringVar(value="Material package")
+    package_choice = tk.StringVar(value=material_package.app_id)
+    flow_choice = tk.StringVar(value=flow_id)
+    app_choice = tk.StringVar(value="")
     language = tk.StringVar(value="English")
     tone = tk.StringVar(value="Professional")
     question = tk.StringVar(value="")
@@ -119,6 +123,14 @@ def run_controller(
         "Conversational": "conversational",
         "Concise": "concise",
     }
+
+    def sync_target_choice(*_args: object) -> None:
+        if source.get() == "Running desktop app":
+            package_choice.set(app_choice.get() or "No running app selected")
+            flow_choice.set("")
+            return
+        package_choice.set(material_package.app_id)
+        flow_choice.set(flow_id)
 
     def start() -> None:
         controller.start()
@@ -163,6 +175,18 @@ def run_controller(
     frame = tk.Frame(root, padx=16, pady=16)
     frame.pack(fill="both", expand=True)
     tk.Label(frame, textvariable=status, anchor="w").pack(fill="x", pady=(0, 12))
+
+    target_frame = tk.LabelFrame(frame, text="Target", padx=8, pady=8)
+    target_frame.pack(fill="x", pady=(0, 12))
+    tk.OptionMenu(
+        target_frame,
+        source,
+        "Material package",
+        "Running desktop app",
+        command=sync_target_choice,
+    ).pack(side="left")
+    tk.Label(target_frame, textvariable=package_choice).pack(side="left", padx=(8, 0))
+    tk.Label(target_frame, textvariable=flow_choice).pack(side="left", padx=(8, 0))
 
     button_row = tk.Frame(frame)
     button_row.pack(fill="x")

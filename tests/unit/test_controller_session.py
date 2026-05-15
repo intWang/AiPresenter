@@ -46,6 +46,18 @@ def test_session_scans_running_app_into_temporary_package() -> None:
     assert package.demo_flows[0].id == "temp-demo"
 
 
+def test_session_answer_after_running_app_scan() -> None:
+    session = ControllerSession()
+    window = VisibleWindow("Demo", 10, "DemoWindow", "Demo App", (0, 0, 800, 600))
+    controls = (VisibleControl("Settings", "Button", (10, 10, 120, 40)),)
+
+    session.scan_running_app(RunningAppTarget(window=window), controls)
+    response = session.answer_question("settings")
+
+    assert response.entrypoint_id == "temp.demo.10.settings"
+    assert response.can_operate is True
+
+
 def test_session_answers_question_with_active_voice_settings() -> None:
     session = ControllerSession()
     package = load_material_package(Path("packages/ringcentral-video.yaml"))

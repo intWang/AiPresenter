@@ -29,6 +29,11 @@ class MediaOutput(Protocol):
         ...
 
 
+class StoppableOutput(Protocol):
+    def stop(self) -> None:
+        ...
+
+
 class AudioOutputError(RuntimeError):
     def __init__(self, message: str, *, sink_failures: dict[str, Exception] | None = None) -> None:
         self.sink_failures = sink_failures or {}
@@ -65,6 +70,9 @@ class SoundDeviceSink:
         except sounddevice.PortAudioError as exc:
             raise AudioOutputError(f"Audio playback failed for {self.name}.") from exc
 
+    def stop(self) -> None:
+        sounddevice.stop()
+
 
 class SingleOutput:
     def __init__(self, sink: AudioSink) -> None:
@@ -72,6 +80,9 @@ class SingleOutput:
 
     def play(self, audio: SpeechAudio) -> None:
         self._sink.play(audio)
+
+    def stop(self) -> None:
+        _stop_if_supported(self._sink)
 
 
 class CombinedOutput:
@@ -93,6 +104,13 @@ class CombinedOutput:
                 f"All audio outputs failed: {failed_sinks}",
                 sink_failures=errors,
             ) from next(iter(errors.values()))
+
+    def stop(self) -> None:
+        for sink in self._sinks:
+            try:
+                _stop_if_supported(sink)
+            except Exception as exc:
+                logger.warning("Audio stop failed for %s: %s", sink.__class__.__name__, exc)
 
     def _sink_name(self, index: int, sink: AudioSink) -> str:
         name = getattr(sink, "name", None)
@@ -146,3 +164,9 @@ def _speaker_device(device: str | None) -> str | None:
     if not normalized or normalized.casefold() == "default":
         return None
     return normalized
+
+
+def _stop_if_supported(output: object) -> None:
+    stop = getattr(output, "stop", None)
+    if callable(stop):
+        stop()

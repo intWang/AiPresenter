@@ -10,9 +10,11 @@ from ai_presenter.desktop.base import VisibleWindow, WindowHandle
 from ai_presenter.runtime.control import DemoControl
 from ai_presenter.runtime.controller import NO_RUNNING_APPS_LABEL
 from ai_presenter.runtime.controller import ChatTurn
+from ai_presenter.runtime.controller import ControllerStatusSnapshot
 from ai_presenter.runtime.controller import PresenterController
 from ai_presenter.runtime.controller import _RunningAppScanState
 from ai_presenter.runtime.controller import format_chat_turns
+from ai_presenter.runtime.controller import resolve_controller_status
 from ai_presenter.runtime.temporary_package import build_temporary_package
 from ai_presenter.runtime.voice import PresenterVoiceSettings
 
@@ -139,11 +141,12 @@ def test_presenter_controller_runs_existing_window_target() -> None:
     assert calls == [("ringcentral-video-bind-speaker", "temp.demo.10", "temp-demo", handle)]
 
 
-def test_presenter_controller_queues_safe_question_interrupt_while_running() -> None:
+def test_presenter_controller_interrupts_current_demo_for_safe_question() -> None:
     profile, package = _controller_inputs()
     control = DemoControl()
     started = threading.Event()
-    release = threading.Event()
+    stop_requested = threading.Event()
+    calls: list[str] = []
 
     def runner(
         captured_profile: DesktopAppProfile,
@@ -153,8 +156,12 @@ def test_presenter_controller_queues_safe_question_interrupt_while_running() -> 
         control: DemoControl,
         voice: PresenterVoiceSettings | None = None,
     ) -> None:
-        started.set()
-        release.wait(timeout=2)
+        calls.append(captured_flow_id)
+        if captured_flow_id == "meeting-control-map-demo":
+            started.set()
+            while not control.is_stop_requested:
+                stop_requested.wait(timeout=0.01)
+            stop_requested.set()
 
     controller = PresenterController(
         profile=profile,
@@ -168,14 +175,57 @@ def test_presenter_controller_queues_safe_question_interrupt_while_running() -> 
     assert started.wait(timeout=1)
 
     result = controller.submit_question("chat")
-    interrupt = control.pop_interrupt()
-    release.set()
+    assert stop_requested.wait(timeout=1)
     controller.join(timeout=1)
 
     assert "Chat" in result.answer_text or "chat" in result.answer_text
-    assert result.demonstration_status == "queued"
-    assert interrupt is not None
-    assert interrupt.action.entrypoint_id == "ringcentral.video.toolbar.chat"
+    assert result.demonstration_status == "interrupting"
+    assert calls == ["meeting-control-map-demo", "question-answer-demo"]
+
+
+def test_presenter_controller_end_clears_pending_question_demo() -> None:
+    profile, package = _controller_inputs()
+    control = DemoControl()
+    started = threading.Event()
+    stop_requested = threading.Event()
+    release = threading.Event()
+    calls: list[str] = []
+
+    def runner(
+        captured_profile: DesktopAppProfile,
+        captured_package: MaterialPackage,
+        captured_flow_id: str,
+        *,
+        control: DemoControl,
+        voice: PresenterVoiceSettings | None = None,
+    ) -> None:
+        calls.append(captured_flow_id)
+        if captured_flow_id == "meeting-control-map-demo":
+            started.set()
+            while not control.is_stop_requested:
+                stop_requested.wait(timeout=0.01)
+            stop_requested.set()
+            release.wait(timeout=1)
+
+    controller = PresenterController(
+        profile=profile,
+        material_package=package,
+        flow_id="meeting-control-map-demo",
+        control=control,
+        runner=runner,
+    )
+
+    controller.start()
+    assert started.wait(timeout=1)
+    result = controller.submit_question("chat")
+    assert result.demonstration_status == "interrupting"
+    assert stop_requested.wait(timeout=1)
+
+    controller.end()
+    release.set()
+    controller.join(timeout=1)
+
+    assert calls == ["meeting-control-map-demo"]
 
 
 def test_presenter_controller_starts_safe_question_demo_when_idle() -> None:
@@ -293,6 +343,42 @@ def test_format_chat_turns_keeps_history_in_order() -> None:
         "AiPresenter: Open Chat from the meeting toolbar.\n\n"
         "AiPresenter: Demonstrating it now."
     )
+
+
+def test_resolve_controller_status_keeps_stopping_visible_while_thread_is_alive() -> None:
+    update = resolve_controller_status(
+        ControllerStatusSnapshot(
+            current_status="Ending",
+            last_error=None,
+            is_running=True,
+            is_paused=False,
+            is_stopping=True,
+            is_switching_targets=False,
+            session_is_running=True,
+        )
+    )
+
+    assert update.status == "Ending"
+    assert update.pause_label == "Pause"
+    assert update.mark_session_stopped is False
+
+
+def test_resolve_controller_status_reports_switching_before_running() -> None:
+    update = resolve_controller_status(
+        ControllerStatusSnapshot(
+            current_status="Question queued",
+            last_error=None,
+            is_running=True,
+            is_paused=False,
+            is_stopping=True,
+            is_switching_targets=True,
+            session_is_running=True,
+        )
+    )
+
+    assert update.status == "Switching to answer"
+    assert update.pause_label == "Pause"
+    assert update.mark_session_stopped is False
 
 
 def test_running_app_scan_state_starts_unscanned() -> None:

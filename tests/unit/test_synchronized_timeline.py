@@ -1,8 +1,10 @@
 from typing import Literal
+import threading
 
 from ai_presenter.media.output import AudioSink
 from ai_presenter.packages.models import DemoStep, DemoStepAction, DemoStepNarration
 from ai_presenter.providers.base import SpeechAudio
+from ai_presenter.runtime.control import DemoControl
 from ai_presenter.runtime.manual import ManualDirectiveQueue
 from ai_presenter.runtime.sync import SynchronizedTimelineRunner
 
@@ -24,6 +26,23 @@ class RecordingOutput(AudioSink):
 
     def play(self, audio: SpeechAudio) -> None:
         self._log.append(audio.data.decode().replace("wav:", "play:"))
+
+
+class BlockingStoppableOutput(AudioSink):
+    def __init__(self, log: list[str]) -> None:
+        self._log = log
+        self.started = threading.Event()
+        self.released = threading.Event()
+
+    def play(self, audio: SpeechAudio) -> None:
+        self._log.append("play:start")
+        self.started.set()
+        self.released.wait(timeout=2)
+        self._log.append("play:end")
+
+    def stop(self) -> None:
+        self._log.append("stop")
+        self.released.set()
 
 
 class RecordingActionExecutor:
@@ -95,6 +114,35 @@ def test_before_narration_plays_audio_before_action() -> None:
         "play:Scripted narration.",
         "action:ringcentral.video.toolbar.video:click:Start video",
     ]
+
+
+def test_before_narration_stops_blocking_audio_when_control_stops() -> None:
+    log: list[str] = []
+    control = DemoControl()
+    media_output = BlockingStoppableOutput(log)
+    action_executor = RecordingActionExecutor(log)
+    runner = SynchronizedTimelineRunner(
+        speech_provider=RecordingSpeechProvider(log),
+        media_output=media_output,
+        action_executor=action_executor,
+        control=control,
+    )
+    result_holder: list[object] = []
+    worker = threading.Thread(
+        target=lambda: result_holder.append(runner.run_step(make_step(placement="before"))),
+        daemon=True,
+    )
+
+    worker.start()
+    assert media_output.started.wait(timeout=1)
+    control.request_stop()
+    worker.join(timeout=1)
+
+    assert len(result_holder) == 1
+    result = result_holder[0]
+    assert getattr(result, "stopped") is True
+    assert action_executor.actions == []
+    assert log == ["synthesize:Scripted narration.", "play:start", "stop", "play:end"]
 
 
 def test_after_narration_runs_action_before_audio() -> None:

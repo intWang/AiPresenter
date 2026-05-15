@@ -67,7 +67,9 @@ class SynchronizedTimelineRunner:
 
         placement = step.narration.placement
         if placement == "before":
-            self._speak(narration_text)
+            control_result = self._speak(step.id, narration_text)
+            if control_result is not None:
+                return control_result
             control_result = self._wait_for_resume_or_stop(step.id, narration_text)
             if control_result is not None:
                 return control_result
@@ -79,7 +81,10 @@ class SynchronizedTimelineRunner:
             if control_result is not None:
                 self._cleanup_pending_action()
                 return control_result
-            self._speak(narration_text)
+            control_result = self._speak(step.id, narration_text)
+            if control_result is not None:
+                self._cleanup_pending_action()
+                return control_result
             self._cleanup_pending_action()
         elif placement == "during":
             audio = self._speech_provider.synthesize(narration_text)
@@ -88,10 +93,14 @@ class SynchronizedTimelineRunner:
             self._sleep(step.narration.action_offset_ms / 1000)
             control_result = self._wait_for_resume_or_stop(step.id, narration_text)
             if control_result is not None:
+                playback.stop()
                 playback.join_and_raise()
                 return control_result
             self._action_executor.execute(step.action)
-            playback.join_and_raise()
+            control_result = self._join_playback(step.id, narration_text, playback)
+            if control_result is not None:
+                self._cleanup_pending_action()
+                return control_result
             self._cleanup_pending_action()
             control_result = self._wait_for_resume_or_stop(step.id, narration_text)
             if control_result is not None:
@@ -101,9 +110,31 @@ class SynchronizedTimelineRunner:
 
         return StepRunResult(step_id=step.id, skipped=False, narration_text=narration_text)
 
-    def _speak(self, text: str) -> None:
+    def _speak(self, step_id: str, text: str) -> StepRunResult | None:
         audio = self._speech_provider.synthesize(text)
-        self._media_output.play(audio)
+        playback = _BackgroundPlayback(self._media_output, audio)
+        playback.start()
+        return self._join_playback(step_id, text, playback)
+
+    def _join_playback(
+        self,
+        step_id: str,
+        narration_text: str,
+        playback: _BackgroundPlayback,
+    ) -> StepRunResult | None:
+        if self._control is None:
+            playback.join_and_raise()
+            return None
+        while playback.is_alive:
+            if self._control.is_stop_requested:
+                playback.stop()
+                playback.join_and_raise()
+                return _stopped_step(step_id, narration_text=narration_text)
+            self._sleep(0.05)
+        playback.join_and_raise()
+        if self._control.is_stop_requested:
+            return _stopped_step(step_id, narration_text=narration_text)
+        return None
 
     def _cleanup_pending_action(self) -> None:
         cleanup = getattr(self._action_executor, "cleanup_pending", None)
@@ -145,6 +176,15 @@ class _BackgroundPlayback:
         self._thread.join()
         if self._error is not None:
             raise RuntimeError("Timeline audio playback failed.") from self._error
+
+    @property
+    def is_alive(self) -> bool:
+        return self._thread.is_alive()
+
+    def stop(self) -> None:
+        stop = getattr(self._media_output, "stop", None)
+        if callable(stop):
+            stop()
 
     def _play(self) -> None:
         try:

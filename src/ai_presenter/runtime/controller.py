@@ -30,7 +30,7 @@ NO_RUNNING_APPS_LABEL = "No running apps found"
 RUNNING_APP_SCAN_REQUIRED_MESSAGE = "Scan the selected running app before asking questions."
 QUESTION_FLOW_ID = "question-answer-demo"
 
-QuestionDemonstrationStatus = Literal["text_only", "queued", "started"]
+QuestionDemonstrationStatus = Literal["text_only", "interrupting", "started"]
 
 
 @dataclass(frozen=True)
@@ -46,8 +46,50 @@ class QuestionSubmitResult:
     demonstration_message: str = ""
 
 
+@dataclass(frozen=True)
+class ControllerStatusSnapshot:
+    current_status: str
+    last_error: Exception | None
+    is_running: bool
+    is_paused: bool
+    is_stopping: bool
+    is_switching_targets: bool
+    session_is_running: bool
+
+
+@dataclass(frozen=True)
+class ControllerStatusUpdate:
+    status: str
+    pause_label: str
+    mark_session_stopped: bool = False
+
+
 def format_chat_turns(turns: Sequence[ChatTurn]) -> str:
     return "\n\n".join(f"{turn.speaker}: {turn.message}" for turn in turns)
+
+
+def resolve_controller_status(snapshot: ControllerStatusSnapshot) -> ControllerStatusUpdate:
+    if snapshot.last_error is not None:
+        return ControllerStatusUpdate(
+            status=f"Error: {snapshot.last_error}",
+            pause_label="Pause",
+            mark_session_stopped=True,
+        )
+    if snapshot.is_running:
+        if snapshot.is_switching_targets:
+            return ControllerStatusUpdate(status="Switching to answer", pause_label="Pause")
+        if snapshot.is_stopping:
+            return ControllerStatusUpdate(status="Ending", pause_label="Pause")
+        if snapshot.is_paused:
+            return ControllerStatusUpdate(status="Paused", pause_label="Resume")
+        return ControllerStatusUpdate(status="Running", pause_label="Pause")
+    if snapshot.current_status == "Ending" or snapshot.session_is_running:
+        return ControllerStatusUpdate(
+            status="Ended",
+            pause_label="Pause",
+            mark_session_stopped=True,
+        )
+    return ControllerStatusUpdate(status=snapshot.current_status, pause_label="Pause")
 
 
 @dataclass
@@ -132,6 +174,8 @@ class PresenterController:
         self._last_error: Exception | None = None
         self._voice = PresenterVoiceSettings()
         self._state_lock = threading.Lock()
+        self._pending_target: _ControllerRunTarget | None = None
+        self._pending_voice: PresenterVoiceSettings | None = None
 
     def start(self) -> None:
         with self._state_lock:
@@ -147,6 +191,9 @@ class PresenterController:
         return True
 
     def end(self) -> None:
+        with self._state_lock:
+            self._pending_target = None
+            self._pending_voice = None
         self._control.request_stop()
 
     def set_voice(self, voice: PresenterVoiceSettings) -> None:
@@ -177,25 +224,25 @@ class PresenterController:
         interrupt = create_question_interrupt_step(target.material_package, response)
         if interrupt is None:
             return QuestionSubmitResult(answer_text=response.answer_text)
+        question_target = _target_with_question_flow(target, interrupt)
         if self.is_running:
-            self._control.enqueue_interrupt(interrupt)
+            self._switch_to_target_after_current_step(question_target, voice)
             return QuestionSubmitResult(
                 answer_text=response.answer_text,
-                demonstration_status="queued",
-                demonstration_message="I will show that right after the current step.",
+                demonstration_status="interrupting",
+                demonstration_message="I am switching to that now.",
             )
-        question_target = _target_with_question_flow(target, interrupt)
         if self._start_target(question_target, voice):
             return QuestionSubmitResult(
                 answer_text=response.answer_text,
                 demonstration_status="started",
                 demonstration_message="Demonstrating it now.",
             )
-        self._control.enqueue_interrupt(interrupt)
+        self._switch_to_target_after_current_step(question_target, voice)
         return QuestionSubmitResult(
             answer_text=response.answer_text,
-            demonstration_status="queued",
-            demonstration_message="I will show that right after the current step.",
+            demonstration_status="interrupting",
+            demonstration_message="I am switching to that now.",
         )
 
     def join(self, timeout: float | None = None) -> None:
@@ -211,6 +258,15 @@ class PresenterController:
         return self._control.is_paused
 
     @property
+    def is_stopping(self) -> bool:
+        return self._control.is_stop_requested
+
+    @property
+    def is_switching_targets(self) -> bool:
+        with self._state_lock:
+            return self._pending_target is not None
+
+    @property
     def last_error(self) -> Exception | None:
         return self._last_error
 
@@ -219,9 +275,43 @@ class PresenterController:
             return False
         self._last_error = None
         self._control.reset()
-        self._thread = threading.Thread(target=self._run_demo, args=(target, voice), daemon=True)
+        with self._state_lock:
+            self._pending_target = None
+            self._pending_voice = None
+        self._thread = threading.Thread(
+            target=self._run_demo_sequence,
+            args=(target, voice),
+            daemon=True,
+        )
         self._thread.start()
         return True
+
+    def _switch_to_target_after_current_step(
+        self,
+        target: _ControllerRunTarget,
+        voice: PresenterVoiceSettings,
+    ) -> None:
+        with self._state_lock:
+            self._pending_target = target
+            self._pending_voice = voice
+        self._control.request_stop()
+
+    def _run_demo_sequence(
+        self,
+        target: _ControllerRunTarget,
+        voice: PresenterVoiceSettings,
+    ) -> None:
+        current_target = target
+        current_voice = voice
+        while True:
+            self._run_demo(current_target, current_voice)
+            if self._last_error is not None:
+                return
+            next_run = self._pop_pending_target()
+            if next_run is None:
+                return
+            current_target, current_voice = next_run
+            self._control.reset()
 
     def _run_demo(self, target: _ControllerRunTarget, voice: PresenterVoiceSettings) -> None:
         try:
@@ -244,6 +334,18 @@ class PresenterController:
                 )
         except Exception as exc:
             self._last_error = exc
+
+    def _pop_pending_target(
+        self,
+    ) -> tuple[_ControllerRunTarget, PresenterVoiceSettings] | None:
+        with self._state_lock:
+            if self._pending_target is None:
+                return None
+            target = self._pending_target
+            voice = self._pending_voice or self._voice
+            self._pending_target = None
+            self._pending_voice = None
+            return target, voice
 
 
 def _target_with_question_flow(
@@ -493,24 +595,27 @@ def run_controller(
             if result.demonstration_status == "started":
                 session.mark_running()
                 status.set("Demonstrating answer")
-            elif result.demonstration_status == "queued":
-                status.set("Question queued")
+            elif result.demonstration_status == "interrupting":
+                status.set("Switching to answer")
         except Exception as exc:
             append_chat("AiPresenter", f"Question error: {exc}")
 
     def refresh_status() -> None:
-        if controller.last_error is not None:
+        update = resolve_controller_status(
+            ControllerStatusSnapshot(
+                current_status=status.get(),
+                last_error=controller.last_error,
+                is_running=controller.is_running,
+                is_paused=controller.is_paused,
+                is_stopping=controller.is_stopping,
+                is_switching_targets=controller.is_switching_targets,
+                session_is_running=session.is_running,
+            )
+        )
+        if update.mark_session_stopped:
             session.mark_stopped()
-            status.set(f"Error: {controller.last_error}")
-        elif controller.is_running:
-            status.set("Paused" if controller.is_paused else "Running")
-            pause_label.set("Resume" if controller.is_paused else "Pause")
-        elif status.get() == "Ending":
-            session.mark_stopped()
-            status.set("Ended")
-        elif session.is_running:
-            session.mark_stopped()
-            status.set("Ended")
+        status.set(update.status)
+        pause_label.set(update.pause_label)
         root.after(500, refresh_status)
 
     frame = tk.Frame(root, padx=16, pady=16)

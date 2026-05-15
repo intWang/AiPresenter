@@ -67,21 +67,40 @@ class ControllerSession:
         )
 
     def create_interrupt_step(self, response: QuestionResponse) -> DemoStep | None:
-        if self._active_package is None or response.entrypoint_id is None or not response.can_operate:
+        if self._active_package is None:
             return None
-        entrypoint = self._active_package.entrypoint_by_id(response.entrypoint_id)
-        if not entrypoint.open_steps:
-            return None
-        return DemoStep(
-            id=f"question-{entrypoint.id}",
-            title=f"Question: {entrypoint.title}",
-            action=DemoStepAction(entrypointId=entrypoint.id, operation="open"),
-            narration=DemoStepNarration(
-                text=response.answer_text,
-                placement="during",
-                actionOffsetMs=300,
-            ),
-        )
+        return create_question_interrupt_step(self._active_package, response)
+
+    def mark_running(self) -> None:
+        self._running = True
+
+    def mark_stopped(self) -> None:
+        self._running = False
+
+    @property
+    def is_running(self) -> bool:
+        return self._running
 
     def mark_running_for_test(self) -> None:
-        self._running = True
+        self.mark_running()
+
+
+def create_question_interrupt_step(
+    package: MaterialPackage,
+    response: QuestionResponse,
+) -> DemoStep | None:
+    if response.entrypoint_id is None or not response.can_operate:
+        return None
+    entrypoint = package.entrypoint_by_id(response.entrypoint_id)
+    if not entrypoint.open_steps:
+        return None
+    return DemoStep(
+        id=f"question-{entrypoint.id}",
+        title=f"Question: {entrypoint.title}",
+        action=DemoStepAction(entrypointId=entrypoint.id, operation="open"),
+        narration=DemoStepNarration(
+            text=response.answer_text,
+            placement="during",
+            actionOffsetMs=300,
+        ),
+    )

@@ -6,6 +6,7 @@ from ai_presenter.runtime.temporary_package import classify_control_safety
 def test_classifies_destructive_controls_as_risky() -> None:
     assert classify_control_safety("Delete", "Button").is_safe is False
     assert classify_control_safety("Send", "Button").is_safe is False
+    assert classify_control_safety("Start recording", "Button").is_safe is False
 
 
 def test_classifies_settings_control_as_safe() -> None:

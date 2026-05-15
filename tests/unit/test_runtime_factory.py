@@ -13,8 +13,10 @@ from ai_presenter.runtime.factory import create_adapter
 from ai_presenter.runtime.factory import create_fake_provider_registry
 from ai_presenter.runtime.factory import create_provider_registry
 from ai_presenter.runtime.factory import run_desktop_profile
+from ai_presenter.runtime.factory import run_existing_window_material_demo
 from ai_presenter.runtime.factory import run_material_demo
 from ai_presenter.runtime.sync import StepRunResult
+from ai_presenter.runtime.voice import PresenterVoiceSettings
 
 
 def test_fake_provider_registry_satisfies_ringcentral_profile() -> None:
@@ -294,3 +296,77 @@ def test_run_material_demo_captures_state_before_steps_and_rewrites_empty_room_i
         ("add-coworkers", "ringcentral.video.toolbar.invite"),
         ("participants", "ringcentral.video.toolbar.participants"),
     ]
+
+
+def test_existing_window_material_demo_applies_voice_to_narration(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    profile = load_profile(Path("profiles/ringcentral-video.yaml"))
+    assert isinstance(profile, DesktopAppProfile)
+    handle = WindowHandle("Demo", 123, "DemoWindow", "Demo App")
+    run_texts: list[str] = []
+    package = MaterialPackage.model_validate(
+        {
+            "appId": "temp.demo.123",
+            "appName": "Demo App",
+            "version": 1,
+            "profileIds": ["temp.demo.123.profile"],
+            "operationEntrypoints": [
+                {
+                    "id": "temp.demo.123.overview",
+                    "title": "Overview",
+                    "area": "Demo App",
+                    "purpose": "Introduce the app.",
+                    "openSteps": [],
+                }
+            ],
+            "demoFlows": [
+                {
+                    "id": "temp-demo",
+                    "title": "Temporary demo",
+                    "goal": "Introduce a running app.",
+                    "steps": [
+                        {
+                            "id": "overview",
+                            "title": "Overview",
+                            "action": {
+                                "entrypointId": "temp.demo.123.overview",
+                                "operation": "explain",
+                            },
+                            "narration": {
+                                "text": "Open settings. Then review options.",
+                                "placement": "before",
+                            },
+                        }
+                    ],
+                }
+            ],
+            "manualControls": [],
+        }
+    )
+
+    class FakeDesktop:
+        pass
+
+    class FakeTimelineRunner:
+        def __init__(self, **kwargs: object) -> None:
+            return None
+
+        def run_step(self, step: object) -> StepRunResult:
+            narration = getattr(step, "narration")
+            run_texts.append(getattr(narration, "text"))
+            return StepRunResult(step_id=getattr(step, "id"), skipped=False)
+
+    monkeypatch.setattr(factory_module, "WindowsDesktopDriver", FakeDesktop)
+    monkeypatch.setattr(factory_module, "SynchronizedTimelineRunner", FakeTimelineRunner)
+
+    run_existing_window_material_demo(
+        profile,
+        package,
+        "temp-demo",
+        handle=handle,
+        registry=create_provider_registry(profile),
+        voice=PresenterVoiceSettings(tone="concise"),
+    )
+
+    assert run_texts == ["Open settings."]

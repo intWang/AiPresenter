@@ -2,9 +2,32 @@ from dataclasses import dataclass
 import re
 
 from ai_presenter.packages.models import MaterialPackage, OperationEntrypoint, QuestionAnswer
-from ai_presenter.runtime.voice import PresenterVoiceSettings
+from ai_presenter.runtime.voice import PresenterVoiceSettings, render_presenter_text
 
-_RISKY_ENTRYPOINT_WORDS = {"leave", "recording", "record", "share", "delete", "send", "pay"}
+_RISKY_ENTRYPOINT_WORDS = {
+    "delete",
+    "end",
+    "invite",
+    "leave",
+    "lock",
+    "lower hand",
+    "mute",
+    "pay",
+    "raise hand",
+    "reaction",
+    "record",
+    "recording",
+    "send",
+    "share",
+    "start",
+    "stop",
+    "submit",
+    "toggle",
+    "transfer",
+    "turn",
+    "unlock",
+    "unmute",
+}
 _STOPWORDS = {
     "a",
     "can",
@@ -139,29 +162,7 @@ def _render_entrypoint_answer(entrypoint: OperationEntrypoint, voice: PresenterV
 
 
 def _render_text(text: str, voice: PresenterVoiceSettings) -> str:
-    if voice.language == "zh":
-        return _render_chinese(text, voice)
-    if voice.tone == "conversational":
-        return f"Sure. {text}"
-    if voice.tone == "concise":
-        return text.split(".")[0].strip() + "."
-    return text
-
-
-def _render_chinese(text: str, voice: PresenterVoiceSettings) -> str:
-    replacements = {
-        "Chat": "聊天",
-        "chat": "聊天",
-        "Invite": "邀请",
-        "Settings": "设置",
-        "Leave": "离开会议",
-        "Background": "背景",
-    }
-    rendered = text
-    for source, target in replacements.items():
-        rendered = rendered.replace(source, target)
-    prefix = "我来说明一下。" if voice.tone == "conversational" else ""
-    return f"{prefix}{rendered}"
+    return render_presenter_text(text, voice)
 
 
 def _can_operate(package: MaterialPackage, entrypoint_id: str | None) -> bool:

@@ -1,5 +1,6 @@
 import logging
 import time
+from collections.abc import Callable
 
 from ai_presenter.adapters.base import AppAdapter
 from ai_presenter.adapters.ringcentral import RingCentralAdapter
@@ -31,6 +32,9 @@ from ai_presenter.runtime.presenter_context import load_presenter_context
 from ai_presenter.runtime.presenter import PresenterLoop
 from ai_presenter.runtime.profile_runner import ProfileRunner
 from ai_presenter.runtime.sync import SynchronizedTimelineRunner
+from ai_presenter.runtime.voice import PresenterVoiceSettings
+from ai_presenter.runtime.voice import render_presenter_text
+from ai_presenter.runtime.voice import validate_profile_voice
 
 logger = logging.getLogger("ai_presenter.runtime.factory")
 
@@ -138,21 +142,81 @@ def run_material_demo(
     *,
     registry: ProviderRegistry | None = None,
     control: DemoControl | None = None,
+    voice: PresenterVoiceSettings | None = None,
 ) -> None:
-    flow = demo_flow_by_id(material_package, flow_id)
     desktop = WindowsDesktopDriver()
     providers = registry or create_provider_registry(profile)
     handle = create_profile_runner(profile, desktop).launch_and_bind()
     adapter = create_adapter(profile)
+    _run_material_demo_on_handle(
+        profile=profile,
+        material_package=material_package,
+        flow_id=flow_id,
+        desktop=desktop,
+        providers=providers,
+        handle=handle,
+        control=control,
+        voice=voice,
+        clear_blockers_before_start=True,
+        clear_before_action=False,
+        state_adjuster=lambda step: _adjust_demo_step(profile, desktop, adapter, handle, step),
+    )
+
+
+def run_existing_window_material_demo(
+    profile: DesktopAppProfile,
+    material_package: MaterialPackage,
+    flow_id: str,
+    *,
+    handle: WindowHandle,
+    registry: ProviderRegistry | None = None,
+    control: DemoControl | None = None,
+    voice: PresenterVoiceSettings | None = None,
+) -> None:
+    desktop = WindowsDesktopDriver()
+    providers = registry or create_provider_registry(profile)
+    _run_material_demo_on_handle(
+        profile=profile,
+        material_package=material_package,
+        flow_id=flow_id,
+        desktop=desktop,
+        providers=providers,
+        handle=handle,
+        control=control,
+        voice=voice,
+        clear_blockers_before_start=False,
+        clear_before_action=False,
+        state_adjuster=lambda step: step,
+    )
+
+
+def _run_material_demo_on_handle(
+    *,
+    profile: DesktopAppProfile,
+    material_package: MaterialPackage,
+    flow_id: str,
+    desktop: WindowsDesktopDriver,
+    providers: ProviderRegistry,
+    handle: WindowHandle,
+    control: DemoControl | None,
+    voice: PresenterVoiceSettings | None,
+    clear_blockers_before_start: bool,
+    clear_before_action: bool,
+    state_adjuster: Callable[[DemoStep], DemoStep | None],
+) -> None:
+    voice_settings = voice or PresenterVoiceSettings()
+    validate_profile_voice(profile, voice_settings)
+    flow = demo_flow_by_id(material_package, flow_id)
     action_executor = PackageActionExecutor(
         package=material_package,
         driver=desktop,
         handle=handle,
-        clear_before_action=False,
+        clear_before_action=clear_before_action,
         defer_cleanup=True,
         action_hold_seconds=0.2,
     )
-    action_executor.clear_blockers()
+    if clear_blockers_before_start:
+        action_executor.clear_blockers()
     runner = SynchronizedTimelineRunner(
         speech_provider=providers.speech(profile.providers.speech),
         media_output=create_media_output(profile),
@@ -162,9 +226,28 @@ def run_material_demo(
     runtime = MaterialDemoRuntime(
         flow_steps=flow.steps,
         timeline=runner,
-        state_adjuster=lambda step: _adjust_demo_step(profile, desktop, adapter, handle, step),
+        state_adjuster=lambda step: _apply_voice_to_adjusted_step(
+            state_adjuster(step),
+            voice_settings,
+        ),
+        interrupt_source=None if control is None else control.pop_interrupt,
     )
     runtime.run_to_completion()
+
+
+def _apply_voice_to_adjusted_step(
+    step: DemoStep | None,
+    voice: PresenterVoiceSettings,
+) -> DemoStep | None:
+    if step is None:
+        return None
+    return step.model_copy(
+        update={
+            "narration": step.narration.model_copy(
+                update={"text": render_presenter_text(step.narration.text, voice)}
+            )
+        }
+    )
 
 
 def _adjust_demo_step(

@@ -10,9 +10,11 @@ from ai_presenter.desktop.base import VisibleWindow, WindowHandle
 from ai_presenter.desktop.windows import WindowsDesktopDriver
 from ai_presenter.runtime.catalog import ControllerAppCatalog
 from ai_presenter.runtime.control import DemoControl
+from ai_presenter.runtime.factory import run_existing_window_material_demo
 from ai_presenter.runtime.factory import run_material_demo
 from ai_presenter.runtime.questions import answer_question
-from ai_presenter.runtime.session import ControllerSession, RunningAppTarget
+from ai_presenter.runtime.session import ControllerSession, MaterialPackageTarget, RunningAppTarget
+from ai_presenter.runtime.session import create_question_interrupt_step
 from ai_presenter.runtime.voice import PresenterTone, PresenterVoiceSettings
 
 if TYPE_CHECKING:
@@ -82,6 +84,13 @@ class _RunningAppScanState:
         return (label, window.pid, window.window_class)
 
 
+@dataclass(frozen=True)
+class _ControllerRunTarget:
+    material_package: MaterialPackage
+    flow_id: str
+    handle: WindowHandle | None = None
+
+
 class PresenterController:
     def __init__(
         self,
@@ -91,22 +100,27 @@ class PresenterController:
         flow_id: str,
         control: DemoControl | None = None,
         runner: Callable[..., None] | None = None,
+        window_runner: Callable[..., None] | None = None,
     ) -> None:
         self._profile = profile
-        self._material_package = material_package
-        self._flow_id = flow_id
+        self._target = _ControllerRunTarget(material_package, flow_id)
         self._control = control or DemoControl()
         self._runner = runner or run_material_demo
+        self._window_runner = window_runner or run_existing_window_material_demo
         self._thread: threading.Thread | None = None
         self._last_error: Exception | None = None
         self._voice = PresenterVoiceSettings()
+        self._state_lock = threading.Lock()
 
     def start(self) -> None:
         if self._thread is not None and self._thread.is_alive():
             return
         self._last_error = None
         self._control.reset()
-        self._thread = threading.Thread(target=self._run_demo, daemon=True)
+        with self._state_lock:
+            target = self._target
+            voice = self._voice
+        self._thread = threading.Thread(target=self._run_demo, args=(target, voice), daemon=True)
         self._thread.start()
 
     def pause_or_resume(self) -> bool:
@@ -120,14 +134,33 @@ class PresenterController:
         self._control.request_stop()
 
     def set_voice(self, voice: PresenterVoiceSettings) -> None:
-        self._voice = voice
+        with self._state_lock:
+            self._voice = voice
+
+    def set_target(
+        self,
+        *,
+        material_package: MaterialPackage,
+        flow_id: str,
+        handle: WindowHandle | None = None,
+    ) -> None:
+        if self.is_running:
+            raise RuntimeError("Cannot change target while a demo is running.")
+        with self._state_lock:
+            self._target = _ControllerRunTarget(material_package, flow_id, handle)
 
     def submit_question(self, question: str) -> str:
+        with self._state_lock:
+            target = self._target
+            voice = self._voice
         response = answer_question(
-            package=self._material_package,
+            package=target.material_package,
             question=question,
-            voice=self._voice,
+            voice=voice,
         )
+        interrupt = create_question_interrupt_step(target.material_package, response)
+        if interrupt is not None and self.is_running:
+            self._control.enqueue_interrupt(interrupt)
         return response.answer_text
 
     def join(self, timeout: float | None = None) -> None:
@@ -146,14 +179,25 @@ class PresenterController:
     def last_error(self) -> Exception | None:
         return self._last_error
 
-    def _run_demo(self) -> None:
+    def _run_demo(self, target: _ControllerRunTarget, voice: PresenterVoiceSettings) -> None:
         try:
-            self._runner(
-                self._profile,
-                self._material_package,
-                self._flow_id,
-                control=self._control,
-            )
+            if target.handle is None:
+                self._runner(
+                    self._profile,
+                    target.material_package,
+                    target.flow_id,
+                    control=self._control,
+                    voice=voice,
+                )
+            else:
+                self._window_runner(
+                    self._profile,
+                    target.material_package,
+                    target.flow_id,
+                    handle=target.handle,
+                    control=self._control,
+                    voice=voice,
+                )
         except Exception as exc:
             self._last_error = exc
 
@@ -167,10 +211,15 @@ def run_controller(
 
     desktop = WindowsDesktopDriver()
     session = ControllerSession()
+    session.select_target(
+        MaterialPackageTarget(profile=profile, package=material_package, flow_id=flow_id)
+    )
     catalog = ControllerAppCatalog(package_dir=REPO_PACKAGE_DIR, desktop=desktop)
     scan_state = _RunningAppScanState()
     scanned_package_id = ""
     scanned_flow_id = ""
+    scanned_package: MaterialPackage | None = None
+    scanned_handle: WindowHandle | None = None
 
     controller = PresenterController(
         profile=profile,
@@ -204,6 +253,20 @@ def run_controller(
     def selected_running_window() -> VisibleWindow | None:
         return scan_state.selected_window
 
+    def current_voice() -> PresenterVoiceSettings:
+        return PresenterVoiceSettings(
+            language="zh" if language.get() == "Chinese" else "en",
+            tone=tone_values[tone.get()],
+        )
+
+    def handle_from_window(window: VisibleWindow) -> WindowHandle:
+        return WindowHandle(
+            process=window.process,
+            pid=window.pid,
+            window_class=window.window_class,
+            title=window.title,
+        )
+
     def sync_target_choice(*_args: object) -> None:
         if source.get() == "Running desktop app":
             if scan_state.has_scanned_selection:
@@ -215,6 +278,8 @@ def run_controller(
             return
         package_choice.set(material_package.app_id)
         flow_choice.set(flow_id)
+        if not controller.is_running:
+            controller.set_target(material_package=material_package, flow_id=flow_id)
 
     def choose_running_app(label: str) -> None:
         previously_scanned = scan_state.has_scanned_selection
@@ -262,23 +327,25 @@ def run_controller(
         sync_target_choice()
 
     def scan_selected_app() -> None:
-        nonlocal scanned_flow_id, scanned_package_id
+        nonlocal scanned_flow_id, scanned_package_id, scanned_handle, scanned_package
         selected = selected_running_window()
         if selected is None:
             status.set("Scan error: select a running app first")
             return
         try:
-            handle = WindowHandle(
-                process=selected.process,
-                pid=selected.pid,
-                window_class=selected.window_class,
-                title=selected.title,
-            )
+            handle = handle_from_window(selected)
             controls = desktop.list_visible_controls(handle)
             package = session.scan_running_app(RunningAppTarget(window=selected), controls)
             scan_state.mark_selected_scanned()
+            scanned_package = package
+            scanned_handle = handle
             scanned_package_id = package.app_id
             scanned_flow_id = package.demo_flows[0].id if package.demo_flows else ""
+            controller.set_target(
+                material_package=package,
+                flow_id=scanned_flow_id,
+                handle=handle,
+            )
             package_choice.set(scanned_package_id)
             flow_choice.set(scanned_flow_id)
             status.set(
@@ -288,9 +355,40 @@ def run_controller(
             status.set(f"Scan error: {exc}")
 
     def start() -> None:
-        controller.start()
-        status.set("Running")
-        pause_label.set("Pause")
+        try:
+            voice = current_voice()
+            controller.set_voice(voice)
+            if source.get() == "Running desktop app":
+                if (
+                    not scan_state.has_scanned_selection
+                    or scanned_package is None
+                    or scanned_handle is None
+                    or not scanned_flow_id
+                ):
+                    status.set(RUNNING_APP_SCAN_REQUIRED_MESSAGE)
+                    return
+                controller.set_target(
+                    material_package=scanned_package,
+                    flow_id=scanned_flow_id,
+                    handle=scanned_handle,
+                )
+            else:
+                session.set_voice(voice)
+                session.select_target(
+                    MaterialPackageTarget(
+                        profile=profile,
+                        package=material_package,
+                        flow_id=flow_id,
+                    )
+                )
+                controller.set_target(material_package=material_package, flow_id=flow_id)
+            session.mark_running()
+            controller.start()
+            status.set("Running")
+            pause_label.set("Pause")
+        except Exception as exc:
+            session.mark_stopped()
+            status.set(f"Start error: {exc}")
 
     def pause_or_resume() -> None:
         paused = controller.pause_or_resume()
@@ -299,6 +397,7 @@ def run_controller(
 
     def end() -> None:
         controller.end()
+        session.mark_stopped()
         status.set("Ending")
         pause_label.set("Pause")
 
@@ -307,10 +406,7 @@ def run_controller(
         if not text:
             return
         try:
-            voice = PresenterVoiceSettings(
-                language="zh" if language.get() == "Chinese" else "en",
-                tone=tone_values[tone.get()],
-            )
+            voice = current_voice()
             controller.set_voice(voice)
             if source.get() == "Running desktop app":
                 if not scan_state.has_scanned_selection:
@@ -318,19 +414,24 @@ def run_controller(
                     status.set(RUNNING_APP_SCAN_REQUIRED_MESSAGE)
                     return
                 session.set_voice(voice)
-                answer.set(session.answer_question(text).answer_text)
-            else:
-                answer.set(controller.submit_question(text))
+            elif not controller.is_running:
+                controller.set_target(material_package=material_package, flow_id=flow_id)
+            answer.set(controller.submit_question(text))
         except Exception as exc:
             answer.set(f"Question error: {exc}")
 
     def refresh_status() -> None:
         if controller.last_error is not None:
+            session.mark_stopped()
             status.set(f"Error: {controller.last_error}")
         elif controller.is_running:
             status.set("Paused" if controller.is_paused else "Running")
             pause_label.set("Resume" if controller.is_paused else "Pause")
         elif status.get() == "Ending":
+            session.mark_stopped()
+            status.set("Ended")
+        elif session.is_running:
+            session.mark_stopped()
             status.set("Ended")
         root.after(500, refresh_status)
 

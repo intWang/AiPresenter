@@ -17,10 +17,12 @@ class MaterialDemoRuntime:
         flow_steps: Sequence[DemoStep],
         timeline: TimelineLike,
         state_adjuster: Callable[[DemoStep], DemoStep | None],
+        interrupt_source: Callable[[], DemoStep | None] | None = None,
     ) -> None:
         self._flow_steps = tuple(flow_steps)
         self._timeline = timeline
         self._state_adjuster = state_adjuster
+        self._interrupt_source = interrupt_source
         self._next_index = 0
 
     @property
@@ -28,6 +30,10 @@ class MaterialDemoRuntime:
         return self._next_index >= len(self._flow_steps)
 
     def run_next(self) -> bool:
+        interrupt = self._pop_interrupt()
+        if interrupt is not None:
+            result = self.run_interrupt(interrupt)
+            return not getattr(result, "stopped", False)
         if self.is_complete:
             return False
         step = self._flow_steps[self._next_index]
@@ -45,3 +51,8 @@ class MaterialDemoRuntime:
 
     def run_interrupt(self, step: DemoStep) -> object:
         return self._timeline.run_step(step)
+
+    def _pop_interrupt(self) -> DemoStep | None:
+        if self._interrupt_source is None:
+            return None
+        return self._interrupt_source()

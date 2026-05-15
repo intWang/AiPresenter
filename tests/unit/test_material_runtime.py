@@ -1,6 +1,7 @@
 from ai_presenter.packages.models import DemoStep
 from ai_presenter.packages.models import DemoStepAction
 from ai_presenter.packages.models import DemoStepNarration
+from ai_presenter.runtime.control import DemoControl
 from ai_presenter.runtime.material_runtime import MaterialDemoRuntime
 
 
@@ -51,6 +52,23 @@ def test_runtime_can_run_interrupt_step_without_advancing_flow() -> None:
     )
 
     runtime.run_interrupt(make_step("interrupt"))
+    runtime.run_next()
+
+    assert timeline.steps == ["interrupt", "one"]
+
+
+def test_runtime_runs_queued_control_interrupt_before_next_flow_step() -> None:
+    timeline = FakeTimeline()
+    control = DemoControl()
+    control.enqueue_interrupt(make_step("interrupt"))
+    runtime = MaterialDemoRuntime(
+        flow_steps=[make_step("one"), make_step("two")],
+        timeline=timeline,
+        state_adjuster=lambda step: step,
+        interrupt_source=control.pop_interrupt,
+    )
+
+    runtime.run_next()
     runtime.run_next()
 
     assert timeline.steps == ["interrupt", "one"]

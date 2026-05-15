@@ -94,6 +94,7 @@ def test_invite_people_prefers_invite_entrypoint() -> None:
         "ringcentral.video.toolbar.leave",
         "ringcentral.video.toolbar.participants",
     }
+    assert response.can_operate is False
 
 
 def test_bring_people_into_meeting_matches_invite_package_qa() -> None:
@@ -133,6 +134,35 @@ def test_recording_answer_is_not_operable() -> None:
     )
 
     assert response.entrypoint_id == "ringcentral.video.more.recording"
+    assert response.can_operate is False
+
+
+def test_camera_toggle_answer_is_not_operable() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question="camera",
+        voice=PresenterVoiceSettings(),
+    )
+
+    assert response.entrypoint_id in {
+        "ringcentral.video.toolbar.video",
+        "ringcentral.video.toolbar.video-menu",
+    }
+    assert response.can_operate is False
+
+
+def test_start_meeting_answer_is_not_operable() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question="start meeting",
+        voice=PresenterVoiceSettings(),
+    )
+
+    assert response.entrypoint_id == "ringcentral.develop.video.start"
     assert response.can_operate is False
 
 

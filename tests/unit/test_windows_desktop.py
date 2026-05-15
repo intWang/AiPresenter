@@ -13,9 +13,9 @@ class FakeControl:
     def __init__(
         self,
         name: str | None,
-        control_type: str | list["FakeControl"] | None = None,
+        control_type: str | list[Any] | None = None,
         bounds: SimpleNamespace | None = None,
-        children: list["FakeControl"] | None = None,
+        children: list[Any] | None = None,
         is_offscreen: bool | None = None,
     ) -> None:
         self.Name = name
@@ -29,7 +29,7 @@ class FakeControl:
                 self.IsOffscreen = is_offscreen
             self._children = children or []
 
-    def GetChildren(self) -> list["FakeControl"]:
+    def GetChildren(self) -> list[Any]:
         return self._children
 
 
@@ -39,7 +39,7 @@ class FakeClickableControl(FakeControl):
         name: str,
         control_type_name: str,
         clicked: list[str],
-        children: list[FakeControl] | None = None,
+        children: list[Any] | None = None,
     ) -> None:
         super().__init__(name, children)
         self.ControlTypeName = control_type_name
@@ -140,7 +140,7 @@ class StaleNameControl:
     def BoundingRectangle(self) -> SimpleNamespace:
         return SimpleNamespace(left=20, top=20, right=120, bottom=50)
 
-    def GetChildren(self) -> list[FakeControl]:
+    def GetChildren(self) -> list[Any]:
         return []
 
 
@@ -155,7 +155,7 @@ class StaleTypeControl:
     def BoundingRectangle(self) -> SimpleNamespace:
         return SimpleNamespace(left=20, top=60, right=120, bottom=90)
 
-    def GetChildren(self) -> list[FakeControl]:
+    def GetChildren(self) -> list[Any]:
         return []
 
 
@@ -164,7 +164,7 @@ class StaleChildrenControl:
     ControlTypeName = "Button"
     BoundingRectangle = SimpleNamespace(left=20, top=100, right=120, bottom=130)
 
-    def GetChildren(self) -> list[FakeControl]:
+    def GetChildren(self) -> list[Any]:
         raise RuntimeError("stale children")
 
 
@@ -177,7 +177,7 @@ class StaleOffscreenControl:
     def IsOffscreen(self) -> bool:
         raise RuntimeError("stale visibility")
 
-    def GetChildren(self) -> list[FakeControl]:
+    def GetChildren(self) -> list[Any]:
         return []
 
 

@@ -4,7 +4,7 @@ import pytest
 
 from ai_presenter.config.loader import load_profile
 from ai_presenter.config.models import DesktopAppProfile, LaunchStep
-from ai_presenter.desktop.base import DesktopDriver, WindowHandle
+from ai_presenter.desktop.base import DesktopDriver, VisibleControl, VisibleWindow, WindowHandle
 from ai_presenter.runtime.profile_runner import ProfileRunner
 
 
@@ -29,6 +29,12 @@ class FakeDesktopDriver(DesktopDriver):
     def read_focused_window_text(self) -> tuple[str, ...]:
         self.actions.append("read-text")
         return self._focused_text
+
+    def list_visible_windows(self) -> tuple[VisibleWindow, ...]:
+        return ()
+
+    def list_visible_controls(self, handle: WindowHandle) -> tuple[VisibleControl, ...]:
+        return ()
 
     def click_window_relative(self, handle: WindowHandle, x: int, y: int) -> None:
         raise AssertionError("ProfileRunner should not click bound meeting windows")

@@ -595,7 +595,8 @@ def _control_type_name(control: Any) -> str | None:
             return None
         if isinstance(value, str) and value.strip():
             return value.strip()
-    return control.__class__.__name__
+    class_name: object = control.__class__.__name__
+    return class_name if isinstance(class_name, str) else None
 
 
 def _control_is_visible(control: Any) -> bool:
@@ -612,8 +613,10 @@ def _process_name_from_pid(pid: int) -> str:
     if psutil is None:
         return str(pid)
     try:
-        name = psutil.Process(pid).name()
+        name: object = psutil.Process(pid).name()
     except Exception:
+        return str(pid)
+    if not isinstance(name, str):
         return str(pid)
     return name[:-4] if name.casefold().endswith(".exe") else name
 

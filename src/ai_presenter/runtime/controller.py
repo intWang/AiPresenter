@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import threading
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from ai_presenter.desktop.base import VisibleWindow, WindowHandle
 from ai_presenter.desktop.windows import WindowsDesktopDriver
+from ai_presenter.packages.models import DemoFlow, DemoStep
 from ai_presenter.runtime.catalog import ControllerAppCatalog
 from ai_presenter.runtime.control import DemoControl
 from ai_presenter.runtime.factory import run_existing_window_material_demo
@@ -27,6 +28,26 @@ if TYPE_CHECKING:
 REPO_PACKAGE_DIR = Path(__file__).resolve().parents[3] / "packages"
 NO_RUNNING_APPS_LABEL = "No running apps found"
 RUNNING_APP_SCAN_REQUIRED_MESSAGE = "Scan the selected running app before asking questions."
+QUESTION_FLOW_ID = "question-answer-demo"
+
+QuestionDemonstrationStatus = Literal["text_only", "queued", "started"]
+
+
+@dataclass(frozen=True)
+class ChatTurn:
+    speaker: str
+    message: str
+
+
+@dataclass(frozen=True)
+class QuestionSubmitResult:
+    answer_text: str
+    demonstration_status: QuestionDemonstrationStatus = "text_only"
+    demonstration_message: str = ""
+
+
+def format_chat_turns(turns: Sequence[ChatTurn]) -> str:
+    return "\n\n".join(f"{turn.speaker}: {turn.message}" for turn in turns)
 
 
 @dataclass
@@ -113,15 +134,10 @@ class PresenterController:
         self._state_lock = threading.Lock()
 
     def start(self) -> None:
-        if self._thread is not None and self._thread.is_alive():
-            return
-        self._last_error = None
-        self._control.reset()
         with self._state_lock:
             target = self._target
             voice = self._voice
-        self._thread = threading.Thread(target=self._run_demo, args=(target, voice), daemon=True)
-        self._thread.start()
+        self._start_target(target, voice)
 
     def pause_or_resume(self) -> bool:
         if self._control.is_paused:
@@ -149,7 +165,7 @@ class PresenterController:
         with self._state_lock:
             self._target = _ControllerRunTarget(material_package, flow_id, handle)
 
-    def submit_question(self, question: str) -> str:
+    def submit_question(self, question: str) -> QuestionSubmitResult:
         with self._state_lock:
             target = self._target
             voice = self._voice
@@ -159,9 +175,28 @@ class PresenterController:
             voice=voice,
         )
         interrupt = create_question_interrupt_step(target.material_package, response)
-        if interrupt is not None and self.is_running:
+        if interrupt is None:
+            return QuestionSubmitResult(answer_text=response.answer_text)
+        if self.is_running:
             self._control.enqueue_interrupt(interrupt)
-        return response.answer_text
+            return QuestionSubmitResult(
+                answer_text=response.answer_text,
+                demonstration_status="queued",
+                demonstration_message="I will show that right after the current step.",
+            )
+        question_target = _target_with_question_flow(target, interrupt)
+        if self._start_target(question_target, voice):
+            return QuestionSubmitResult(
+                answer_text=response.answer_text,
+                demonstration_status="started",
+                demonstration_message="Demonstrating it now.",
+            )
+        self._control.enqueue_interrupt(interrupt)
+        return QuestionSubmitResult(
+            answer_text=response.answer_text,
+            demonstration_status="queued",
+            demonstration_message="I will show that right after the current step.",
+        )
 
     def join(self, timeout: float | None = None) -> None:
         if self._thread is not None:
@@ -178,6 +213,15 @@ class PresenterController:
     @property
     def last_error(self) -> Exception | None:
         return self._last_error
+
+    def _start_target(self, target: _ControllerRunTarget, voice: PresenterVoiceSettings) -> bool:
+        if self._thread is not None and self._thread.is_alive():
+            return False
+        self._last_error = None
+        self._control.reset()
+        self._thread = threading.Thread(target=self._run_demo, args=(target, voice), daemon=True)
+        self._thread.start()
+        return True
 
     def _run_demo(self, target: _ControllerRunTarget, voice: PresenterVoiceSettings) -> None:
         try:
@@ -200,6 +244,22 @@ class PresenterController:
                 )
         except Exception as exc:
             self._last_error = exc
+
+
+def _target_with_question_flow(
+    target: _ControllerRunTarget,
+    step: DemoStep,
+) -> _ControllerRunTarget:
+    flow = DemoFlow(
+        id=QUESTION_FLOW_ID,
+        title="Question answer",
+        goal="Answer the user's question with a focused UI demonstration.",
+        steps=[step],
+    )
+    package = target.material_package.model_copy(
+        update={"demo_flows": [*target.material_package.demo_flows, flow]},
+    )
+    return _ControllerRunTarget(package, QUESTION_FLOW_ID, target.handle)
 
 
 def run_controller(
@@ -228,7 +288,7 @@ def run_controller(
     )
     root = tk.Tk()
     root.title("AiPresenter Controller")
-    root.geometry("640x360")
+    root.geometry("720x500")
 
     status = tk.StringVar(value="Ready")
     pause_label = tk.StringVar(value="Pause")
@@ -239,7 +299,7 @@ def run_controller(
     language = tk.StringVar(value="English")
     tone = tk.StringVar(value="Professional")
     question = tk.StringVar(value="")
-    answer = tk.StringVar(value="")
+    chat_turns: list[ChatTurn] = []
     tone_values: dict[str, PresenterTone] = {
         "Professional": "professional",
         "Conversational": "conversational",
@@ -401,24 +461,42 @@ def run_controller(
         status.set("Ending")
         pause_label.set("Pause")
 
+    def append_chat(speaker: str, message: str) -> None:
+        chat_turns.append(ChatTurn(speaker, message))
+        chat_history.configure(state="normal")
+        chat_history.delete("1.0", "end")
+        chat_history.insert("end", format_chat_turns(chat_turns))
+        chat_history.configure(state="disabled")
+        chat_history.see("end")
+
     def submit_question() -> None:
         text = question.get().strip()
         if not text:
             return
+        append_chat("You", text)
+        question.set("")
         try:
             voice = current_voice()
             controller.set_voice(voice)
             if source.get() == "Running desktop app":
                 if not scan_state.has_scanned_selection:
-                    answer.set(RUNNING_APP_SCAN_REQUIRED_MESSAGE)
+                    append_chat("AiPresenter", RUNNING_APP_SCAN_REQUIRED_MESSAGE)
                     status.set(RUNNING_APP_SCAN_REQUIRED_MESSAGE)
                     return
                 session.set_voice(voice)
             elif not controller.is_running:
                 controller.set_target(material_package=material_package, flow_id=flow_id)
-            answer.set(controller.submit_question(text))
+            result = controller.submit_question(text)
+            append_chat("AiPresenter", result.answer_text)
+            if result.demonstration_message:
+                append_chat("AiPresenter", result.demonstration_message)
+            if result.demonstration_status == "started":
+                session.mark_running()
+                status.set("Demonstrating answer")
+            elif result.demonstration_status == "queued":
+                status.set("Question queued")
         except Exception as exc:
-            answer.set(f"Question error: {exc}")
+            append_chat("AiPresenter", f"Question error: {exc}")
 
     def refresh_status() -> None:
         if controller.last_error is not None:
@@ -482,9 +560,12 @@ def run_controller(
 
     question_row = tk.Frame(frame)
     question_row.pack(fill="x", pady=(12, 8))
-    tk.Entry(question_row, textvariable=question).pack(side="left", fill="x", expand=True, padx=(0, 8))
+    question_entry = tk.Entry(question_row, textvariable=question)
+    question_entry.pack(side="left", fill="x", expand=True, padx=(0, 8))
+    question_entry.bind("<Return>", lambda _event: submit_question())
     tk.Button(question_row, text="Submit", command=submit_question, width=10).pack(side="left")
-    tk.Label(frame, textvariable=answer, anchor="w", wraplength=580, justify="left").pack(fill="x")
+    chat_history = tk.Text(frame, height=8, wrap="word", state="disabled")
+    chat_history.pack(fill="both", expand=True)
 
     _center_window(root)
     refresh_running_windows()

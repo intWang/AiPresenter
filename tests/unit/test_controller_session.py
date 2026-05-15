@@ -78,3 +78,29 @@ def test_session_rejects_incompatible_voice_without_changing_current_voice() -> 
     response = session.answer_question("chat")
 
     assert response.answer_text.startswith("Chat panel")
+
+
+def test_session_rejects_incompatible_target_without_changing_current_state() -> None:
+    session = ControllerSession()
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    compatible_target = MaterialPackageTarget(
+        profile=load_desktop_profile(speech="windows-sapi-zh"),
+        package=package,
+        flow_id="meeting-control-map-demo",
+    )
+    incompatible_target = MaterialPackageTarget(
+        profile=load_desktop_profile(),
+        package=package,
+        flow_id="meeting-control-map-demo",
+    )
+    session.set_voice(PresenterVoiceSettings(language="zh", tone="conversational"))
+    session.select_target(compatible_target)
+
+    with pytest.raises(ValueError, match="windows-sapi-zh"):
+        session.select_target(incompatible_target)
+
+    with pytest.raises(ValueError, match="English voice"):
+        session.set_voice(PresenterVoiceSettings(language="en"))
+    response = session.answer_question("chat")
+
+    assert "聊天" in response.answer_text

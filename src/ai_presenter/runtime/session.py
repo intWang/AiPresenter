@@ -33,9 +33,10 @@ class ControllerSession:
     def select_target(self, target: ControllerTarget) -> None:
         if self._running:
             raise RuntimeError("Cannot change target while a demo is running.")
-        self._target = target
         if isinstance(target, MaterialPackageTarget):
             validate_profile_voice(target.profile, self._voice)
+        self._target = target
+        if isinstance(target, MaterialPackageTarget):
             self._active_package = target.package
 
     def scan_running_app(

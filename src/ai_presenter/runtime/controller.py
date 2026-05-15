@@ -52,7 +52,12 @@ class _RunningAppScanState:
 
     @property
     def has_scanned_selection(self) -> bool:
-        return self._selected_window_key() == self._scanned_window_key
+        selected_key = self._selected_window_key()
+        return (
+            selected_key is not None
+            and self._scanned_window_key is not None
+            and selected_key == self._scanned_window_key
+        )
 
     def _clear_stale_scan(self) -> None:
         if self._scanned_window_key is None:

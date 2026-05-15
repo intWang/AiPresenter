@@ -4,10 +4,11 @@ from ai_presenter.config.loader import load_profile
 from ai_presenter.config.models import DesktopAppProfile
 from ai_presenter.packages.loader import load_material_package
 from ai_presenter.packages.models import MaterialPackage
+from ai_presenter.desktop.base import VisibleWindow
 from ai_presenter.runtime.control import DemoControl
+from ai_presenter.runtime.controller import NO_RUNNING_APPS_LABEL
 from ai_presenter.runtime.controller import PresenterController
 from ai_presenter.runtime.controller import _RunningAppScanState
-from ai_presenter.desktop.base import VisibleWindow
 
 
 def _controller_inputs() -> tuple[DesktopAppProfile, MaterialPackage]:
@@ -94,6 +95,12 @@ def test_controller_session_answers_question_text() -> None:
     assert "Chat" in answer or "chat" in answer
 
 
+def test_running_app_scan_state_starts_unscanned() -> None:
+    state = _RunningAppScanState()
+
+    assert state.has_scanned_selection is False
+
+
 def test_running_app_scan_state_clears_scan_when_selection_changes() -> None:
     state = _RunningAppScanState()
     app_a = VisibleWindow("DemoA", 10, "WindowA", "Demo A", (0, 0, 800, 600))
@@ -106,6 +113,20 @@ def test_running_app_scan_state_clears_scan_when_selection_changes() -> None:
 
     assert state.has_scanned_selection is False
     assert state.selected_label == "Demo B (DemoB:20)"
+
+
+def test_running_app_scan_state_clears_scan_when_refresh_removes_all_windows() -> None:
+    state = _RunningAppScanState()
+    app_a = VisibleWindow("DemoA", 10, "WindowA", "Demo A", (0, 0, 800, 600))
+    state.replace_windows({"Demo A (DemoA:10)": app_a})
+    state.choose("Demo A (DemoA:10)")
+    state.mark_selected_scanned()
+
+    state.replace_windows({})
+
+    assert state.has_scanned_selection is False
+    assert state.selected_label == NO_RUNNING_APPS_LABEL
+    assert state.selected_window is None
 
 
 def test_running_app_scan_state_clears_scan_when_refresh_removes_window() -> None:

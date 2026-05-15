@@ -12,9 +12,11 @@ from ai_presenter.runtime.session import RunningAppTarget
 from ai_presenter.runtime.voice import PresenterVoiceSettings
 
 
-def load_desktop_profile() -> DesktopAppProfile:
+def load_desktop_profile(*, speech: str | None = None) -> DesktopAppProfile:
     profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
     assert isinstance(profile, DesktopAppProfile)
+    if speech is not None:
+        profile.providers.speech = speech
     return profile
 
 
@@ -48,13 +50,31 @@ def test_session_answers_question_with_active_voice_settings() -> None:
     session = ControllerSession()
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
     target = MaterialPackageTarget(
+        profile=load_desktop_profile(speech="windows-sapi-zh"),
+        package=package,
+        flow_id="meeting-control-map-demo",
+    )
+    session.set_voice(PresenterVoiceSettings(language="zh", tone="conversational"))
+    session.select_target(target)
+
+    response = session.answer_question("chat")
+
+    assert "聊天" in response.answer_text
+
+
+def test_session_rejects_incompatible_voice_without_changing_current_voice() -> None:
+    session = ControllerSession()
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    target = MaterialPackageTarget(
         profile=load_desktop_profile(),
         package=package,
         flow_id="meeting-control-map-demo",
     )
     session.select_target(target)
-    session.set_voice(PresenterVoiceSettings(language="zh", tone="conversational"))
+
+    with pytest.raises(ValueError, match="windows-sapi-zh"):
+        session.set_voice(PresenterVoiceSettings(language="zh"))
 
     response = session.answer_question("chat")
 
-    assert "聊天" in response.answer_text
+    assert response.answer_text.startswith("Chat panel")

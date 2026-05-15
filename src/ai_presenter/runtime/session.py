@@ -51,6 +51,8 @@ class ControllerSession:
         return package
 
     def set_voice(self, voice: PresenterVoiceSettings) -> None:
+        if isinstance(self._target, MaterialPackageTarget):
+            validate_profile_voice(self._target.profile, voice)
         self._voice = voice
 
     def answer_question(self, question: str) -> QuestionResponse:

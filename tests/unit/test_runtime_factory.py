@@ -89,6 +89,7 @@ def test_provider_registry_supports_piper_profile() -> None:
 
     assert profile.providers.speech == "piper"
     assert registry.speech(profile.providers.speech).__class__.__name__ == "PiperSpeechProvider"
+    assert registry.speech("windows-sapi-zh").__class__.__name__ == "WindowsSapiSpeechProvider"
 
 
 def test_create_adapter_returns_ringcentral_adapter_for_reference_profile() -> None:
@@ -379,3 +380,74 @@ def test_existing_window_material_demo_applies_voice_to_narration(
     )
 
     assert run_texts == ["Open settings."]
+
+
+def test_existing_window_material_demo_routes_piper_chinese_to_sapi_provider(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-piper-speaker.yaml"))
+    assert isinstance(profile, DesktopAppProfile)
+    handle = WindowHandle("Demo", 123, "DemoWindow", "Demo App")
+    captured_speech_provider_classes: list[str] = []
+    package = MaterialPackage.model_validate(
+        {
+            "appId": "temp.demo.123",
+            "appName": "Demo App",
+            "version": 1,
+            "profileIds": ["temp.demo.123.profile"],
+            "operationEntrypoints": [
+                {
+                    "id": "temp.demo.123.overview",
+                    "title": "Overview",
+                    "area": "Demo App",
+                    "purpose": "Introduce the app.",
+                    "openSteps": [],
+                }
+            ],
+            "demoFlows": [
+                {
+                    "id": "temp-demo",
+                    "title": "Temporary demo",
+                    "goal": "Introduce a running app.",
+                    "steps": [
+                        {
+                            "id": "overview",
+                            "title": "Overview",
+                            "action": {
+                                "entrypointId": "temp.demo.123.overview",
+                                "operation": "explain",
+                            },
+                            "narration": {"text": "Open settings.", "placement": "before"},
+                        }
+                    ],
+                }
+            ],
+            "manualControls": [],
+        }
+    )
+
+    class FakeDesktop:
+        pass
+
+    class FakeTimelineRunner:
+        def __init__(self, **kwargs: object) -> None:
+            captured_speech_provider_classes.append(
+                kwargs["speech_provider"].__class__.__name__
+            )
+
+        def run_step(self, step: object) -> StepRunResult:
+            return StepRunResult(step_id=getattr(step, "id"), skipped=False)
+
+    monkeypatch.setattr(factory_module, "WindowsDesktopDriver", FakeDesktop)
+    monkeypatch.setattr(factory_module, "SynchronizedTimelineRunner", FakeTimelineRunner)
+
+    run_existing_window_material_demo(
+        profile,
+        package,
+        "temp-demo",
+        handle=handle,
+        registry=create_provider_registry(profile),
+        voice=PresenterVoiceSettings(language="zh"),
+    )
+
+    assert captured_speech_provider_classes == ["WindowsSapiSpeechProvider"]

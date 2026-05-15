@@ -19,6 +19,14 @@ _CHINESE_REPLACEMENTS = {
     "Leave": "离开会议",
     "Background": "背景",
 }
+_LOCAL_SAPI_FALLBACK_SPEECH = frozenset(
+    {
+        "piper",
+        "windows-sapi",
+        "windows-sapi-en",
+        "windows-sapi-zh",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -44,11 +52,23 @@ def render_presenter_text(text: str, settings: PresenterVoiceSettings) -> str:
 
 
 def validate_profile_voice(profile: AppProfile, settings: PresenterVoiceSettings) -> None:
-    speech = profile.providers.speech
+    speech = resolve_speech_provider_name(profile, settings)
     if settings.language == "zh" and speech not in {"openai", "windows-sapi-zh"}:
         raise ValueError("Chinese voice output requires speech provider openai or windows-sapi-zh.")
     if settings.language == "en" and speech == "windows-sapi-zh":
-        raise ValueError("English voice output requires speech provider openai, fake, windows-sapi, or windows-sapi-en.")
+        raise ValueError(
+            "English voice output requires speech provider openai, fake, piper, "
+            "windows-sapi, or windows-sapi-en."
+        )
+
+
+def resolve_speech_provider_name(profile: AppProfile, settings: PresenterVoiceSettings) -> str:
+    speech = profile.providers.speech
+    if settings.language == "zh" and speech in _LOCAL_SAPI_FALLBACK_SPEECH:
+        return "windows-sapi-zh"
+    if settings.language == "en" and speech == "windows-sapi-zh":
+        return "windows-sapi-en"
+    return speech
 
 
 def _render_chinese(text: str, settings: PresenterVoiceSettings) -> str:

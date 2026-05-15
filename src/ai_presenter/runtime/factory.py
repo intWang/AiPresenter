@@ -35,6 +35,7 @@ from ai_presenter.runtime.profile_runner import ProfileRunner
 from ai_presenter.runtime.sync import SynchronizedTimelineRunner
 from ai_presenter.runtime.voice import PresenterVoiceSettings
 from ai_presenter.runtime.voice import render_presenter_text
+from ai_presenter.runtime.voice import resolve_speech_provider_name
 from ai_presenter.runtime.voice import validate_profile_voice
 
 logger = logging.getLogger("ai_presenter.runtime.factory")
@@ -69,11 +70,16 @@ def create_provider_registry(profile: AppProfile) -> ProviderRegistry:
         registry.register_speech("openai", OpenAISpeechProvider())
     if profile.providers.speech == "piper":
         registry.register_speech("piper", PiperSpeechProvider())
+        registry.register_speech("windows-sapi-zh", WindowsSapiSpeechProvider(voice="Huihui"))
     if profile.providers.speech == "windows-sapi":
         registry.register_speech("windows-sapi", WindowsSapiSpeechProvider())
+        registry.register_speech("windows-sapi-en", WindowsSapiSpeechProvider(voice="Zira"))
+        registry.register_speech("windows-sapi-zh", WindowsSapiSpeechProvider(voice="Huihui"))
     if profile.providers.speech == "windows-sapi-en":
         registry.register_speech("windows-sapi-en", WindowsSapiSpeechProvider(voice="Zira"))
+        registry.register_speech("windows-sapi-zh", WindowsSapiSpeechProvider(voice="Huihui"))
     if profile.providers.speech == "windows-sapi-zh":
+        registry.register_speech("windows-sapi-en", WindowsSapiSpeechProvider(voice="Zira"))
         registry.register_speech("windows-sapi-zh", WindowsSapiSpeechProvider(voice="Huihui"))
     return registry
 
@@ -209,6 +215,7 @@ def _run_material_demo_on_handle(
 ) -> None:
     voice_settings = voice or PresenterVoiceSettings()
     validate_profile_voice(profile, voice_settings)
+    speech_provider_name = resolve_speech_provider_name(profile, voice_settings)
     flow = demo_flow_by_id(material_package, flow_id)
     action_executor = PackageActionExecutor(
         package=material_package,
@@ -221,7 +228,7 @@ def _run_material_demo_on_handle(
     if clear_blockers_before_start:
         action_executor.clear_blockers()
     runner = SynchronizedTimelineRunner(
-        speech_provider=providers.speech(profile.providers.speech),
+        speech_provider=providers.speech(speech_provider_name),
         media_output=create_media_output(profile),
         action_executor=action_executor,
         control=control,

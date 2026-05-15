@@ -74,7 +74,7 @@ def test_session_answers_question_with_active_voice_settings() -> None:
     assert "聊天" in response.answer_text
 
 
-def test_session_rejects_incompatible_voice_without_changing_current_voice() -> None:
+def test_session_routes_chinese_voice_for_english_sapi_profile() -> None:
     session = ControllerSession()
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
     target = MaterialPackageTarget(
@@ -84,15 +84,14 @@ def test_session_rejects_incompatible_voice_without_changing_current_voice() -> 
     )
     session.select_target(target)
 
-    with pytest.raises(ValueError, match="windows-sapi-zh"):
-        session.set_voice(PresenterVoiceSettings(language="zh"))
+    session.set_voice(PresenterVoiceSettings(language="zh"))
 
     response = session.answer_question("chat")
 
-    assert response.answer_text.startswith("Chat panel")
+    assert response.answer_text
 
 
-def test_session_rejects_incompatible_target_without_changing_current_state() -> None:
+def test_session_routes_language_when_target_changes_between_sapi_profiles() -> None:
     session = ControllerSession()
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
     compatible_target = MaterialPackageTarget(
@@ -108,14 +107,12 @@ def test_session_rejects_incompatible_target_without_changing_current_state() ->
     session.set_voice(PresenterVoiceSettings(language="zh", tone="conversational"))
     session.select_target(compatible_target)
 
-    with pytest.raises(ValueError, match="windows-sapi-zh"):
-        session.select_target(incompatible_target)
+    session.select_target(incompatible_target)
 
-    with pytest.raises(ValueError, match="English voice"):
-        session.set_voice(PresenterVoiceSettings(language="en"))
+    session.set_voice(PresenterVoiceSettings(language="en"))
     response = session.answer_question("chat")
 
-    assert "聊天" in response.answer_text
+    assert response.answer_text.startswith("Chat panel")
 
 
 def test_session_creates_interrupt_step_for_safe_answer() -> None:

@@ -24,6 +24,9 @@ and a fast app explorer.
 - Answer questions using the active package context.
 - When a question maps to a safe, operable entrypoint, temporarily branch to that entrypoint,
   demonstrate it, then continue the original flow from a sensible next step.
+- Let the user switch spoken output language between English and Chinese.
+- Let the user switch presenter tone so spoken output can become more natural for the current
+  demo context.
 
 ## Non-Goals For First Implementation
 
@@ -32,6 +35,8 @@ and a fast app explorer.
 - Fully autonomous risky operations.
 - Deep semantic understanding of arbitrary app business logic.
 - Cross-window multi-app orchestration.
+- Full multilingual localization beyond English and Chinese.
+- Custom free-form voice design beyond the first tone presets.
 
 ## UX Design
 
@@ -48,13 +53,24 @@ The controller remains a compact desktop UI, but grows into four sections:
    - Buttons always operate on the current selected session.
    - Changing target while a demo is running is blocked until End completes.
 
-3. Question box
+3. Voice settings
+   - Spoken language selector: `English` or `Chinese`.
+   - Tone selector with first-version presets:
+     - `Professional`: clear, structured, product-specialist delivery.
+     - `Conversational`: warmer, more natural, less formal.
+     - `Concise`: shorter sentences and faster transitions.
+   - These settings apply to scripted demo narration, generated answers, and question-driven
+     interrupt explanations.
+   - Changing voice settings during a running demo applies to the next generated utterance; already
+     playing audio is not interrupted.
+
+4. Question box
    - Single-line text input.
    - Submit button.
    - Empty submissions are ignored.
    - Submitted questions are handled against the active session.
 
-4. Answer/status area
+5. Answer/status area
    - Shows the latest answer summary, session state, or error.
    - For operable answers, shows which entrypoint was demonstrated.
 
@@ -70,11 +86,34 @@ Core concepts:
 - `ControllerTarget`: material package target or running app target.
 - `ControllerSession`: selected target plus runtime state.
 - `ControllerAppCatalog`: lists known packages and visible windows.
+- `PresenterVoiceSettings`: selected language and tone for the active session.
 - `QuestionRequest`: user text plus active session snapshot.
 - `QuestionResponse`: answer text, optional entrypoint id, and whether the demo flow should resume.
 
 The UI should not directly call `run_material_demo`. It should ask the session to start, pause,
 end, scan, or answer a question.
+
+### Voice Settings
+
+Voice settings are session-level state:
+
+- `language`: `en` or `zh`.
+- `tone`: first-version preset such as `professional`, `conversational`, or `concise`.
+
+Language affects the text that is sent to speech synthesis. For deterministic first-version
+answers, templates should produce English or Chinese text directly. For OpenAI-backed narration,
+the language and tone are added to the presenter context/instructions.
+
+Tone affects phrasing, sentence length, pacing hints, and transition style. It should not change
+the safety policy or cause the presenter to click different controls. The first implementation
+can map tone to prompt/style text and template variants rather than creating a separate provider.
+
+Speech provider selection remains explicit:
+
+- English can use the current English Windows SAPI or OpenAI speech path.
+- Chinese can use the current Chinese Windows SAPI or OpenAI speech path.
+- If the selected profile cannot support the chosen language, the controller should show a clear
+  status and refuse to start until the user changes language or profile.
 
 ### Material Package Target
 
@@ -89,6 +128,9 @@ Start runs the existing synchronized material demo path.
 Questions use package `qa`, `explainers`, operation entrypoint titles, purposes, and presenter
 notes. If a question maps to a package entrypoint with safe executable steps, the session pauses
 the current flow, runs that entrypoint as an interrupting demo step, then resumes.
+
+Answers should be rendered in the selected voice language and tone. Package source text can remain
+English; translation or Chinese template rendering happens at answer/narration time.
 
 ### Running App Target
 
@@ -174,6 +216,7 @@ Question handling runs against the active session:
 3. Build an answer:
    - Use package QA when direct match exists.
    - Otherwise synthesize from entrypoint purpose, explainer details, and presenter notes.
+   - Render the answer in the active language and tone.
 4. Decide action:
    - If best match has safe open steps, create an interrupt step and run it.
    - If unsafe or not executable, answer without clicking.
@@ -212,6 +255,8 @@ parallel runtime path unless a window lacks all usable controls.
   memory for debugging.
 - If a question arrives before a session is selected or scanned, show "Select or scan an app first."
 - If a question maps to a risky action, answer and explain why it was not clicked.
+- If the selected spoken language is unsupported by the current profile/provider, show a voice
+  configuration error before starting or answering.
 - If an interrupt action fails, show the entrypoint id and failure context, then resume only if
   the runner is still healthy.
 - If the active app window disappears, End the session and show a window-lost status.
@@ -225,6 +270,9 @@ Unit tests:
 - Risk classifier marks destructive/external controls as explain-only.
 - Question matcher selects QA, explainer, entrypoint title, and visible UI text matches.
 - Question handler returns answer-only for risky actions and action+answer for safe actions.
+- Voice settings choose English or Chinese answer text.
+- Tone settings alter deterministic phrasing without changing matched entrypoints or safety.
+- Unsupported language/provider combinations produce a clear validation error.
 - Controller session binds Start/Pause/End to the selected target.
 - Controller blocks target change during active demo.
 
@@ -240,6 +288,8 @@ Manual acceptance:
 - Start controller.
 - Select RingCentral package and run `meeting-control-map-demo`.
 - Ask "What does Invite do?" and verify answer plus app action.
+- Switch language to Chinese and ask the same question; verify Chinese spoken/visible answer.
+- Switch tone to Conversational and verify the answer is less formal while staying accurate.
 - Select a running desktop app without a package.
 - Scan it, start generated demo, ask about a visible safe control, and verify answer/action.
 - Ask about a risky control and verify no click happens.
@@ -251,8 +301,9 @@ Manual acceptance:
 3. Add visible-window discovery.
 4. Add temporary package generation for scanned windows.
 5. Add question model, matcher, and deterministic answer builder.
-6. Add question interrupt execution.
-7. Wire Tk UI.
-8. Add docs and manual acceptance checklist.
+6. Add session voice settings for English/Chinese and tone presets.
+7. Add question interrupt execution.
+8. Wire Tk UI.
+9. Add docs and manual acceptance checklist.
 
 This order keeps the UI as a thin shell over testable runtime units.

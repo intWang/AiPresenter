@@ -13,10 +13,18 @@ class FakeControl:
     def __init__(
         self,
         name: str | None,
+        control_type: str | list["FakeControl"] | None = None,
+        bounds: SimpleNamespace | None = None,
         children: list["FakeControl"] | None = None,
     ) -> None:
         self.Name = name
-        self._children = children or []
+        if isinstance(control_type, list):
+            self._children = control_type
+        else:
+            self.ControlTypeName = control_type or ""
+            if bounds is not None:
+                self.BoundingRectangle = bounds
+            self._children = children or []
 
     def GetChildren(self) -> list["FakeControl"]:
         return self._children
@@ -57,6 +65,67 @@ class FakeFocusedWindow:
     def set_focus(self) -> None:
         if self._focus_calls is not None:
             self._focus_calls.append("focus")
+
+
+class FakeWindow:
+    def __init__(
+        self,
+        *,
+        title: str,
+        class_name: str,
+        pid: int,
+        rectangle: SimpleNamespace,
+        visible: bool,
+        minimized: bool,
+    ) -> None:
+        self._title = title
+        self._class_name = class_name
+        self._pid = pid
+        self._rectangle = rectangle
+        self._visible = visible
+        self._minimized = minimized
+
+    def window_text(self) -> str:
+        return self._title
+
+    def class_name(self) -> str:
+        return self._class_name
+
+    def process_id(self) -> int:
+        return self._pid
+
+    def rectangle(self) -> SimpleNamespace:
+        return self._rectangle
+
+    def is_visible(self) -> bool:
+        return self._visible
+
+    def is_minimized(self) -> bool:
+        return self._minimized
+
+
+class FakeDesktop:
+    def __init__(self, root_windows: list[FakeWindow]) -> None:
+        self._root_windows = root_windows
+
+    def windows(self) -> list[FakeWindow]:
+        return self._root_windows
+
+
+class FakeBoundWindow:
+    def __init__(self, handle: WindowHandle) -> None:
+        self.handle = handle
+
+
+class FakePsutil:
+    def __init__(self, processes_by_name: dict[str, list[int]]) -> None:
+        self._process_names_by_pid = {
+            pid: name for name, pids in processes_by_name.items() for pid in pids
+        }
+
+    def Process(self, pid: int) -> Any:
+        process_name = self._process_names_by_pid[pid]
+        return SimpleNamespace(name=lambda: process_name)
 
 
 def focused_driver(monkeypatch: pytest.MonkeyPatch, root_control: FakeControl) -> WindowsDesktopDriver:
@@ -328,6 +397,54 @@ def test_read_focused_window_text_uses_focused_control_tree(
 def test_read_focused_window_text_requires_focused_window() -> None:
     with pytest.raises(RuntimeError, match="before focusing a window"):
         WindowsDesktopDriver().read_focused_window_text()
+
+
+def test_list_visible_windows_returns_metadata(monkeypatch: pytest.MonkeyPatch) -> None:
+    root = FakeWindow(
+        title="Demo App",
+        class_name="DemoWindow",
+        pid=42,
+        rectangle=SimpleNamespace(left=10, top=20, right=410, bottom=320),
+        visible=True,
+        minimized=False,
+    )
+    monkeypatch.setattr(windows, "Desktop", lambda backend: FakeDesktop([root]))
+    monkeypatch.setattr(windows, "psutil", FakePsutil({"Demo.exe": [42]}))
+
+    discovered = WindowsDesktopDriver().list_visible_windows()
+
+    assert discovered[0].process == "Demo"
+    assert discovered[0].pid == 42
+    assert discovered[0].window_class == "DemoWindow"
+    assert discovered[0].title == "Demo App"
+
+
+def test_list_visible_controls_returns_named_controls(monkeypatch: pytest.MonkeyPatch) -> None:
+    handle = WindowHandle("Demo", 42, "DemoWindow", "Demo App")
+    root_control = FakeControl(
+        name="root",
+        control_type="Window",
+        bounds=SimpleNamespace(left=0, top=0, right=500, bottom=500),
+        children=[
+            FakeControl(
+                "Settings",
+                "Button",
+                SimpleNamespace(left=10, top=10, right=100, bottom=40),
+            ),
+            FakeControl(
+                "Delete",
+                "Button",
+                SimpleNamespace(left=10, top=50, right=100, bottom=80),
+            ),
+        ],
+    )
+    monkeypatch.setattr(windows, "_bind_window", lambda pid, window_class: FakeBoundWindow(handle))
+    monkeypatch.setattr(windows, "_control_from_window", lambda window: root_control)
+
+    controls = WindowsDesktopDriver().list_visible_controls(handle)
+
+    assert [control.name for control in controls] == ["Settings", "Delete"]
+    assert controls[0].control_type == "Button"
 
 
 def test_wait_for_window_uses_process_and_class(monkeypatch: pytest.MonkeyPatch) -> None:

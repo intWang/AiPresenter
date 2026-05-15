@@ -14,6 +14,22 @@ class WindowHandle:
     title: str
 
 
+@dataclass(frozen=True)
+class VisibleWindow:
+    process: str
+    pid: int
+    window_class: str
+    title: str
+    bounds: tuple[int, int, int, int]
+
+
+@dataclass(frozen=True)
+class VisibleControl:
+    name: str
+    control_type: str
+    bounds: tuple[int, int, int, int]
+
+
 class DesktopDriver(Protocol):
     def focus_window(self, process: str) -> None:
         ...
@@ -28,6 +44,12 @@ class DesktopDriver(Protocol):
         ...
 
     def read_focused_window_text(self) -> tuple[str, ...]:
+        ...
+
+    def list_visible_windows(self) -> tuple[VisibleWindow, ...]:
+        ...
+
+    def list_visible_controls(self, handle: WindowHandle) -> tuple[VisibleControl, ...]:
         ...
 
     def click_window_relative(self, handle: WindowHandle, x: int, y: int) -> None:

@@ -7,7 +7,7 @@ from time import monotonic, sleep
 from typing import Any
 
 from ai_presenter.config.models import ObservationSource
-from ai_presenter.desktop.base import WindowHandle
+from ai_presenter.desktop.base import VisibleControl, VisibleWindow, WindowHandle
 from ai_presenter.domain.state import RawObservation, WindowMetadata
 
 _pywinauto: Any = None
@@ -132,6 +132,33 @@ class WindowsDesktopDriver:
         if root_control is None:
             return ()
         return tuple(collect_ui_text(root_control))
+
+    def list_visible_windows(self) -> tuple[VisibleWindow, ...]:
+        _require_dependency(Desktop, "pywinauto")
+        visible_windows: list[VisibleWindow] = []
+        for window in Desktop(backend="uia").windows():
+            try:
+                if not _window_is_visible(window) or _call_bool_window_method(
+                    window, "is_minimized"
+                ):
+                    continue
+                bounds = _window_bounds(window)
+                pid = int(getattr(window, "process_id")())
+                process = _process_name_from_pid(pid)
+                title = _window_title(window)
+                window_class = _window_class(window)
+            except Exception:
+                continue
+            if title.strip() and window_class.strip():
+                visible_windows.append(VisibleWindow(process, pid, window_class, title, bounds))
+        return tuple(visible_windows)
+
+    def list_visible_controls(self, handle: WindowHandle) -> tuple[VisibleControl, ...]:
+        window = _bind_window(handle.pid, handle.window_class)
+        root_control = _control_from_window(window)
+        if root_control is None:
+            return ()
+        return tuple(_collect_visible_controls(root_control))
 
     def click_window_relative(self, handle: WindowHandle, x: int, y: int) -> None:
         _require_dependency(mouse, "pywinauto")
@@ -398,6 +425,24 @@ def _window_title(window: Any, fallback: str = "") -> str:
     return fallback
 
 
+def _window_class(window: Any) -> str:
+    class_name = getattr(window, "class_name", None)
+    if callable(class_name):
+        value = class_name()
+        return value if isinstance(value, str) else ""
+    return ""
+
+
+def _window_is_visible(window: Any) -> bool:
+    visible = getattr(window, "is_visible", None)
+    if callable(visible):
+        try:
+            return bool(visible())
+        except Exception:
+            return False
+    return True
+
+
 def _window_bounds(window: Any) -> tuple[int, int, int, int]:
     rectangle = getattr(window, "rectangle", None)
     if not callable(rectangle):
@@ -489,9 +534,51 @@ def _find_descendant_controls(
     return [control for _, control in matches]
 
 
+def _collect_visible_controls(root: Any) -> list[VisibleControl]:
+    controls: list[VisibleControl] = []
+    stack = list(reversed(_control_children(root)))
+    while stack:
+        node = stack.pop()
+        name = _control_name(node)
+        bounds = _control_bounds(node)
+        control_type = _control_type_name(node)
+        if name and bounds is not None:
+            controls.append(VisibleControl(name=name, control_type=control_type, bounds=bounds))
+        stack.extend(reversed(_control_children(node)))
+    return controls
+
+
+def _control_children(control: Any) -> list[Any]:
+    get_children = getattr(control, "GetChildren", None)
+    if not callable(get_children):
+        return []
+    try:
+        return list(get_children() or [])
+    except Exception:
+        return []
+
+
 def _control_name(control: Any) -> str:
     name = getattr(control, "Name", "")
     return name.strip() if isinstance(name, str) else ""
+
+
+def _control_type_name(control: Any) -> str:
+    for attr in ("ControlTypeName", "LocalizedControlType"):
+        value = getattr(control, attr, "")
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return control.__class__.__name__
+
+
+def _process_name_from_pid(pid: int) -> str:
+    if psutil is None:
+        return str(pid)
+    try:
+        name = psutil.Process(pid).name()
+    except Exception:
+        return str(pid)
+    return name[:-4] if name.casefold().endswith(".exe") else name
 
 
 def _normalize_type_markers(control_type: str | None) -> tuple[str, ...]:

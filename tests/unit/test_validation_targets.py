@@ -350,6 +350,23 @@ def test_render_validation_target_lines_keeps_normal_draft_command() -> None:
     ) in text
 
 
+def test_render_validation_target_lines_marks_missing_evidence_source_as_none() -> None:
+    catalog = discover_validation_targets(
+        load_ringcentral_package(),
+        checklist_text=load_checklist_text(),
+        checklist_path=Path("docs/knowledge/ringcentral-video/validation-checklist-index.md"),
+    )
+
+    text = "\n".join(render_validation_target_lines(catalog, priority="P0"))
+
+    assert "Checklist: docs" in text
+    assert "Evidence: none" in text
+    assert "repo-derived planning list only; not live acceptance evidence" in text
+    assert "rcv-add-coworkers-modal" in text
+    assert "entrypoints: ringcentral.video.main.add-coworkers" in text
+    assert "evidence: ringcentral.video.main.add-coworkers=unknown" in text
+
+
 def test_acceptance_draft_command_uses_entrypoint_only_for_single_entrypoint_target() -> None:
     catalog = discover_catalog()
     target = target_by_id(catalog, "rcv-add-coworkers-modal")

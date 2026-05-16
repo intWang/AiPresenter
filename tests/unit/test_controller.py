@@ -113,6 +113,85 @@ def test_controller_voice_readiness_cache_reuses_selected_voice_until_it_changes
     ]
 
 
+def test_controller_voice_readiness_cache_reuses_prior_voice_after_switching_back() -> None:
+    profile, _package = _controller_inputs()
+    calls: list[PresenterVoiceSettings] = []
+
+    def checker(
+        _profile: object,
+        voice: PresenterVoiceSettings,
+    ) -> VoiceAssetAvailability | None:
+        calls.append(voice)
+        return VoiceAssetAvailability(
+            status="OK",
+            route="windows-sapi-zh",
+            detail=f"ready for {voice.language}/{voice.tone}",
+        )
+
+    cache = _ControllerVoiceReadinessCache(profile=profile, checker=checker)
+
+    first = cache.get(PresenterVoiceSettings(language="zh", tone="friendly"))
+    second = cache.get(PresenterVoiceSettings(language="zh", tone="coach"))
+    third = cache.get(PresenterVoiceSettings(language="zh-CN", tone="friendly"))
+
+    assert first == third
+    assert second is not None
+    assert calls == [
+        PresenterVoiceSettings(language="zh", tone="friendly"),
+        PresenterVoiceSettings(language="zh", tone="coach"),
+    ]
+
+
+def test_controller_voice_readiness_refresh_invalidates_only_selected_voice() -> None:
+    profile, _package = _controller_inputs()
+    calls: list[PresenterVoiceSettings] = []
+
+    def checker(
+        _profile: object,
+        voice: PresenterVoiceSettings,
+    ) -> VoiceAssetAvailability | None:
+        calls.append(voice)
+        return VoiceAssetAvailability(
+            status="OK",
+            route="windows-sapi-zh",
+            detail=f"ready call {len(calls)} for {voice.language}/{voice.tone}",
+        )
+
+    cache = _ControllerVoiceReadinessCache(profile=profile, checker=checker)
+
+    first = cache.get(PresenterVoiceSettings(language="zh", tone="friendly"))
+    coach = cache.get(PresenterVoiceSettings(language="zh", tone="coach"))
+    refreshed = cache.refresh(PresenterVoiceSettings(language="zh-CN", tone="friendly"))
+    reused_coach = cache.get(PresenterVoiceSettings(language="zh", tone="coach"))
+
+    assert refreshed != first
+    assert reused_coach == coach
+    assert calls == [
+        PresenterVoiceSettings(language="zh", tone="friendly"),
+        PresenterVoiceSettings(language="zh", tone="coach"),
+        PresenterVoiceSettings(language="zh", tone="friendly"),
+    ]
+
+
+def test_controller_voice_readiness_cache_preserves_none_results() -> None:
+    profile, _package = _controller_inputs()
+    calls: list[PresenterVoiceSettings] = []
+
+    def checker(
+        _profile: object,
+        voice: PresenterVoiceSettings,
+    ) -> VoiceAssetAvailability | None:
+        calls.append(voice)
+        return None
+
+    cache = _ControllerVoiceReadinessCache(profile=profile, checker=checker)
+
+    assert cache.get(PresenterVoiceSettings(language="en")) is None
+    assert cache.get(PresenterVoiceSettings(language="en-US")) is None
+
+    assert calls == [PresenterVoiceSettings(language="en")]
+
+
 def test_presenter_controller_exposes_running_state_and_runner_inputs() -> None:
     profile, package = _controller_inputs()
     control = DemoControl()

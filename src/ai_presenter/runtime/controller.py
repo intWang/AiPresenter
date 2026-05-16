@@ -206,25 +206,34 @@ def _voice_readiness_failure_message(
 class _ControllerVoiceReadinessCache:
     profile: AppProfile
     checker: VoiceAssetChecker
-    _cached_key: tuple[str, str] | None = None
-    _cached_readiness: ControllerVoiceReadiness | None = None
+    _cached_readiness_by_key: dict[
+        tuple[str, str], ControllerVoiceReadiness | None
+    ] = field(default_factory=dict, init=False)
 
     def get(self, voice: PresenterVoiceSettings) -> ControllerVoiceReadiness | None:
-        key = (voice.language, voice.tone)
-        if self._cached_key == key:
-            return self._cached_readiness
+        key = self._key(voice)
+        if key in self._cached_readiness_by_key:
+            return self._cached_readiness_by_key[key]
         readiness = _check_controller_voice_readiness(
             self.profile,
             voice,
             checker=self.checker,
         )
-        self._cached_key = key
-        self._cached_readiness = readiness
+        self._cached_readiness_by_key[key] = readiness
         return readiness
 
     def refresh(self, voice: PresenterVoiceSettings) -> ControllerVoiceReadiness | None:
-        self._cached_key = None
-        return self.get(voice)
+        key = self._key(voice)
+        readiness = _check_controller_voice_readiness(
+            self.profile,
+            voice,
+            checker=self.checker,
+        )
+        self._cached_readiness_by_key[key] = readiness
+        return readiness
+
+    def _key(self, voice: PresenterVoiceSettings) -> tuple[str, str]:
+        return (voice.language, voice.tone)
 
 
 @dataclass

@@ -1047,6 +1047,7 @@ demoFlows:
       text: The camera menu lets you choose the camera and jump to video settings. It is the practical route for
         device changes and appearance setup.
       localizedText:
+        ja: カメラ横のメニューでは、使用するカメラの候補と More video settings への入口を確認できます。カメラ、背景、画質などの見え方を調整したいときの経路ですが、ここでは場所と選択肢の種類を説明するだけです。ユーザーが明示的に求めるまで、カメラや背景、ビデオ設定は変更しません。説明後はメニューを閉じます。
         zh: 摄像头菜单用来切换摄像头，也能直接进入视频设置。换设备、调画面、处理背景效果，通常都从这里走。
       placement: during
       actionOffsetMs: 350

@@ -298,6 +298,10 @@ def match_meaningful_tokens(text: str) -> frozenset[str]:
     )
 
 
+def normalize_question_prompt(text: str) -> str:
+    return text.strip().casefold()
+
+
 def _sort_entrypoint_question_aliases_by_match_order(
     aliases: list[EntrypointQuestionAlias],
 ) -> tuple[EntrypointQuestionAlias, ...]:
@@ -316,11 +320,14 @@ def _build_qa_question_candidates(
     candidates: list[QuestionAnswerMatchCandidate] = []
     for item in items:
         for question in _qa_questions(item):
+            normalized_question = normalize_question_prompt(question)
+            if not normalized_question:
+                continue
             candidates.append(
                 QuestionAnswerMatchCandidate(
                     item=item,
                     question=question,
-                    normalized_question=question.casefold(),
+                    normalized_question=normalized_question,
                     meaningful_tokens=match_meaningful_tokens(question),
                 )
             )

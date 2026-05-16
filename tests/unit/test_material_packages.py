@@ -415,6 +415,41 @@ def test_material_package_exposes_read_only_qa_question_index() -> None:
     assert index[localized_question.casefold()] is item
 
 
+def test_material_package_trims_and_skips_blank_qa_question_candidates() -> None:
+    package = MaterialPackage.model_validate(
+        {
+            "appId": "demo",
+            "appName": "Demo",
+            "version": 1,
+            "profileIds": ["demo-profile"],
+            "operationEntrypoints": [],
+            "demoFlows": [],
+            "qa": [
+                {
+                    "question": " Where is privacy? ",
+                    "answer": "Open privacy.",
+                    "localizedQuestions": {
+                        "zh": [" \u9690\u79c1\u5728\u54ea\u91cc ", "  "],
+                    },
+                }
+            ],
+            "manualControls": [],
+        }
+    )
+
+    normalized_questions = [
+        candidate.normalized_question for candidate in package.qa_question_candidates
+    ]
+
+    assert normalized_questions == [
+        "where is privacy?",
+        "\u9690\u79c1\u5728\u54ea\u91cc",
+    ]
+    assert "" not in package.qa_questions_by_normalized
+    assert package.qa_questions_by_normalized["where is privacy?"] is package.qa[0]
+    assert package.qa_questions_by_normalized["\u9690\u79c1\u5728\u54ea\u91cc"] is package.qa[0]
+
+
 def test_qa_question_index_keeps_first_duplicate_match() -> None:
     package = MaterialPackage.model_validate(
         {

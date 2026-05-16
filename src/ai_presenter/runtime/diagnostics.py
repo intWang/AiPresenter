@@ -386,7 +386,7 @@ def _diagnose_qa_alias_overlaps(material_package: MaterialPackage) -> Diagnostic
         list[QuestionAnswerMatchCandidate],
     ] = {}
     for candidate in material_package.qa_question_candidates:
-        key = (_normalize_user_question(candidate.question), id(candidate.item))
+        key = (candidate.normalized_question, id(candidate.item))
         candidates_by_item.setdefault(key, []).append(candidate)
 
     conflicts: list[
@@ -448,10 +448,6 @@ def _format_qa_alias_overlap_conflict(
         f"alias languages: {', '.join(alias_languages)}) appears in {label} "
         f"and shadows {', '.join(alias_entrypoint_ids)}; first match is Q&A {label}"
     )
-
-
-def _normalize_user_question(question: str) -> str:
-    return question.casefold().strip()
 
 
 def _format_qa_question_conflict(

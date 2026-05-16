@@ -465,6 +465,78 @@ def test_exact_qa_match_uses_precomputed_question_index() -> None:
     assert "host or moderator" in response.answer_text
 
 
+def test_exact_qa_match_uses_trimmed_index_before_entrypoint_alias_fallback() -> None:
+    package = MaterialPackage.model_validate(
+        {
+            "appId": "demo",
+            "appName": "Demo",
+            "version": 1,
+            "profileIds": ["demo-profile"],
+            "operationEntrypoints": [
+                {
+                    "id": "demo.chat",
+                    "title": "Chat",
+                    "area": "Main",
+                    "purpose": "Open chat.",
+                    "questionAliases": {"en": ["chat"]},
+                    "openSteps": [],
+                }
+            ],
+            "demoFlows": [],
+            "qa": [
+                {
+                    "question": " Chat ",
+                    "answer": "Explain chat without opening it.",
+                }
+            ],
+            "manualControls": [],
+        }
+    )
+    package._qa_question_candidates = ()
+
+    response = answer_question(
+        package=package,
+        question="chat",
+        voice=PresenterVoiceSettings(),
+    )
+
+    assert response.answer_text == "Explain chat without opening it."
+    assert response.entrypoint_id is None
+    assert response.can_operate is False
+
+
+@pytest.mark.parametrize("question", ["   ", "quantum waffle"])
+def test_blank_qa_prompt_is_never_a_runtime_match(question: str) -> None:
+    package = MaterialPackage.model_validate(
+        {
+            "appId": "demo",
+            "appName": "Demo",
+            "version": 1,
+            "profileIds": ["demo-profile"],
+            "operationEntrypoints": [],
+            "demoFlows": [],
+            "qa": [
+                {
+                    "question": "Where is privacy?",
+                    "answer": "Open privacy.",
+                    "localizedQuestions": {"en": ["   "]},
+                }
+            ],
+            "manualControls": [],
+        }
+    )
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(),
+    )
+
+    assert response.answer_text == "I could not find a matching control in the active app context."
+    assert response.entrypoint_id is None
+    assert response.can_operate is False
+
+
 def test_ringcentral_chinese_questions_match_package_aliases_without_legacy_table(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

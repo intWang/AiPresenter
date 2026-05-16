@@ -468,6 +468,53 @@ def test_diagnostics_warns_for_duplicate_qa_questions() -> None:
     )
 
 
+def test_diagnostics_warns_for_duplicate_trimmed_qa_questions() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
+    package = _qa_package(
+        {
+            "question": "Where is privacy? ",
+            "answer": "First answer.",
+        },
+        {
+            "question": " where is privacy?",
+            "answer": "Second answer.",
+        },
+    )
+
+    report = diagnostics.diagnose_configuration(
+        profile=profile,
+        material_package=package,
+    )
+
+    qa_check = next(check for check in report.checks if check.name == "qa questions")
+    assert qa_check.status == "WARN"
+    assert qa_check.detail == (
+        "1 duplicate normalized Q&A question prompt: "
+        "'where is privacy?' (languages: en) appears in #1 Where is privacy? , "
+        "#2  where is privacy?; first match is #1 Where is privacy? "
+    )
+
+
+def test_diagnostics_skips_blank_localized_qa_question_prompts() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
+    package = _qa_package(
+        {
+            "question": "Where is privacy?",
+            "answer": "First answer.",
+            "localizedQuestions": {"zh": ["  "]},
+        },
+    )
+
+    report = diagnostics.diagnose_configuration(
+        profile=profile,
+        material_package=package,
+    )
+
+    qa_check = next(check for check in report.checks if check.name == "qa questions")
+    assert qa_check.status == "OK"
+    assert qa_check.detail == "1 Q&A question prompts have no cross-item duplicates"
+
+
 def test_diagnostics_labels_equal_duplicate_qa_items_by_identity() -> None:
     profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
     package = _qa_package(

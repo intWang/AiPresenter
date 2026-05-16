@@ -8,6 +8,7 @@ from ai_presenter.packages.models import OperationEntrypoint
 from ai_presenter.packages.models import QuestionAnswer
 from ai_presenter.packages.models import match_field_tokens
 from ai_presenter.packages.models import match_meaningful_tokens
+from ai_presenter.packages.models import normalize_question_prompt
 from ai_presenter.runtime.logging import elapsed_ms, log_timed_event
 from ai_presenter.runtime.voice import PresenterVoiceSettings, render_presenter_text
 
@@ -180,7 +181,7 @@ def _answer_question(
     question: str,
     voice: PresenterVoiceSettings,
 ) -> QuestionResponse:
-    normalized = question.casefold().strip()
+    normalized = normalize_question_prompt(question)
     qa_match = _match_qa(package, normalized)
     if qa_match is not None:
         entrypoint_id = qa_match.related_entrypoint_ids[0] if qa_match.related_entrypoint_ids else None
@@ -203,6 +204,8 @@ def _answer_question(
 
 
 def _match_qa(package: MaterialPackage, normalized_question: str) -> QuestionAnswer | None:
+    if not normalized_question:
+        return None
     exact_match = package.qa_questions_by_normalized.get(normalized_question)
     if exact_match is not None:
         return exact_match

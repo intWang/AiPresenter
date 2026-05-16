@@ -337,7 +337,11 @@ def test_render_validation_target_lines_keeps_normal_draft_command() -> None:
     catalog = discover_catalog()
 
     text = "\n".join(render_validation_target_lines(catalog, target_id="rcv-add-coworkers-modal"))
+    checklist_path = Path("docs/knowledge/ringcentral-video/validation-checklist-index.md")
+    evidence_path = Path("docs/knowledge/ringcentral-video/evidence-index.md")
 
+    assert f"Checklist: {checklist_path}" in text
+    assert f"Evidence: {evidence_path}" in text
     assert "repo-derived planning list only; not live acceptance evidence" in text
     assert "draft:" in text
     assert (

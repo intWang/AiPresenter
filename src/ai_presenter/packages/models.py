@@ -50,6 +50,8 @@ class OperationEntrypoint(CamelModel):
     title: str
     area: str
     purpose: str
+    localized_titles: dict[str, str] = Field(default_factory=dict, alias="localizedTitles")
+    localized_purposes: dict[str, str] = Field(default_factory=dict, alias="localizedPurposes")
     question_policy: Literal["default", "answerOnly"] = Field(
         default="default",
         alias="questionPolicy",
@@ -57,6 +59,18 @@ class OperationEntrypoint(CamelModel):
     open_steps: list[PackageOpenStep] = Field(default_factory=list, alias="openSteps")
     presenter_notes: list[str] = Field(default_factory=list, alias="presenterNotes")
     question_aliases: dict[str, list[str]] = Field(default_factory=dict, alias="questionAliases")
+
+    def title_for_language(self, language: str) -> str:
+        localized = self.localized_titles.get(language, "").strip()
+        if localized:
+            return localized
+        return self.title
+
+    def purpose_for_language(self, language: str) -> str:
+        localized = self.localized_purposes.get(language, "").strip()
+        if localized:
+            return localized
+        return self.purpose
 
 
 @dataclass(frozen=True)

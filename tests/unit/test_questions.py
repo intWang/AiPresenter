@@ -190,6 +190,166 @@ def test_package_owned_alias_matches_without_legacy_alias_table() -> None:
     assert response.can_operate is True
 
 
+def test_entrypoint_answer_uses_localized_title_and_purpose() -> None:
+    package = MaterialPackage.model_validate(
+        {
+            "appId": "demo",
+            "appName": "Demo",
+            "version": 1,
+            "profileIds": ["demo-profile"],
+            "operationEntrypoints": [
+                {
+                    "id": "demo.participants",
+                    "title": "Participants panel",
+                    "area": "Toolbar",
+                    "purpose": "Open participant list.",
+                    "localizedTitles": {"es": "Panel de participantes"},
+                    "localizedPurposes": {"es": "Abre la lista de participantes."},
+                    "questionAliases": {"es": ["participantes"]},
+                    "openSteps": [],
+                }
+            ],
+            "demoFlows": [],
+            "manualControls": [],
+        }
+    )
+
+    response = answer_question(
+        package=package,
+        question="Donde estan los participantes?",
+        voice=PresenterVoiceSettings(language="es"),
+    )
+
+    assert response.answer_text == "Panel de participantes: Abre la lista de participantes."
+    assert response.entrypoint_id == "demo.participants"
+
+
+def test_entrypoint_answer_uses_localized_title_with_english_purpose_fallback() -> None:
+    package = MaterialPackage.model_validate(
+        {
+            "appId": "demo",
+            "appName": "Demo",
+            "version": 1,
+            "profileIds": ["demo-profile"],
+            "operationEntrypoints": [
+                {
+                    "id": "demo.participants",
+                    "title": "Participants panel",
+                    "area": "Toolbar",
+                    "purpose": "Open participant list.",
+                    "localizedTitles": {"es": "Panel de participantes"},
+                    "questionAliases": {"es": ["participantes"]},
+                    "openSteps": [],
+                }
+            ],
+            "demoFlows": [],
+            "manualControls": [],
+        }
+    )
+
+    response = answer_question(
+        package=package,
+        question="participantes",
+        voice=PresenterVoiceSettings(language="es"),
+    )
+
+    assert response.answer_text == "Panel de participantes: Open participant list."
+
+
+def test_spanish_entrypoint_answer_keeps_alias_label_when_localized_title_missing() -> None:
+    package = MaterialPackage.model_validate(
+        {
+            "appId": "demo",
+            "appName": "Demo",
+            "version": 1,
+            "profileIds": ["demo-profile"],
+            "operationEntrypoints": [
+                {
+                    "id": "demo.participants",
+                    "title": "Participants panel",
+                    "area": "Toolbar",
+                    "purpose": "Open participant list.",
+                    "questionAliases": {"es": ["panel de participantes"]},
+                    "openSteps": [],
+                }
+            ],
+            "demoFlows": [],
+            "manualControls": [],
+        }
+    )
+
+    response = answer_question(
+        package=package,
+        question="panel de participantes",
+        voice=PresenterVoiceSettings(language="es"),
+    )
+
+    assert response.answer_text == "panel de participantes: Open participant list."
+
+
+def test_non_spanish_entrypoint_answer_uses_canonical_title_without_localized_copy() -> None:
+    package = MaterialPackage.model_validate(
+        {
+            "appId": "demo",
+            "appName": "Demo",
+            "version": 1,
+            "profileIds": ["demo-profile"],
+            "operationEntrypoints": [
+                {
+                    "id": "demo.camera",
+                    "title": "Camera menu",
+                    "area": "Toolbar",
+                    "purpose": "Open camera options.",
+                    "questionAliases": {"ja": ["\u30ab\u30e1\u30e9"]},
+                    "openSteps": [],
+                }
+            ],
+            "demoFlows": [],
+            "manualControls": [],
+        }
+    )
+
+    response = answer_question(
+        package=package,
+        question="\u30ab\u30e1\u30e9",
+        voice=PresenterVoiceSettings(language="ja"),
+    )
+
+    assert response.answer_text == "Camera menu: Open camera options."
+
+
+def test_localized_entrypoint_title_alone_does_not_create_a_match() -> None:
+    package = MaterialPackage.model_validate(
+        {
+            "appId": "demo",
+            "appName": "Demo",
+            "version": 1,
+            "profileIds": ["demo-profile"],
+            "operationEntrypoints": [
+                {
+                    "id": "demo.attendees",
+                    "title": "Attendees",
+                    "area": "Toolbar",
+                    "purpose": "Open attendee controls.",
+                    "localizedTitles": {"es": "Panel de participantes"},
+                    "openSteps": [],
+                }
+            ],
+            "demoFlows": [],
+            "manualControls": [],
+        }
+    )
+
+    response = answer_question(
+        package=package,
+        question="panel de participantes",
+        voice=PresenterVoiceSettings(language="es"),
+    )
+
+    assert response.entrypoint_id is None
+    assert response.can_operate is False
+
+
 def test_package_owned_alias_takes_precedence_over_legacy_alias_table() -> None:
     package = MaterialPackage.model_validate(
         {

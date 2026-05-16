@@ -29,6 +29,8 @@ class LocalizationStatusReport:
     missing_question_indexes: tuple[tuple[int, str], ...]
     missing_answer_indexes: tuple[tuple[int, str], ...]
     entrypoints_with_aliases: int
+    entrypoint_titles_present: int
+    entrypoint_purposes_present: int
     entrypoint_total: int
     alias_total: int
     _flow_by_id: Mapping[str, FlowLocalizationStatus]
@@ -82,6 +84,8 @@ def build_localization_status(
             missing_answers.append((index, item.question))
 
     entrypoints_with_aliases = 0
+    entrypoint_titles_present = 0
+    entrypoint_purposes_present = 0
     alias_total = 0
     for entrypoint in package.operation_entrypoints:
         aliases = [
@@ -90,6 +94,10 @@ def build_localization_status(
         if aliases:
             entrypoints_with_aliases += 1
             alias_total += len(aliases)
+        if entrypoint.localized_titles.get(language, "").strip():
+            entrypoint_titles_present += 1
+        if entrypoint.localized_purposes.get(language, "").strip():
+            entrypoint_purposes_present += 1
 
     flow_by_id = MappingProxyType({status.flow_id: status for status in flow_statuses})
     return LocalizationStatusReport(
@@ -105,6 +113,8 @@ def build_localization_status(
         missing_question_indexes=tuple(missing_questions),
         missing_answer_indexes=tuple(missing_answers),
         entrypoints_with_aliases=entrypoints_with_aliases,
+        entrypoint_titles_present=entrypoint_titles_present,
+        entrypoint_purposes_present=entrypoint_purposes_present,
         entrypoint_total=len(package.operation_entrypoints),
         alias_total=alias_total,
         _flow_by_id=flow_by_id,
@@ -159,6 +169,14 @@ def render_localization_status_lines(report: LocalizationStatusReport) -> list[s
                 f"- questionAliases.{report.language} present on "
                 f"{report.entrypoints_with_aliases}/{report.entrypoint_total} entrypoints "
                 f"({report.alias_total} aliases)"
+            ),
+            (
+                f"- localizedTitles.{report.language} present on "
+                f"{report.entrypoint_titles_present}/{report.entrypoint_total} entrypoints"
+            ),
+            (
+                f"- localizedPurposes.{report.language} present on "
+                f"{report.entrypoint_purposes_present}/{report.entrypoint_total} entrypoints"
             ),
             "",
             (

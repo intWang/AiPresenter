@@ -86,6 +86,100 @@ def test_question_answers_support_localized_questions_and_answers() -> None:
     assert item.localized_answers["zh"].startswith("打开 Settings")
 
 
+def test_material_package_parses_localized_entrypoint_title_and_purpose() -> None:
+    package = MaterialPackage.model_validate(
+        {
+            "appId": "demo",
+            "appName": "Demo",
+            "version": 1,
+            "profileIds": ["demo-profile"],
+            "operationEntrypoints": [
+                {
+                    "id": "demo.participants",
+                    "title": "Participants panel",
+                    "area": "Toolbar",
+                    "purpose": "Open participant list.",
+                    "localizedTitles": {
+                        "es": "Panel de participantes",
+                        "ja": "\u53c2\u52a0\u8005\u30d1\u30cd\u30eb",
+                        "zh": "  ",
+                    },
+                    "localizedPurposes": {
+                        "es": "Abre la lista de participantes.",
+                        "ja": "  ",
+                    },
+                    "openSteps": [],
+                }
+            ],
+            "demoFlows": [],
+            "manualControls": [],
+        }
+    )
+
+    entrypoint = package.entrypoint_by_id("demo.participants")
+
+    assert entrypoint.localized_titles["es"] == "Panel de participantes"
+    assert entrypoint.localized_purposes["es"] == "Abre la lista de participantes."
+    assert entrypoint.title_for_language("es") == "Panel de participantes"
+    assert entrypoint.purpose_for_language("es") == "Abre la lista de participantes."
+    assert entrypoint.title_for_language("zh") == entrypoint.title
+    assert entrypoint.purpose_for_language("ja") == entrypoint.purpose
+
+
+def test_entrypoint_localized_title_and_purpose_do_not_affect_match_candidates() -> None:
+    package = MaterialPackage.model_validate(
+        {
+            "appId": "demo",
+            "appName": "Demo",
+            "version": 1,
+            "profileIds": ["demo-profile"],
+            "operationEntrypoints": [
+                {
+                    "id": "demo.attendees",
+                    "title": "Attendees",
+                    "area": "Toolbar",
+                    "purpose": "Open attendee controls.",
+                    "localizedTitles": {"es": "Panel de participantes"},
+                    "localizedPurposes": {"es": "Abre la lista de participantes."},
+                    "openSteps": [],
+                }
+            ],
+            "demoFlows": [],
+            "manualControls": [],
+        }
+    )
+
+    candidate = package.entrypoint_match_candidates[0]
+
+    assert "participantes" not in candidate.title_tokens
+    assert "abre" not in candidate.purpose_tokens
+    assert "participantes" not in candidate.purpose_tokens
+
+
+def test_material_package_still_rejects_unknown_entrypoint_keys() -> None:
+    with pytest.raises(ValidationError, match="extra_forbidden"):
+        MaterialPackage.model_validate(
+            {
+                "appId": "demo",
+                "appName": "Demo",
+                "version": 1,
+                "profileIds": ["demo-profile"],
+                "operationEntrypoints": [
+                    {
+                        "id": "demo.participants",
+                        "title": "Participants panel",
+                        "area": "Toolbar",
+                        "purpose": "Open participant list.",
+                        "localizedTitle": {"es": "Panel de participantes"},
+                        "openSteps": [],
+                    }
+                ],
+                "demoFlows": [],
+                "manualControls": [],
+            }
+        )
+
+
 def test_ringcentral_all_qa_items_have_chinese_localized_questions_and_answers() -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
     entrypoint_ids = {entrypoint.id for entrypoint in package.operation_entrypoints}
@@ -174,6 +268,8 @@ def test_localization_status_renders_partial_coverage_without_failing() -> None:
                     "title": "Panel",
                     "area": "Main",
                     "purpose": "Open panel.",
+                    "localizedTitles": {"zh": "Localized panel"},
+                    "localizedPurposes": {"zh": "Open localized panel."},
                     "questionAliases": {"zh": ["panel alias"]},
                     "openSteps": [],
                 },
@@ -236,10 +332,14 @@ def test_localization_status_renders_partial_coverage_without_failing() -> None:
     assert report.qa_localized_questions == 1
     assert report.qa_localized_answers == 0
     assert report.entrypoints_with_aliases == 1
+    assert report.entrypoint_titles_present == 1
+    assert report.entrypoint_purposes_present == 1
     assert report.alias_total == 1
     assert "- onboarding-demo: 1/2 narration localized" in lines
     assert "  missing: missing" in lines
     assert "  missing answers: #1 Where is the panel?" in lines
+    assert "- localizedTitles.zh present on 1/2 entrypoints" in lines
+    assert "- localizedPurposes.zh present on 1/2 entrypoints" in lines
 
 
 def test_localization_status_treats_blank_localized_questions_as_missing() -> None:
@@ -278,6 +378,73 @@ def test_localization_status_treats_blank_localized_questions_as_missing() -> No
     assert report.qa_localized_questions == 0
     assert report.qa_localized_answers == 1
     assert "  missing questions: #1 Where is the panel?" in lines
+
+
+def test_entrypoint_title_and_purpose_counts_do_not_gate_required_localization() -> None:
+    package = MaterialPackage.model_validate(
+        {
+            "appId": "demo",
+            "appName": "Demo",
+            "version": 1,
+            "profileIds": ["demo-profile"],
+            "operationEntrypoints": [
+                {
+                    "id": "demo.panel",
+                    "title": "Panel",
+                    "area": "Main",
+                    "purpose": "Open panel.",
+                    "localizedTitles": {"es": "Panel"},
+                    "localizedPurposes": {"es": "Abre el panel."},
+                    "openSteps": [],
+                },
+                {
+                    "id": "demo.other",
+                    "title": "Other",
+                    "area": "Main",
+                    "purpose": "Open other.",
+                    "openSteps": [],
+                },
+            ],
+            "demoFlows": [
+                {
+                    "id": "onboarding-demo",
+                    "title": "Onboarding",
+                    "goal": "Show onboarding.",
+                    "steps": [
+                        {
+                            "id": "intro",
+                            "title": "Intro",
+                            "action": {
+                                "entrypointId": "demo.panel",
+                                "operation": "explain",
+                            },
+                            "narration": {
+                                "text": "Show the panel.",
+                                "localizedText": {"es": "Muestra el panel."},
+                            },
+                        }
+                    ],
+                }
+            ],
+            "qa": [
+                {
+                    "question": "Where is the panel?",
+                    "answer": "Open Panel.",
+                    "localizedQuestions": {"es": ["Donde esta el panel?"]},
+                    "localizedAnswers": {"es": "Abre Panel."},
+                    "relatedEntrypointIds": ["demo.panel"],
+                }
+            ],
+            "manualControls": [],
+        }
+    )
+
+    report = build_localization_status(package, language="es")
+
+    assert report.entrypoint_titles_present == 1
+    assert report.entrypoint_purposes_present == 1
+    assert report.entrypoint_total == 2
+    assert report.required_localization_complete is True
 
 
 def test_localization_status_reports_zero_for_explicit_uncovered_language() -> None:

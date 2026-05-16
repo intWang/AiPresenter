@@ -518,6 +518,8 @@ def test_localization_report_outputs_ringcentral_chinese_coverage() -> None:
     assert "- localized questions: 12/12" in result.stdout
     assert "- localized answers: 12/12" in result.stdout
     assert "questionAliases.zh present on 15/27 entrypoints (49 aliases)" in result.stdout
+    assert "localizedTitles.zh present on 0/27 entrypoints" in result.stdout
+    assert "localizedPurposes.zh present on 0/27 entrypoints" in result.stdout
     assert "Localization report: 51/51 demo steps" in result.stdout
     assert "Loaded profile" not in result.stdout
 
@@ -540,6 +542,8 @@ def test_localization_report_outputs_japanese_demo_and_qa_coverage() -> None:
     assert "- localized questions: 12/12" in result.stdout
     assert "- localized answers: 12/12" in result.stdout
     assert "questionAliases.ja present on 13/27 entrypoints (34 aliases)" in result.stdout
+    assert "localizedTitles.ja present on 0/27 entrypoints" in result.stdout
+    assert "localizedPurposes.ja present on 0/27 entrypoints" in result.stdout
 
 
 def test_localization_report_outputs_complete_spanish_package() -> None:
@@ -558,6 +562,8 @@ def test_localization_report_outputs_complete_spanish_package() -> None:
     assert "- localized questions: 12/12" in result.stdout
     assert "- localized answers: 12/12" in result.stdout
     assert "questionAliases.es present on 26/27 entrypoints (69 aliases)" in result.stdout
+    assert "localizedTitles.es present on 0/27 entrypoints" in result.stdout
+    assert "localizedPurposes.es present on 0/27 entrypoints" in result.stdout
     assert "Localization coverage incomplete" not in result.stdout
 
 

@@ -24,7 +24,7 @@ This index separates product-scope sources from executable automation evidence f
 
 | Source | Role | Repository Signal |
 | --- | --- | --- |
-| `packages/ringcentral-video.yaml` | Main package knowledge | 27 entrypoints, 4 flows, 21 explainers, 9 QA items, manual controls, safety notes. |
+| `packages/ringcentral-video.yaml` | Main package knowledge | 27 entrypoints, 4 flows, 21 explainers, 10 QA items, manual controls, safety notes. |
 | `profiles/ringcentral-video*.yaml` | Runtime profiles | Launch/bind paths and provider combinations for fake, OpenAI, Codex CLI, Piper, Windows SAPI paths. |
 | `src/ai_presenter/adapters/ringcentral.py` | State extraction | Meeting joined, mic, camera, participant count, permission/waiting-room dialogs, connection warning. |
 | `src/ai_presenter/runtime/package_demo.py` | Action execution | Supported actions and cleanup modes for package `openSteps`. |

@@ -96,9 +96,9 @@ def test_ringcentral_localization_status_reports_chinese_coverage() -> None:
     assert report.language == "zh"
     assert report.demo_localized_steps == 51
     assert report.demo_total_steps == 51
-    assert report.qa_localized_questions == 9
-    assert report.qa_localized_answers == 9
-    assert report.qa_total == 9
+    assert report.qa_localized_questions == 10
+    assert report.qa_localized_answers == 10
+    assert report.qa_total == 10
     assert report.entrypoints_with_aliases == 15
     assert report.entrypoint_total == 27
     assert report.alias_total == 49

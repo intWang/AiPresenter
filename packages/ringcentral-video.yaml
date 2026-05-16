@@ -1386,6 +1386,23 @@ qa:
     zh: Notes 会打开笔记和转录面板。启动笔记可能改变会议状态，所以只在用户明确要求并且会议上下文允许时使用。
   relatedEntrypointIds:
   - ringcentral.video.more.notes
+- question: Where are captions, live transcription, and translation controls?
+  localizedQuestions:
+    en:
+    - Where are captions?
+    - Can I use live transcription?
+    - How do I translate captions?
+    - Where are translated captions?
+    zh:
+    - 字幕在哪里
+    - 实时转录在哪里
+    - 怎么翻译字幕
+  answer: Use Notes and Transcript as the known discovery surface for transcript-related controls, and use Settings
+    for Translation-related meeting preferences when available. Do not start notes, transcription, captions, or translation,
+    read caption or transcript text, or promise post-meeting summaries unless the user explicitly asks and the visible
+    context is verified.
+  localizedAnswers:
+    zh: 可以把 Notes and Transcript 作为转录相关控制的已知查找入口，也可以在功能可用时从 Settings 查看 Translation 相关会议偏好。不要自动开启笔记、转录、字幕或翻译，不要朗读字幕或转录内容，也不要承诺会后摘要；只有在用户明确要求并且可见上下文已验证时才继续。
 - question: How do I handle meeting recording safely?
   localizedQuestions:
     zh:

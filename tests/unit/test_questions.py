@@ -395,6 +395,61 @@ def test_ringcentral_localized_host_controls_question_returns_chinese_guidance()
     assert "\u59d3\u540d" in response.answer_text
 
 
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Where are captions?",
+        "Can I use live transcription?",
+        "How do I translate captions?",
+        "Where are translated captions?",
+    ],
+)
+def test_ringcentral_captions_and_translation_questions_are_answer_only(
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(),
+    )
+
+    assert response.entrypoint_id is None
+    assert response.can_operate is False
+    assert "Notes and Transcript" in response.answer_text
+    assert "Settings" in response.answer_text
+    assert "explicitly asks" in response.answer_text
+    assert "verified" in response.answer_text
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "\u5b57\u5e55\u5728\u54ea\u91cc",
+        "\u5b9e\u65f6\u8f6c\u5f55\u5728\u54ea\u91cc",
+        "\u600e\u4e48\u7ffb\u8bd1\u5b57\u5e55",
+    ],
+)
+def test_ringcentral_localized_caption_translation_questions_are_answer_only(
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(language="zh", tone="professional"),
+    )
+
+    assert response.entrypoint_id is None
+    assert response.can_operate is False
+    assert "Notes and Transcript" in response.answer_text
+    assert "Settings" in response.answer_text
+    assert "\u660e\u786e\u8981\u6c42" in response.answer_text
+    assert "\u5df2\u9a8c\u8bc1" in response.answer_text
+
+
 def test_exact_qa_match_uses_precomputed_question_index() -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
     package._qa_question_candidates = ()

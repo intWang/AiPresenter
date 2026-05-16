@@ -123,7 +123,7 @@ def test_ringcentral_localization_status_reports_japanese_demo_and_qa_coverage()
 
     assert report.package_id == "ringcentral-video"
     assert report.language == "ja"
-    assert report.demo_localized_steps == 46
+    assert report.demo_localized_steps == 47
     assert report.demo_total_steps == 51
     assert report.qa_localized_questions == 12
     assert report.qa_localized_answers == 12
@@ -138,10 +138,10 @@ def test_ringcentral_localization_status_reports_japanese_demo_and_qa_coverage()
     assert report.flow_by_id["meeting-basics-demo"].total_steps == 3
     assert report.flow_by_id["meeting-controls-tour"].localized_steps == 22
     assert report.flow_by_id["meeting-controls-tour"].total_steps == 22
-    assert report.flow_by_id["meeting-control-map-demo"].localized_steps == 17
+    assert report.flow_by_id["meeting-control-map-demo"].localized_steps == 18
     assert report.flow_by_id["meeting-control-map-demo"].total_steps == 22
     assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids[0] == (
-        "control-map-notes"
+        "control-map-background"
     )
 
 
@@ -1975,7 +1975,7 @@ def test_meeting_control_map_has_japanese_camera_menu_narration() -> None:
     assert report.entrypoints_with_aliases == 3
     assert report.alias_total == 9
     assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids[0] == (
-        "control-map-notes"
+        "control-map-background"
     )
     assert len(camera_menu_entrypoint.open_steps) == 1
     open_step = camera_menu_entrypoint.open_steps[0]
@@ -2037,7 +2037,7 @@ def test_meeting_control_map_has_japanese_share_narration() -> None:
     assert report.entrypoints_with_aliases == 3
     assert report.alias_total == 9
     assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids[0] == (
-        "control-map-notes"
+        "control-map-background"
     )
     assert len(share_entrypoint.open_steps) == 1
     open_step = share_entrypoint.open_steps[0]
@@ -2101,7 +2101,7 @@ def test_meeting_control_map_has_japanese_reactions_narration() -> None:
     assert report.entrypoints_with_aliases == 3
     assert report.alias_total == 9
     assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids[0] == (
-        "control-map-notes"
+        "control-map-background"
     )
     assert len(reactions_entrypoint.open_steps) == 1
     open_step = reactions_entrypoint.open_steps[0]
@@ -2172,7 +2172,7 @@ def test_meeting_control_map_has_japanese_raise_hand_narration() -> None:
     assert report.entrypoints_with_aliases == 3
     assert report.alias_total == 9
     assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids[0] == (
-        "control-map-notes"
+        "control-map-background"
     )
     assert len(raise_hand_entrypoint.open_steps) == 1
     open_step = raise_hand_entrypoint.open_steps[0]
@@ -2237,7 +2237,7 @@ def test_meeting_control_map_has_japanese_more_narration() -> None:
     assert report.entrypoints_with_aliases == 3
     assert report.alias_total == 9
     assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids[0] == (
-        "control-map-notes"
+        "control-map-background"
     )
     assert len(more_entrypoint.open_steps) == 1
     open_step = more_entrypoint.open_steps[0]
@@ -2310,7 +2310,7 @@ def test_meeting_control_map_has_japanese_recording_narration() -> None:
     assert report.entrypoints_with_aliases == 3
     assert report.alias_total == 9
     assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids[0] == (
-        "control-map-notes"
+        "control-map-background"
     )
     assert recording_entrypoint.open_steps == []
     assert "Observed under More as Start recording." in recording_entrypoint.presenter_notes
@@ -2335,6 +2335,71 @@ def test_meeting_control_map_has_japanese_recording_narration() -> None:
     assert "録画を開始します" not in ja_text
     assert "録画を停止します" not in ja_text
     assert "Start recording をクリック" not in ja_text
+    assert "クリックします" not in ja_text
+    assert "自動" not in ja_text
+
+
+def test_meeting_control_map_has_japanese_notes_narration() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    flow = package.demo_flow_by_id("meeting-control-map-demo")
+    step = next(step for step in flow.steps if step.id == "control-map-notes")
+
+    assert step.action.entrypoint_id == "ringcentral.video.more.notes"
+    assert step.action.operation == "open"
+    assert step.narration.placement == "during"
+    assert step.narration.action_offset_ms == 400
+    report = build_localization_status(package, language="ja")
+    notes_entrypoint = package.entrypoint_by_id("ringcentral.video.more.notes")
+    assert "ja" not in notes_entrypoint.question_aliases
+    assert report.entrypoints_with_aliases == 3
+    assert report.alias_total == 9
+    assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids[0] == (
+        "control-map-background"
+    )
+    assert len(notes_entrypoint.open_steps) == 2
+    more_step, notes_step = notes_entrypoint.open_steps
+    assert more_step.action == "clickWindowControl"
+    assert more_step.target == "More"
+    assert more_step.match["occurrence"] == "3"
+    assert more_step.match["controlType"] == "button"
+    assert notes_step.action == "clickWindowControl"
+    assert notes_step.target == "onconf.controls.NOTES"
+    assert notes_step.match["alternateTargets"] == "Notes"
+    assert notes_step.match["controlType"] == "menuitem"
+    assert notes_step.match["cleanup"] == "sidePanel"
+    assert "Notes is nested under the More menu." in notes_entrypoint.presenter_notes[0]
+    assert "Start notes" in notes_entrypoint.presenter_notes[3]
+    assert "Also record this meeting" in notes_entrypoint.presenter_notes[3]
+    assert "only explains the panel" in notes_entrypoint.presenter_notes[4]
+    assert "Close the panel before continuing." in notes_entrypoint.presenter_notes[5]
+    recording_step = next(step for step in flow.steps if step.id == "control-map-recording")
+    assert "ja" in recording_step.narration.localized_text
+    background_step = next(step for step in flow.steps if step.id == "control-map-background")
+    assert "ja" not in background_step.narration.localized_text
+    ja_text = step.narration.localized_text["ja"]
+    assert ja_text.strip()
+    assert has_cjk(ja_text)
+    assert "Notes and Transcript" in ja_text
+    assert "会議メモ" in ja_text
+    assert "文字起こし" in ja_text
+    assert "パネル" in ja_text
+    assert "Start notes" in ja_text
+    assert "Also record this meeting" in ja_text
+    assert "録画" in ja_text
+    assert "表示して説明" in ja_text
+    assert "開始しません" in ja_text
+    assert "ユーザー" in ja_text
+    assert "明確" in ja_text
+    assert "同意" in ja_text
+    assert "閉じます" in ja_text
+    assert "Notes を開始します" not in ja_text
+    assert "Start notes を押します" not in ja_text
+    assert "録画を開始します" not in ja_text
+    assert "Also record this meeting を選択" not in ja_text
+    assert "文字起こしを開始します" not in ja_text
+    assert "メモを作成します" not in ja_text
+    assert "内容を読み上げます" not in ja_text
+    assert "要約します" not in ja_text
     assert "クリックします" not in ja_text
     assert "自動" not in ja_text
 

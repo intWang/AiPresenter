@@ -302,6 +302,47 @@ def test_localization_status_marks_french_coverage_incomplete() -> None:
     assert report.required_localization_complete is False
 
 
+def test_ringcentral_spanish_seed_qa_and_aliases_are_present() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    item = next(qa for qa in package.qa if qa.question == "How do I protect my real background?")
+    aliases = package.entrypoint_by_id(
+        "ringcentral.video.settings.background"
+    ).question_aliases.get("es", [])
+    questions = item.localized_questions.get("es", [])
+    answer = item.localized_answers.get("es", "")
+
+    assert len(questions) == 2
+    assert any("fondo real" in question for question in questions)
+    assert any("habitación" in question and "reunión" in question for question in questions)
+    assert "privacidad" in answer
+    assert "Settings" in answer
+    assert "Background" in answer
+    assert "Blur" in answer
+    assert set(aliases) == {
+        "configuración de fondo",
+        "fondo virtual",
+        "desenfocar fondo",
+    }
+
+
+def test_ringcentral_localization_status_reports_spanish_seed_coverage() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    report = build_localization_status(package, language="es")
+
+    assert report.package_id == "ringcentral-video"
+    assert report.language == "es"
+    assert report.demo_localized_steps == 0
+    assert report.demo_total_steps == 51
+    assert report.qa_localized_questions == 1
+    assert report.qa_localized_answers == 1
+    assert report.qa_total == 12
+    assert report.entrypoints_with_aliases == 1
+    assert report.entrypoint_total == 27
+    assert report.alias_total == 3
+    assert report.required_localization_complete is False
+
+
 def test_localization_status_completion_ignores_alias_coverage_gaps() -> None:
     package = MaterialPackage.model_validate(
         {

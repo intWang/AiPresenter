@@ -463,6 +463,42 @@ def test_localization_report_outputs_japanese_demo_and_qa_coverage() -> None:
     assert "questionAliases.ja present on 13/27 entrypoints (34 aliases)" in result.stdout
 
 
+def test_localization_report_outputs_spanish_seed_coverage() -> None:
+    result = CliRunner().invoke(
+        app,
+        ["localization-report", "--package", "ringcentral-video", "--language", "es"],
+    )
+
+    assert result.exit_code == 0
+    assert "Language: es" in result.stdout
+    assert "Localization report: 0/51 demo steps" in result.stdout
+    assert "- localized questions: 1/12" in result.stdout
+    assert "- localized answers: 1/12" in result.stdout
+    assert "questionAliases.es present on 1/27 entrypoints (3 aliases)" in result.stdout
+    assert "Localization coverage incomplete" not in result.stdout
+
+
+def test_localization_report_require_complete_fails_for_spanish_seed() -> None:
+    result = CliRunner().invoke(
+        app,
+        [
+            "localization-report",
+            "--package",
+            "ringcentral-video",
+            "--language",
+            "es",
+            "--require-complete",
+        ],
+    )
+
+    assert result.exit_code == 1
+    assert "Language: es" in result.stdout
+    assert "Localization report: 0/51 demo steps" in result.stdout
+    assert "- localized questions: 1/12" in result.stdout
+    assert "- localized answers: 1/12" in result.stdout
+    assert "Localization coverage incomplete for es." in result.stdout
+
+
 def test_localization_report_require_complete_passes_for_chinese() -> None:
     result = CliRunner().invoke(
         app,
@@ -942,11 +978,11 @@ def test_doctor_loads_profile_package_and_flow(monkeypatch: pytest.MonkeyPatch) 
     assert "[OK] package: loaded ringcentral-video" in result.stdout
     assert "[OK] package profile support" in result.stdout
     assert "[OK] question aliases:" in result.stdout
-    assert "87 package-owned aliases have no cross-entrypoint duplicates" in result.stdout
+    assert "90 package-owned aliases have no cross-entrypoint duplicates" in result.stdout
     assert "[OK] qa questions:" in result.stdout
-    assert "71 Q&A question prompts have no cross-item duplicates" in result.stdout
+    assert "73 Q&A question prompts have no cross-item duplicates" in result.stdout
     assert "[OK] qa alias overlap:" in result.stdout
-    assert "71 Q&A question prompts have no unsafe package-owned alias overlaps" in result.stdout
+    assert "73 Q&A question prompts have no unsafe package-owned alias overlaps" in result.stdout
     assert "[INFO] qa alias substring risk:" in result.stdout
     assert (
         "11 Q&A question prompts contain package-owned alias substrings outside "

@@ -270,6 +270,10 @@ operationEntrypoints:
   area: Settings
   purpose: Configure blur, built-in virtual backgrounds, video backgrounds, or custom uploads.
   questionAliases:
+    es:
+    - configuración de fondo
+    - fondo virtual
+    - desenfocar fondo
     zh:
     - 背景
     - 虚拟背景
@@ -1391,6 +1395,9 @@ explainers:
 qa:
 - question: How do I protect my real background?
   localizedQuestions:
+    es:
+    - ¿Cómo protejo mi fondo real?
+    - ¿Cómo oculto el fondo de mi habitación en la reunión?
     ja:
     - 実際の背景を保護するにはどうすればいいですか
     zh:
@@ -1399,6 +1406,8 @@ qa:
   answer: Open Settings, choose Background, and select Blur or a virtual background. Blur is the safest default
     for privacy because it hides room detail while keeping the person visible.
   localizedAnswers:
+    es: Abre Settings, elige Background y selecciona Blur o un fondo virtual. Blur es la opción predeterminada
+      más segura para la privacidad porque oculta los detalles de la habitación y mantiene visible a la persona.
     ja: Settings を開き、Background を選んで Blur または仮想背景を選択します。Blur は部屋の詳細を隠しながら人物を表示できるため、プライバシー保護の安全な既定候補です。
     zh: 打开 Settings，选择 Background，然后选择 Blur 或虚拟背景。Blur 是最稳妥的隐私默认项，因为它会隐藏房间细节，同时保留人物可见。
   relatedEntrypointIds:

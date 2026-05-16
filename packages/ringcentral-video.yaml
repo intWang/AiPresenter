@@ -773,6 +773,7 @@ demoFlows:
       text: The camera arrow opens camera selection and a shortcut to more video settings, including background
         configuration.
       localizedText:
+        ja: カメラ横の矢印は、カメラ選択と、背景設定を含む詳しいビデオ設定へのショートカットを開きます。ここでは場所を説明するだけで、ユーザーの明確な指示なしにカメラを切り替えません。背景やビデオ設定も変更しません。説明したらメニューを閉じます。
         zh: 摄像头箭头会打开摄像头选择，并提供进入更多视频设置的入口，包括背景配置。
       placement: during
       actionOffsetMs: 350

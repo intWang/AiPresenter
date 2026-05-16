@@ -44,6 +44,21 @@ def _alias_package(*entries: tuple[str, dict[str, list[str]]]) -> MaterialPackag
     )
 
 
+def _qa_package(*items: dict[str, object]) -> MaterialPackage:
+    return MaterialPackage.model_validate(
+        {
+            "appId": "demo",
+            "appName": "Demo",
+            "version": 1,
+            "profileIds": ["ringcentral-video-bind-speaker"],
+            "operationEntrypoints": [],
+            "demoFlows": [],
+            "qa": list(items),
+            "manualControls": [],
+        }
+    )
+
+
 def test_ringcentral_config_is_auto_discovered_from_running_process(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -355,6 +370,117 @@ def test_diagnostics_reports_question_aliases_ok_for_ringcentral_package() -> No
     assert alias_check.detail == (
         "53 package-owned aliases have no cross-entrypoint duplicates"
     )
+
+
+def test_diagnostics_reports_qa_questions_ok_for_ringcentral_package() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    report = diagnostics.diagnose_configuration(
+        profile=profile,
+        material_package=package,
+    )
+
+    qa_check = next(check for check in report.checks if check.name == "qa questions")
+    assert qa_check.status == "OK"
+    assert qa_check.detail == "36 Q&A question prompts have no cross-item duplicates"
+
+
+def test_diagnostics_warns_for_duplicate_qa_questions() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
+    package = _qa_package(
+        {
+            "question": "Where is privacy?",
+            "answer": "First answer.",
+        },
+        {
+            "question": "where is privacy?",
+            "answer": "Second answer.",
+        },
+    )
+
+    report = diagnostics.diagnose_configuration(
+        profile=profile,
+        material_package=package,
+    )
+
+    qa_check = next(check for check in report.checks if check.name == "qa questions")
+    assert qa_check.status == "WARN"
+    assert qa_check.detail == (
+        "1 duplicate normalized Q&A question prompt: "
+        "'where is privacy?' (languages: en) appears in #1 Where is privacy?, "
+        "#2 where is privacy?; first match is #1 Where is privacy?"
+    )
+
+
+def test_diagnostics_labels_equal_duplicate_qa_items_by_identity() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
+    package = _qa_package(
+        {
+            "question": "Where is privacy?",
+            "answer": "Same answer.",
+        },
+        {
+            "question": "Where is privacy?",
+            "answer": "Same answer.",
+        },
+    )
+
+    report = diagnostics.diagnose_configuration(
+        profile=profile,
+        material_package=package,
+    )
+
+    qa_check = next(check for check in report.checks if check.name == "qa questions")
+    assert qa_check.status == "WARN"
+    assert "#1 Where is privacy?, #2 Where is privacy?" in qa_check.detail
+
+
+def test_diagnostics_warns_for_duplicate_localized_qa_questions() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
+    package = _qa_package(
+        {
+            "question": "Where is privacy?",
+            "answer": "First answer.",
+            "localizedQuestions": {"zh": ["隐私在哪里"]},
+        },
+        {
+            "question": "Where are privacy settings?",
+            "answer": "Second answer.",
+            "localizedQuestions": {"zh": ["隐私在哪里"]},
+        },
+    )
+
+    report = diagnostics.diagnose_configuration(
+        profile=profile,
+        material_package=package,
+    )
+
+    qa_check = next(check for check in report.checks if check.name == "qa questions")
+    assert qa_check.status == "WARN"
+    assert "'隐私在哪里' (languages: zh)" in qa_check.detail
+    assert "#1 Where is privacy?, #2 Where are privacy settings?" in qa_check.detail
+    assert "first match is #1 Where is privacy?" in qa_check.detail
+
+
+def test_diagnostics_ignores_duplicate_questions_within_same_qa_item() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
+    package = _qa_package(
+        {
+            "question": "Where is privacy?",
+            "answer": "First answer.",
+            "localizedQuestions": {"en": ["Where is privacy?"]},
+        },
+    )
+
+    report = diagnostics.diagnose_configuration(
+        profile=profile,
+        material_package=package,
+    )
+
+    qa_check = next(check for check in report.checks if check.name == "qa questions")
+    assert qa_check.status == "OK"
+    assert qa_check.detail == "2 Q&A question prompts have no cross-item duplicates"
 
 
 def test_diagnostics_warns_for_duplicate_question_aliases() -> None:

@@ -14,6 +14,8 @@ from ai_presenter.packages.localization_status import LocalizationStatusReport
 from ai_presenter.packages.localization_status import build_localization_status
 from ai_presenter.packages.models import EntrypointQuestionAlias
 from ai_presenter.packages.models import MaterialPackage
+from ai_presenter.packages.models import QuestionAnswer
+from ai_presenter.packages.models import QuestionAnswerMatchCandidate
 from ai_presenter.runtime.voice import PresenterVoiceSettings
 from ai_presenter.runtime.voice import language_label
 from ai_presenter.runtime.voice import resolve_speech_provider_name
@@ -237,6 +239,7 @@ def _diagnose_material_package(
             )
         )
     checks.append(_diagnose_question_aliases(material_package))
+    checks.append(_diagnose_qa_questions(material_package))
     checks.append(_diagnose_explainer_coverage(material_package))
 
     if flow_id is not None:
@@ -341,6 +344,80 @@ def _diagnose_question_aliases(material_package: MaterialPackage) -> DiagnosticC
         f"{len(conflicts)} duplicate normalized package-owned question {alias_word}: "
         f"{_format_question_alias_conflict(normalized_alias, aliases)}{suffix}",
     )
+
+
+def _diagnose_qa_questions(material_package: MaterialPackage) -> DiagnosticCheck:
+    candidates_by_normalized: dict[str, list[QuestionAnswerMatchCandidate]] = {}
+    for candidate in material_package.qa_question_candidates:
+        candidates_by_normalized.setdefault(candidate.normalized_question, []).append(candidate)
+
+    conflicts = [
+        (normalized_question, candidates)
+        for normalized_question, candidates in candidates_by_normalized.items()
+        if len(_unique_qa_items(candidates)) > 1
+    ]
+    if not conflicts:
+        return DiagnosticCheck(
+            "OK",
+            "qa questions",
+            f"{len(material_package.qa_question_candidates)} Q&A question prompts "
+            "have no cross-item duplicates",
+        )
+
+    normalized_question, candidates = conflicts[0]
+    prompt_word = "prompt" if len(conflicts) == 1 else "prompts"
+    suffix = "" if len(conflicts) == 1 else f"; and {len(conflicts) - 1} more"
+    return DiagnosticCheck(
+        "WARN",
+        "qa questions",
+        f"{len(conflicts)} duplicate normalized Q&A question {prompt_word}: "
+        f"{_format_qa_question_conflict(material_package, normalized_question, candidates)}{suffix}",
+    )
+
+
+def _format_qa_question_conflict(
+    material_package: MaterialPackage,
+    normalized_question: str,
+    candidates: list[QuestionAnswerMatchCandidate],
+) -> str:
+    items = _unique_qa_items(candidates)
+    labels = [_format_qa_item_label(material_package, item) for item in items]
+    languages = _ordered_unique(_qa_question_language(candidate) for candidate in candidates)
+    return (
+        f"{normalized_question!r} (languages: {', '.join(languages)}) appears in "
+        f"{', '.join(labels)}; first match is {labels[0]}"
+    )
+
+
+def _unique_qa_items(
+    candidates: list[QuestionAnswerMatchCandidate],
+) -> list[QuestionAnswer]:
+    seen: set[int] = set()
+    ordered: list[QuestionAnswer] = []
+    for candidate in candidates:
+        item_id = id(candidate.item)
+        if item_id in seen:
+            continue
+        seen.add(item_id)
+        ordered.append(candidate.item)
+    return ordered
+
+
+def _format_qa_item_label(
+    material_package: MaterialPackage,
+    item: QuestionAnswer,
+) -> str:
+    for index, candidate in enumerate(material_package.qa, start=1):
+        if candidate is item:
+            return f"#{index} {item.question}"
+    return item.question
+
+
+def _qa_question_language(candidate: QuestionAnswerMatchCandidate) -> str:
+    for language, questions in candidate.item.localized_questions.items():
+        if candidate.question in questions:
+            return language
+    return "en"
 
 
 def _format_question_alias_conflict(

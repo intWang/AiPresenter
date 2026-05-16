@@ -928,6 +928,8 @@ def test_doctor_loads_profile_package_and_flow(monkeypatch: pytest.MonkeyPatch) 
     assert "[OK] package profile support" in result.stdout
     assert "[OK] question aliases:" in result.stdout
     assert "53 package-owned aliases have no cross-entrypoint duplicates" in result.stdout
+    assert "[OK] qa questions:" in result.stdout
+    assert "36 Q&A question prompts have no cross-item duplicates" in result.stdout
     assert "[OK] explainer coverage" in result.stdout
     assert "[OK] demo flow: meeting-control-map-demo" in result.stdout
     assert "[OK] presenter context" in result.stdout
@@ -993,6 +995,48 @@ manualControls: []
     assert "[WARN] question aliases:" in result.stdout
     assert "'chat' (languages: en) maps to demo.alpha, demo.bravo" in result.stdout
     assert "first match is demo.alpha" in result.stdout
+    assert "1 warning, 0 failed" in result.stdout
+
+
+def test_doctor_warns_for_duplicate_qa_questions(tmp_path: Path) -> None:
+    config_path = tmp_path / "config.ini"
+    config_path.write_text("[General]\nDisableAffinityMask=true\n", encoding="utf-8")
+    package_path = tmp_path / "duplicate-qa-package.yaml"
+    package_path.write_text(
+        """
+appId: demo
+appName: Demo
+version: 1
+profileIds: [ringcentral-video-bind-speaker]
+operationEntrypoints: []
+demoFlows: []
+qa:
+  - question: Where is privacy?
+    answer: First answer.
+  - question: where is privacy?
+    answer: Second answer.
+manualControls: []
+""",
+        encoding="utf-8",
+    )
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "doctor",
+            "--profile",
+            "ringcentral-video-bind-speaker",
+            "--package",
+            str(package_path),
+            "--ringcentral-config",
+            str(config_path),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "[WARN] qa questions:" in result.stdout
+    assert "'where is privacy?' (languages: en)" in result.stdout
+    assert "first match is #1 Where is privacy?" in result.stdout
     assert "1 warning, 0 failed" in result.stdout
 
 

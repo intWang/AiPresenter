@@ -256,13 +256,41 @@ def entrypoints(
         "--area",
         help="Optional case-insensitive area filter.",
     ),
+    language: str | None = typer.Option(
+        None,
+        "--language",
+        help="Optional package-local language for localized entrypoint display.",
+    ),
 ) -> None:
     """List operation entrypoints available in a material package."""
     loaded_package = load_material_package(resolve_material_package(package))
     typer.echo(f"Package: {loaded_package.app_id}")
     area_filter = None if area is None else area.strip().lower()
+    language_filter = None if language is None else language.strip()
+    if language_filter:
+        typer.echo(f"Language: {language_filter}")
     for entrypoint in loaded_package.operation_entrypoints:
         if area_filter and area_filter not in entrypoint.area.lower():
+            continue
+        if language_filter:
+            title_source = (
+                "localized"
+                if entrypoint.localized_titles.get(language_filter, "").strip()
+                else "fallback"
+            )
+            purpose_source = (
+                "localized"
+                if entrypoint.localized_purposes.get(language_filter, "").strip()
+                else "fallback"
+            )
+            typer.echo(
+                f"- {entrypoint.id}: {entrypoint.title_for_language(language_filter)} "
+                f"[{entrypoint.area}] (title: {title_source})"
+            )
+            typer.echo(
+                f"  purpose: {entrypoint.purpose_for_language(language_filter)} "
+                f"({purpose_source})"
+            )
             continue
         typer.echo(f"- {entrypoint.id}: {entrypoint.title} [{entrypoint.area}]")
 

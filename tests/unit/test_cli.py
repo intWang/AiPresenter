@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
+import ai_presenter.cli as cli
 from ai_presenter.cli import app
 from ai_presenter.cli import REPO_PACKAGE_DIR
 from ai_presenter.cli import PACKAGE_PROFILE_DIR
@@ -645,9 +646,95 @@ def test_entrypoints_lists_material_package_entrypoints_by_area() -> None:
 
     assert result.exit_code == 0
     assert "Package: ringcentral-video" in result.stdout
-    assert "ringcentral.video.toolbar.audio" in result.stdout
-    assert "ringcentral.video.toolbar.leave" in result.stdout
+    assert (
+        "- ringcentral.video.toolbar.audio: Microphone control [Meeting toolbar]"
+    ) in result.stdout
+    assert "- ringcentral.video.toolbar.leave: Leave meeting [Meeting toolbar]" in result.stdout
     assert "ringcentral.video.top.meeting-info" not in result.stdout
+    assert "(title:" not in result.stdout
+    assert "purpose:" not in result.stdout
+
+
+def test_entrypoints_language_inspects_ringcentral_localized_and_fallback_copy() -> None:
+    result = CliRunner().invoke(
+        app,
+        [
+            "entrypoints",
+            "--package",
+            "ringcentral-video",
+            "--area",
+            "Meeting top bar",
+            "--language",
+            "es",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "Language: es" in result.stdout
+    assert (
+        "- ringcentral.video.top.network-quality: Calidad de red "
+        "[Meeting top bar] (title: localized)"
+    ) in result.stdout
+    assert (
+        "  purpose: Abre Network quality para revisar packet loss, jitter y latency "
+        "de Share, video y audio cuando la reuni\u00f3n se siente inestable. (localized)"
+    ) in result.stdout
+    assert (
+        "- ringcentral.video.top.meeting-info: Meeting information "
+        "[Meeting top bar] (title: fallback)"
+    ) in result.stdout
+    assert (
+        "  purpose: Open meeting details including meeting title, host, meeting ID, "
+        "copy link, dial-in info, encryption, and end-to-end encryption option. (fallback)"
+    ) in result.stdout
+    assert "ringcentral.video.toolbar.audio" not in result.stdout
+
+
+def test_entrypoints_language_uses_package_local_metadata_without_runtime_voice_validation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fail_runtime_voice_call(*args: object, **kwargs: object) -> None:
+        raise AssertionError("entrypoints --language must not inspect runtime voices")
+
+    monkeypatch.setattr(cli, "resolve_voice_settings", fail_runtime_voice_call)
+    monkeypatch.setattr(cli, "validate_cli_voice_profile", fail_runtime_voice_call)
+    monkeypatch.setattr(cli, "resolve_speech_provider_name", fail_runtime_voice_call)
+    monkeypatch.setattr(cli, "check_voice_asset_availability", fail_runtime_voice_call)
+
+    package_path = tmp_path / "package-local-entrypoints.yaml"
+    package_path.write_text(
+        """
+appId: demo
+appName: Demo
+version: 1
+profileIds: [ringcentral-video]
+operationEntrypoints:
+  - id: demo.panel
+    title: Panel
+    area: Main
+    purpose: Explain panel.
+    localizedTitles:
+      de: Bereich
+    localizedPurposes:
+      de: Erklaert den Bereich.
+    openSteps: []
+demoFlows: []
+manualControls: []
+""",
+        encoding="utf-8",
+    )
+
+    result = CliRunner().invoke(
+        app,
+        ["entrypoints", "--package", str(package_path), "--language", "de"],
+    )
+
+    assert result.exit_code == 0
+    assert "Package: demo" in result.stdout
+    assert "Language: de" in result.stdout
+    assert "- demo.panel: Bereich [Main] (title: localized)" in result.stdout
+    assert "  purpose: Erklaert den Bereich. (localized)" in result.stdout
 
 
 def test_acceptance_draft_outputs_entrypoint_template() -> None:

@@ -40,6 +40,16 @@ def assert_acceptance_draft_boundary(text: str) -> None:
     assert "live validated" not in lowered
 
 
+def assert_acceptance_draft_refusal_boundary(text: str) -> None:
+    assert "Manual RingCentral Acceptance Draft" not in text
+    assert "### Manual Acceptance Fields" not in text
+    assert "Wrote acceptance draft" not in text
+    lowered = text.casefold()
+    assert "accepted" not in lowered
+    assert "passed" not in lowered
+    assert "live validated" not in lowered
+
+
 def test_cli_help_renders() -> None:
     result = CliRunner().invoke(app, ["--help"])
 
@@ -1098,8 +1108,7 @@ def test_acceptance_draft_rejects_no_open_step_entrypoint() -> None:
     assert "open steps" in output
     assert "confirmation" in output
     assert "workflow" in output
-    assert "Manual RingCentral Acceptance Draft" not in output
-    assert "### Manual Acceptance Fields" not in output
+    assert_acceptance_draft_refusal_boundary(output)
 
 
 def test_acceptance_draft_refusal_does_not_write_output_file(tmp_path: Path) -> None:
@@ -1126,6 +1135,7 @@ def test_acceptance_draft_refusal_does_not_write_output_file(tmp_path: Path) -> 
     assert "open steps" in output
     assert "confirmation" in output
     assert "workflow" in output
+    assert_acceptance_draft_refusal_boundary(output)
     assert not output_path.exists()
 
 
@@ -1190,6 +1200,7 @@ def test_acceptance_draft_rejects_existing_output_file(tmp_path: Path) -> None:
 
     assert result.exit_code != 0
     assert "Output file already exists" in result.output
+    assert_acceptance_draft_refusal_boundary(result.output)
     assert output_path.read_text(encoding="utf-8") == "existing draft"
 
 
@@ -1211,6 +1222,7 @@ def test_acceptance_draft_rejects_acceptance_runs_output_file(tmp_path: Path) ->
 
     assert result.exit_code != 0
     assert "Refusing to write acceptance draft to acceptance-runs.md" in result.output
+    assert_acceptance_draft_refusal_boundary(result.output)
     assert not output_path.exists()
 
 

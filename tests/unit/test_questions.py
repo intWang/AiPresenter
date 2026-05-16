@@ -395,6 +395,21 @@ def test_ringcentral_localized_host_controls_question_returns_chinese_guidance()
     assert "\u59d3\u540d" in response.answer_text
 
 
+def test_exact_qa_match_uses_precomputed_question_index() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    package._qa_question_candidates = ()
+
+    response = answer_question(
+        package=package,
+        question="Where are host controls for participants?",
+        voice=PresenterVoiceSettings(),
+    )
+
+    assert response.entrypoint_id is None
+    assert response.can_operate is False
+    assert "host or moderator" in response.answer_text
+
+
 def test_ringcentral_chinese_questions_match_package_aliases_without_legacy_table(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

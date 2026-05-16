@@ -148,6 +148,9 @@ class MaterialPackage(CamelModel):
     _qa_question_candidates: tuple[QuestionAnswerMatchCandidate, ...] = PrivateAttr(
         default_factory=tuple
     )
+    _qa_questions_by_normalized: dict[str, QuestionAnswer] = PrivateAttr(
+        default_factory=dict
+    )
     _entrypoint_match_candidates: tuple[EntrypointMatchCandidate, ...] = PrivateAttr(
         default_factory=tuple
     )
@@ -224,7 +227,11 @@ class MaterialPackage(CamelModel):
                 entrypoint_question_aliases
             )
         )
-        self._qa_question_candidates = _build_qa_question_candidates(self.qa)
+        qa_question_candidates = _build_qa_question_candidates(self.qa)
+        self._qa_question_candidates = qa_question_candidates
+        self._qa_questions_by_normalized = _build_qa_questions_by_normalized(
+            qa_question_candidates
+        )
         self._entrypoint_match_candidates = _build_entrypoint_match_candidates(
             self.operation_entrypoints
         )
@@ -251,6 +258,10 @@ class MaterialPackage(CamelModel):
     @property
     def qa_question_candidates(self) -> tuple[QuestionAnswerMatchCandidate, ...]:
         return self._qa_question_candidates
+
+    @property
+    def qa_questions_by_normalized(self) -> Mapping[str, QuestionAnswer]:
+        return MappingProxyType(self._qa_questions_by_normalized)
 
     @property
     def entrypoint_match_candidates(self) -> tuple[EntrypointMatchCandidate, ...]:
@@ -314,6 +325,15 @@ def _build_qa_question_candidates(
                 )
             )
     return tuple(candidates)
+
+
+def _build_qa_questions_by_normalized(
+    candidates: tuple[QuestionAnswerMatchCandidate, ...],
+) -> dict[str, QuestionAnswer]:
+    questions_by_normalized: dict[str, QuestionAnswer] = {}
+    for candidate in candidates:
+        questions_by_normalized.setdefault(candidate.normalized_question, candidate.item)
+    return questions_by_normalized
 
 
 def _qa_questions(item: QuestionAnswer) -> list[str]:

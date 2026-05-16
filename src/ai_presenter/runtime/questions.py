@@ -203,9 +203,11 @@ def _answer_question(
 
 
 def _match_qa(package: MaterialPackage, normalized_question: str) -> QuestionAnswer | None:
+    exact_match = package.qa_questions_by_normalized.get(normalized_question)
+    if exact_match is not None:
+        return exact_match
+
     for candidate in package.qa_question_candidates:
-        if normalized_question == candidate.normalized_question:
-            return candidate.item
         if (
             normalized_question
             and normalized_question in candidate.normalized_question

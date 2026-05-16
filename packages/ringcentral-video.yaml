@@ -761,6 +761,7 @@ demoFlows:
     narration:
       text: Start video turns on your local camera. Once the camera is on, the same control becomes Stop video.
       localizedText:
+        ja: Start video はローカルカメラをオンにするためのボタンです。カメラがオンになると同じ場所が Stop video になり、映像をオフにする入口になります。ここでは状態を確認して説明するだけで、ユーザーの明確な指示なしにカメラをオンまたはオフにしません。
         zh: Start video 会打开本地摄像头；开启后，同一个按钮会变成 Stop video，用来关闭视频。
       placement: before
   - id: explain-camera-menu

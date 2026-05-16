@@ -806,6 +806,63 @@ def test_ringcentral_chinese_questions_match_package_aliases_without_legacy_tabl
             assert response.can_operate is True
 
 
+def test_ringcentral_japanese_meeting_basics_questions_match_package_aliases_without_legacy_table(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    monkeypatch.setattr(questions_module, "_ENTRYPOINT_ALIASES", {})
+
+    expected = {
+        "マイクはどこですか": "ringcentral.video.toolbar.audio",
+        "参加者一覧はどこですか": "ringcentral.video.toolbar.participants",
+        "チャットパネルはどこですか": "ringcentral.video.toolbar.chat",
+    }
+
+    for question, entrypoint_id in expected.items():
+        response = answer_question(
+            package=package,
+            question=question,
+            voice=PresenterVoiceSettings(language="ja"),
+        )
+        assert response.entrypoint_id == entrypoint_id
+
+
+def test_ringcentral_japanese_chat_privacy_question_stays_answer_only_with_aliases(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    monkeypatch.setattr(questions_module, "_ENTRYPOINT_ALIASES", {})
+
+    response = answer_question(
+        package=package,
+        question="チャット内容や参加者名を読み上げられますか",
+        voice=PresenterVoiceSettings(language="ja", tone="professional"),
+    )
+
+    assert response.entrypoint_id is None
+    assert response.can_operate is False
+    assert "チャットメッセージ" in response.answer_text
+    assert "読み上げません" in response.answer_text
+
+
+def test_ringcentral_japanese_audio_troubleshooting_question_stays_qa_with_aliases(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    monkeypatch.setattr(questions_module, "_ENTRYPOINT_ALIASES", {})
+
+    response = answer_question(
+        package=package,
+        question="音声や映像が途切れるときはどうすればいいですか",
+        voice=PresenterVoiceSettings(language="ja", tone="professional"),
+    )
+
+    assert response.entrypoint_id == "ringcentral.video.top.network-quality"
+    assert response.can_operate is True
+    assert "Network quality" in response.answer_text
+    assert "パケットロス" in response.answer_text
+
+
 @pytest.mark.parametrize(
     "question",
     [

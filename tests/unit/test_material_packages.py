@@ -128,9 +128,9 @@ def test_ringcentral_localization_status_reports_japanese_demo_and_qa_coverage()
     assert report.qa_localized_questions == 12
     assert report.qa_localized_answers == 12
     assert report.qa_total == 12
-    assert report.entrypoints_with_aliases == 0
+    assert report.entrypoints_with_aliases == 3
     assert report.entrypoint_total == 27
-    assert report.alias_total == 0
+    assert report.alias_total == 9
     assert report.required_localization_complete is False
     assert report.flow_by_id["vbg-blur-demo"].localized_steps == 4
     assert report.flow_by_id["vbg-blur-demo"].total_steps == 4
@@ -368,6 +368,25 @@ def test_ringcentral_package_owns_chinese_aliases_for_question_routes() -> None:
 
     for entrypoint_id, aliases in expected_aliases.items():
         assert aliases <= aliases_by_entrypoint.get(entrypoint_id, set())
+
+
+def test_ringcentral_package_owns_japanese_aliases_for_meeting_basics_routes() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    aliases_by_entrypoint: dict[str, set[str]] = {}
+    for alias in package.entrypoint_question_aliases:
+        if alias.language != "ja":
+            continue
+        aliases_by_entrypoint.setdefault(alias.entrypoint_id, set()).add(alias.alias)
+
+    expected_aliases = {
+        "ringcentral.video.toolbar.audio": {"マイク", "ミュート", "音声"},
+        "ringcentral.video.toolbar.participants": {"参加者", "参加者一覧", "参加者パネル"},
+        "ringcentral.video.toolbar.chat": {"チャット", "チャットパネル", "メッセージ"},
+    }
+
+    assert set(aliases_by_entrypoint) == set(expected_aliases)
+    for entrypoint_id, aliases in expected_aliases.items():
+        assert aliases == aliases_by_entrypoint[entrypoint_id]
 
 
 def test_operation_entrypoints_support_package_owned_question_aliases() -> None:

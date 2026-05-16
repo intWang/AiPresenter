@@ -145,6 +145,10 @@ operationEntrypoints:
   area: Meeting toolbar
   purpose: Toggle mute and unmute in the live meeting.
   questionAliases:
+    ja:
+    - マイク
+    - ミュート
+    - 音声
     zh:
     - 麦克风
     - 静音
@@ -325,6 +329,10 @@ operationEntrypoints:
   area: Meeting toolbar
   purpose: Open participant list and meeting people controls.
   questionAliases:
+    ja:
+    - 参加者
+    - 参加者一覧
+    - 参加者パネル
     zh:
     - 参会者
     - 参会人列表
@@ -345,6 +353,10 @@ operationEntrypoints:
   area: Meeting toolbar
   purpose: Open in-meeting chat.
   questionAliases:
+    ja:
+    - チャット
+    - チャットパネル
+    - メッセージ
     zh:
     - 聊天
     - 聊天室

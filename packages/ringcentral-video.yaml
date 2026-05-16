@@ -1086,6 +1086,7 @@ demoFlows:
       text: Raise hand is for moderated conversation. It signals that you want attention, and because it is a
         toggle, I lower the hand again after showing it.
       localizedText:
+        ja: Raise hand は、司会進行のある会話で、発話を遮らずに注目してほしいことや発言機会を求めていることを示すトグル操作です。リアクションとは別の、会議中に見えるシグナルです。押すと手を上げた状態になり、もう一度押すと手を下げます。ユーザーが明示的に求めるまで、手を上げたり、手を下げたり、上げたままにしたりしません。実演を明確に確認した場合だけ操作し、実演後は手を下げます。
         zh: Raise hand 适合有主持节奏的讨论。它表示你想发言；因为这是一个开关，我展示后会再把手放下。
       placement: during
       actionOffsetMs: 350

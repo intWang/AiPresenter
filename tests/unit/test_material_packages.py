@@ -123,7 +123,7 @@ def test_ringcentral_localization_status_reports_japanese_demo_and_qa_coverage()
 
     assert report.package_id == "ringcentral-video"
     assert report.language == "ja"
-    assert report.demo_localized_steps == 41
+    assert report.demo_localized_steps == 42
     assert report.demo_total_steps == 51
     assert report.qa_localized_questions == 12
     assert report.qa_localized_answers == 12
@@ -138,10 +138,10 @@ def test_ringcentral_localization_status_reports_japanese_demo_and_qa_coverage()
     assert report.flow_by_id["meeting-basics-demo"].total_steps == 3
     assert report.flow_by_id["meeting-controls-tour"].localized_steps == 22
     assert report.flow_by_id["meeting-controls-tour"].total_steps == 22
-    assert report.flow_by_id["meeting-control-map-demo"].localized_steps == 12
+    assert report.flow_by_id["meeting-control-map-demo"].localized_steps == 13
     assert report.flow_by_id["meeting-control-map-demo"].total_steps == 22
     assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids[0] == (
-        "control-map-share"
+        "control-map-reactions"
     )
 
 
@@ -1975,7 +1975,7 @@ def test_meeting_control_map_has_japanese_camera_menu_narration() -> None:
     assert report.entrypoints_with_aliases == 3
     assert report.alias_total == 9
     assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids[0] == (
-        "control-map-share"
+        "control-map-reactions"
     )
     assert len(camera_menu_entrypoint.open_steps) == 1
     open_step = camera_menu_entrypoint.open_steps[0]
@@ -1996,7 +1996,7 @@ def test_meeting_control_map_has_japanese_camera_menu_narration() -> None:
     assert camera_step.action.operation == "point"
     share_step = next(step for step in flow.steps if step.id == "control-map-share")
     assert share_step.action.entrypoint_id == "ringcentral.video.toolbar.share"
-    assert "ja" not in share_step.narration.localized_text
+    assert "ja" in share_step.narration.localized_text
     ja_text = step.narration.localized_text["ja"]
     assert ja_text.strip()
     assert has_cjk(ja_text)
@@ -2018,6 +2018,70 @@ def test_meeting_control_map_has_japanese_camera_menu_narration() -> None:
     assert "適用します" not in ja_text
     assert "改善します" not in ja_text
     assert "確認します" not in ja_text
+    assert "自動" not in ja_text
+    assert "必ず" not in ja_text
+
+
+def test_meeting_control_map_has_japanese_share_narration() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    flow = package.demo_flow_by_id("meeting-control-map-demo")
+    step = next(step for step in flow.steps if step.id == "control-map-share")
+
+    assert step.action.entrypoint_id == "ringcentral.video.toolbar.share"
+    assert step.action.operation == "open"
+    assert step.narration.placement == "during"
+    assert step.narration.action_offset_ms == 400
+    report = build_localization_status(package, language="ja")
+    share_entrypoint = package.entrypoint_by_id("ringcentral.video.toolbar.share")
+    assert "ja" not in share_entrypoint.question_aliases
+    assert report.entrypoints_with_aliases == 3
+    assert report.alias_total == 9
+    assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids[0] == (
+        "control-map-reactions"
+    )
+    assert len(share_entrypoint.open_steps) == 1
+    open_step = share_entrypoint.open_steps[0]
+    assert open_step.action == "clickWindowControl"
+    assert open_step.target == "Share"
+    assert open_step.match["controlType"] == "button"
+    assert open_step.match["cleanup"] == "escape"
+    assert "must not infer shared-screen content" in share_entrypoint.presenter_notes[0]
+    assert "entire screen" in share_entrypoint.presenter_notes[2]
+    assert "application windows" in share_entrypoint.presenter_notes[2]
+    assert "Share system audio" in share_entrypoint.presenter_notes[2]
+    assert "Do not click the final Share button" in share_entrypoint.presenter_notes[3]
+    camera_menu_step = next(
+        step for step in flow.steps if step.id == "control-map-camera-menu"
+    )
+    assert "ja" in camera_menu_step.narration.localized_text
+    reactions_step = next(step for step in flow.steps if step.id == "control-map-reactions")
+    assert reactions_step.action.entrypoint_id == "ringcentral.video.toolbar.react"
+    assert "ja" not in reactions_step.narration.localized_text
+    ja_text = step.narration.localized_text["ja"]
+    assert ja_text.strip()
+    assert has_cjk(ja_text)
+    assert "Share" in ja_text
+    assert "画面" in ja_text
+    assert "アプリケーション" in ja_text
+    assert "ウィンドウ" in ja_text
+    assert "Share system audio" in ja_text
+    assert "システム音声" in ja_text
+    assert "候補" in ja_text
+    assert "ユーザー" in ja_text
+    assert "明示的" in ja_text
+    assert "確認" in ja_text
+    assert "最終的な Share ボタン" in ja_text
+    assert "押しません" in ja_text
+    assert "読み上げません" in ja_text
+    assert "閉じます" in ja_text
+    assert "押します" not in ja_text
+    assert "クリックします" not in ja_text
+    assert "共有を開始します" not in ja_text
+    assert "読み上げます" not in ja_text
+    assert "推測します" not in ja_text
+    assert "選択します" not in ja_text
+    assert "選びます" not in ja_text
+    assert "オンにします" not in ja_text
     assert "自動" not in ja_text
     assert "必ず" not in ja_text
 

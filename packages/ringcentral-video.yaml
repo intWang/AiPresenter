@@ -863,6 +863,7 @@ demoFlows:
       text: Background opens the settings page for visual presentation. You can turn effects off, blur the room,
         choose a built-in background, use a video background, or upload your own.
       localizedText:
+        ja: Background は Settings ダイアログの Background タブを開き、表示品質とプライバシーに関わる設定の場所を示します。ここには Off、Blur、仮想背景、動画背景、アップロード、Mirror my video などの項目があります。ツアーでは場所と選択肢を説明するだけで、ユーザーが明確に求めるまで背景効果や見え方は変更しません。説明後は Settings ダイアログを閉じます。
         zh: Background 会打开视觉呈现设置，可以关闭效果、模糊房间、选择内置背景、使用视频背景或上传自己的背景。
       placement: during
       actionOffsetMs: 400

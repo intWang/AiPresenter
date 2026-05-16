@@ -123,7 +123,7 @@ def test_ringcentral_localization_status_reports_japanese_demo_and_qa_coverage()
 
     assert report.package_id == "ringcentral-video"
     assert report.language == "ja"
-    assert report.demo_localized_steps == 26
+    assert report.demo_localized_steps == 27
     assert report.demo_total_steps == 51
     assert report.qa_localized_questions == 12
     assert report.qa_localized_answers == 12
@@ -136,7 +136,7 @@ def test_ringcentral_localization_status_reports_japanese_demo_and_qa_coverage()
     assert report.flow_by_id["vbg-blur-demo"].total_steps == 4
     assert report.flow_by_id["meeting-basics-demo"].localized_steps == 3
     assert report.flow_by_id["meeting-basics-demo"].total_steps == 3
-    assert report.flow_by_id["meeting-controls-tour"].localized_steps == 19
+    assert report.flow_by_id["meeting-controls-tour"].localized_steps == 20
     assert report.flow_by_id["meeting-controls-tour"].total_steps == 22
 
 
@@ -1240,6 +1240,49 @@ def test_meeting_controls_tour_has_japanese_notes_narration() -> None:
     assert "Start notes を押します" not in ja_text
     assert "Also record this meeting を選択します" not in ja_text
     assert "録画を開始します" not in ja_text
+
+
+def test_meeting_controls_tour_has_japanese_background_settings_narration() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    flow = package.demo_flow_by_id("meeting-controls-tour")
+    step = next(step for step in flow.steps if step.id == "explain-background-settings")
+
+    assert step.action.entrypoint_id == "ringcentral.video.more.background"
+    assert step.action.operation == "open"
+    assert step.narration.placement == "during"
+    assert step.narration.action_offset_ms == 400
+    background_entrypoint = package.entrypoint_by_id("ringcentral.video.more.background")
+    assert [open_step.target for open_step in background_entrypoint.open_steps] == [
+        "More",
+        "Background",
+    ]
+    assert background_entrypoint.open_steps[0].match["occurrence"] == "3"
+    assert background_entrypoint.open_steps[0].match["controlType"] == "button"
+    assert background_entrypoint.open_steps[1].match["cleanup"] == "settings"
+    ja_text = step.narration.localized_text["ja"]
+    assert ja_text.strip()
+    assert has_cjk(ja_text)
+    assert "Background" in ja_text
+    assert "Settings" in ja_text
+    assert "Off" in ja_text
+    assert "Blur" in ja_text
+    assert "仮想背景" in ja_text
+    assert "動画背景" in ja_text
+    assert "アップロード" in ja_text
+    assert "Mirror my video" in ja_text
+    assert "プライバシー" in ja_text
+    assert "ユーザー" in ja_text
+    assert "明確に求める" in ja_text
+    assert "変更しません" in ja_text
+    assert "閉じます" in ja_text
+    assert "背景を変更します" not in ja_text
+    assert "Blur を選択します" not in ja_text
+    assert "アップロードします" not in ja_text
+    assert "クリック" not in ja_text
+    assert "押します" not in ja_text
+    assert "選択します" not in ja_text
+    assert "適用します" not in ja_text
+    assert "切り替えます" not in ja_text
 
 
 def test_rejects_duplicate_operation_entrypoint_ids(tmp_path: Path) -> None:

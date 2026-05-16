@@ -1035,6 +1035,7 @@ demoFlows:
       text: The camera button controls whether others can see you. Once video is on, the same area becomes the
         stop-video control.
       localizedText:
+        ja: カメラボタンは、ほかの参加者に自分の映像が見えるかどうかを確認するための主要なコントロールです。状態は Start video または Stop video の表示で確認できます。ここでは場所と状態の見方を説明するだけで、ユーザーが明示的に求めるまでカメラのオン・オフには触れません。
         zh: 摄像头按钮决定别人能不能看到你。开启以后，同一个位置会变成停止视频，所以它既是入口也是状态提示。
       placement: before
   - id: control-map-camera-menu

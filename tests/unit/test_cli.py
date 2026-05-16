@@ -451,12 +451,12 @@ def test_localization_report_outputs_japanese_demo_and_qa_coverage() -> None:
 
     assert result.exit_code == 0
     assert "Language: ja" in result.stdout
-    assert "Localization report: 39/51 demo steps" in result.stdout
+    assert "Localization report: 40/51 demo steps" in result.stdout
     assert "- vbg-blur-demo: 4/4 narration localized" in result.stdout
     assert "- meeting-basics-demo: 3/3 narration localized" in result.stdout
     assert "- meeting-controls-tour: 22/22 narration localized" in result.stdout
-    assert "- meeting-control-map-demo: 10/22 narration localized" in result.stdout
-    assert "missing: control-map-camera" in result.stdout
+    assert "- meeting-control-map-demo: 11/22 narration localized" in result.stdout
+    assert "missing: control-map-camera-menu" in result.stdout
     assert "missing: explain-leave" not in result.stdout
     assert "- localized questions: 12/12" in result.stdout
     assert "- localized answers: 12/12" in result.stdout
@@ -496,12 +496,12 @@ def test_localization_report_require_complete_fails_for_japanese_demo_gap() -> N
 
     assert result.exit_code == 1
     assert "Language: ja" in result.stdout
-    assert "Localization report: 39/51 demo steps" in result.stdout
+    assert "Localization report: 40/51 demo steps" in result.stdout
     assert "- vbg-blur-demo: 4/4 narration localized" in result.stdout
     assert "- meeting-basics-demo: 3/3 narration localized" in result.stdout
     assert "- meeting-controls-tour: 22/22 narration localized" in result.stdout
-    assert "- meeting-control-map-demo: 10/22 narration localized" in result.stdout
-    assert "missing: control-map-camera" in result.stdout
+    assert "- meeting-control-map-demo: 11/22 narration localized" in result.stdout
+    assert "missing: control-map-camera-menu" in result.stdout
     assert "missing: explain-leave" not in result.stdout
     assert "- localized questions: 12/12" in result.stdout
     assert "- localized answers: 12/12" in result.stdout

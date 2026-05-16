@@ -589,6 +589,22 @@ def test_localization_report_normalizes_spanish_language_aliases() -> None:
     assert "Localization coverage incomplete" not in result.stdout
 
 
+def test_package_language_alias_normalization_is_documented() -> None:
+    lifecycle_text = Path("docs/knowledge/language-lifecycle.md").read_text(
+        encoding="utf-8"
+    )
+    normalized_lifecycle_text = " ".join(lifecycle_text.split())
+
+    assert cli.resolve_package_language_key("Spanish") == "es"
+    assert cli.resolve_package_language_key("es-MX") == "es"
+    assert cli.resolve_package_language_key("zh-CN") == "zh"
+    assert cli.resolve_package_language_key("de") == "de"
+    assert "raw language-key lookup" not in normalized_lifecycle_text
+    assert "known presenter language aliases" in normalized_lifecycle_text
+    assert "Unknown package-only keys remain raw" in normalized_lifecycle_text
+    assert "resolved package key" in normalized_lifecycle_text
+
+
 def test_localization_report_keeps_unknown_package_language_key_raw() -> None:
     result = CliRunner().invoke(
         app,

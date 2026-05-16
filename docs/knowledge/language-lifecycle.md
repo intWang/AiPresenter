@@ -64,9 +64,14 @@ This note defines the difference between package-local language coverage and run
 
    Important boundary:
 
-   - `entrypoints --language <lang>` is package-local inspection. It performs a
-     raw language-key lookup against package metadata.
-   - The command prints `Language: <key>` using the key the author provided.
+   - `entrypoints --language <lang>` is package-local inspection. For known presenter
+     language aliases such as `Spanish`, `es-MX`, and `zh-CN`, the command
+     normalizes to canonical package keys before package-local inspection.
+   - `localization-report --language <lang>` uses the same package-local
+     language key resolution.
+   - Unknown package-only keys remain raw package metadata lookup keys, so
+     future package-local languages are not blocked by runtime voice support.
+   - The command prints `Language: <key>` using the resolved package key.
    - `localized` source markers mean nonblank package-local display copy was
      found for that field.
    - `fallback` source markers mean canonical title or purpose copy was shown.

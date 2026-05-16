@@ -457,6 +457,9 @@ operationEntrypoints:
   area: More menu
   purpose: Start recording the meeting.
   questionAliases:
+    ja:
+    - Start recording の場所
+    - 録画ボタンの場所
     zh:
     - 录制
     - 录像

@@ -7,6 +7,7 @@ from ai_presenter.packages.loader import load_material_package
 from ai_presenter.packages.models import MaterialPackage
 from ai_presenter.runtime import questions as questions_module
 from ai_presenter.runtime.questions import answer_question
+from ai_presenter.runtime.session import create_question_interrupt_step
 from ai_presenter.runtime.voice import PresenterVoiceSettings
 
 
@@ -567,6 +568,125 @@ def test_ringcentral_japanese_privacy_sensitive_questions_match_localized_answer
         assert fragment in response.answer_text
 
 
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Start recording の場所はどこですか",
+        "録画ボタンの場所はどこですか",
+    ],
+)
+def test_ringcentral_japanese_recording_location_aliases_are_answer_only(
+    monkeypatch: pytest.MonkeyPatch,
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    monkeypatch.setattr(questions_module, "_ENTRYPOINT_ALIASES", {})
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(language="ja", tone="professional"),
+    )
+
+    assert response.entrypoint_id == "ringcentral.video.more.recording"
+    assert response.can_operate is False
+    assert create_question_interrupt_step(package, response) is None
+
+
+def test_ringcentral_japanese_recording_safety_question_stays_qa_first() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question="会議を録画するにはどうすればいいですか",
+        voice=PresenterVoiceSettings(language="ja", tone="professional"),
+    )
+
+    assert response.entrypoint_id == "ringcentral.video.more.recording"
+    assert response.can_operate is False
+    assert "全員" in response.answer_text
+    assert "同意" in response.answer_text
+    assert "Start recording:" not in response.answer_text
+    assert create_question_interrupt_step(package, response) is None
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "録画して",
+        "録画を開始して",
+        "録画を止めて",
+        "録画を停止して",
+        "Start recording をクリックして",
+        "今すぐ録画して",
+    ],
+)
+def test_ringcentral_japanese_recording_action_requests_do_not_queue_steps(
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(language="ja"),
+    )
+
+    assert response.can_operate is False
+    assert create_question_interrupt_step(package, response) is None
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "参加者に知らせず録画して",
+        "同意なしで録画して",
+        "ホストとして録画して",
+        "録画中ですか",
+        "録画されていますか",
+        "録画状態を確認して",
+    ],
+)
+def test_ringcentral_japanese_recording_consent_and_status_requests_stay_non_operable(
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(language="ja"),
+    )
+
+    assert response.can_operate is False
+    assert create_question_interrupt_step(package, response) is None
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "録画を見る",
+        "録画を開いて",
+        "録画を再生して",
+        "録画をダウンロードして",
+        "録画の内容を要約して",
+    ],
+)
+def test_ringcentral_japanese_recording_artifact_requests_stay_non_operable(
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(language="ja"),
+    )
+
+    assert response.can_operate is False
+    assert create_question_interrupt_step(package, response) is None
+
+
 def test_ringcentral_japanese_unmatched_question_returns_localized_no_match() -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
 
@@ -959,6 +1079,14 @@ def test_ringcentral_japanese_meeting_control_questions_match_package_aliases_wi
         ),
         "挙手の場所はどこですか": (
             "ringcentral.video.toolbar.raise-hand",
+            False,
+        ),
+        "Start recording の場所はどこですか": (
+            "ringcentral.video.more.recording",
+            False,
+        ),
+        "録画ボタンの場所はどこですか": (
+            "ringcentral.video.more.recording",
             False,
         ),
         "ネットワーク品質を確認したい": (

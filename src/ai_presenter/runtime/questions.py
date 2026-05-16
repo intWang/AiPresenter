@@ -44,6 +44,28 @@ _QUESTION_EXPLAIN_ONLY_ENTRYPOINT_IDS = frozenset(
         "ringcentral.video.top.meeting-info",
     }
 )
+_RECORDING_SAFETY_ENTRYPOINT_ID = "ringcentral.video.more.recording"
+_JAPANESE_RECORDING_TERMS = ("録画",)
+_JAPANESE_RECORDING_ACTION_TERMS = (
+    "して",
+    "開始",
+    "止め",
+    "停止",
+    "クリック",
+    "今すぐ",
+    "知らせず",
+    "同意なし",
+    "ホスト",
+    "中ですか",
+    "されていますか",
+    "状態",
+    "見る",
+    "開いて",
+    "再生",
+    "ダウンロード",
+    "内容",
+    "要約",
+)
 _NO_MATCH_ANSWERS = {
     "en": "I could not find a matching control in the active app context.",
     "zh": "\u6211\u6ca1\u6709\u5728\u5f53\u524d\u5e94\u7528\u4e0a\u4e0b\u6587\u4e2d\u627e\u5230\u5339\u914d\u7684\u63a7\u4ef6\u3002",
@@ -213,6 +235,9 @@ def _match_qa(package: MaterialPackage, normalized_question: str) -> QuestionAns
     exact_match = package.qa_questions_by_normalized.get(normalized_question)
     if exact_match is not None:
         return exact_match
+    safety_match = _match_recording_safety_qa(package, normalized_question)
+    if safety_match is not None:
+        return safety_match
 
     if _is_entrypoint_title_lookup(package, normalized_question):
         return None
@@ -243,6 +268,31 @@ def _match_qa(package: MaterialPackage, normalized_question: str) -> QuestionAns
     if best_score >= 2:
         return best_match
     return None
+
+
+def _match_recording_safety_qa(
+    package: MaterialPackage,
+    normalized_question: str,
+) -> QuestionAnswer | None:
+    if not any(term in normalized_question for term in _JAPANESE_RECORDING_TERMS):
+        return None
+    if not any(term in normalized_question for term in _JAPANESE_RECORDING_ACTION_TERMS):
+        return None
+    return _qa_by_related_entrypoint(package, _RECORDING_SAFETY_ENTRYPOINT_ID)
+
+
+def _qa_by_related_entrypoint(
+    package: MaterialPackage,
+    entrypoint_id: str,
+) -> QuestionAnswer | None:
+    return next(
+        (
+            item
+            for item in package.qa
+            if entrypoint_id in item.related_entrypoint_ids
+        ),
+        None,
+    )
 
 
 def _is_entrypoint_title_lookup(package: MaterialPackage, normalized_question: str) -> bool:

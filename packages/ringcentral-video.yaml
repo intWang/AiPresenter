@@ -47,6 +47,11 @@ operationEntrypoints:
   purpose: Open meeting details including meeting title, host, meeting ID, copy link, dial-in info, encryption,
     and end-to-end encryption option.
   questionAliases:
+    en:
+    - meeting information
+    - meeting details
+    - meeting ID
+    - meeting link
     zh:
     - 会议信息
     - 会议号

@@ -419,6 +419,50 @@ def test_ringcentral_chinese_questions_match_package_aliases_without_legacy_tabl
             voice=PresenterVoiceSettings(language="zh"),
         )
         assert response.entrypoint_id == entrypoint_id
+        if entrypoint_id == "ringcentral.video.top.network-quality":
+            assert response.can_operate is True
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "meeting information",
+        "where is the meeting ID",
+        "where is the meeting link",
+        "\u4f1a\u8bae\u53f7\u5728\u54ea\u91cc",
+        "\u4f1a\u8bae\u94fe\u63a5",
+    ],
+)
+def test_meeting_info_privacy_questions_are_answer_only(question: str) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(language="zh" if "\u4f1a\u8bae" in question else "en"),
+    )
+
+    assert response.entrypoint_id == "ringcentral.video.top.meeting-info"
+    assert response.can_operate is False
+    assert "Meeting information:" in response.answer_text
+    assert "meeting ID" in response.answer_text
+    assert "copy link" in response.answer_text
+
+
+def test_meeting_info_privacy_gate_does_not_depend_on_risky_words(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    monkeypatch.setattr(questions_module, "_RISKY_ENTRYPOINT_WORDS", frozenset())
+
+    response = answer_question(
+        package=package,
+        question="meeting information",
+        voice=PresenterVoiceSettings(),
+    )
+
+    assert response.entrypoint_id == "ringcentral.video.top.meeting-info"
+    assert response.can_operate is False
 
 
 def test_legacy_alias_table_remains_dynamic_for_runtime_matching(

@@ -927,7 +927,7 @@ def test_doctor_loads_profile_package_and_flow(monkeypatch: pytest.MonkeyPatch) 
     assert "[OK] package: loaded ringcentral-video" in result.stdout
     assert "[OK] package profile support" in result.stdout
     assert "[OK] question aliases:" in result.stdout
-    assert "49 package-owned aliases have no cross-entrypoint duplicates" in result.stdout
+    assert "53 package-owned aliases have no cross-entrypoint duplicates" in result.stdout
     assert "[OK] explainer coverage" in result.stdout
     assert "[OK] demo flow: meeting-control-map-demo" in result.stdout
     assert "[OK] presenter context" in result.stdout

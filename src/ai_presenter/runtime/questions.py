@@ -38,6 +38,11 @@ _RISKY_ENTRYPOINT_WORDS = {
     "unmute",
 }
 _GENERIC_ENTRYPOINT_TOKENS = {"people"}
+_QUESTION_EXPLAIN_ONLY_ENTRYPOINT_IDS = frozenset(
+    {
+        "ringcentral.video.top.meeting-info",
+    }
+)
 _NO_MATCH_ANSWERS = {
     "en": "I could not find a matching control in the active app context.",
     "zh": "\u6211\u6ca1\u6709\u5728\u5f53\u524d\u5e94\u7528\u4e0a\u4e0b\u6587\u4e2d\u627e\u5230\u5339\u914d\u7684\u63a7\u4ef6\u3002",
@@ -349,6 +354,8 @@ def _render_text(text: str, voice: PresenterVoiceSettings) -> str:
 
 def _can_operate(package: MaterialPackage, entrypoint_id: str | None) -> bool:
     if entrypoint_id is None:
+        return False
+    if entrypoint_id in _QUESTION_EXPLAIN_ONLY_ENTRYPOINT_IDS:
         return False
     entrypoint = package.entrypoint_by_id(entrypoint_id)
     if not entrypoint.open_steps:

@@ -69,19 +69,34 @@ This note defines the difference between package-local language coverage and run
 
 ## Current Spanish State
 
-As of Cycle 123, Spanish is package-local only:
+As of Cycle 126, Spanish is package-local complete and query-ready, but still
+not a presenter runtime language:
 
-- `localization-report --package ringcentral-video --language es` reports partial package coverage.
-- Spanish Q&A is localized.
-- Spanish aliases are intentionally sparse.
-- `doctor --require-localization --localization-language es` may inspect Spanish package content.
-- `demo --language es` and `controller --language es` must remain unsupported until a runtime-promotion cycle owns the full voice and acceptance surface.
+- `localization-report --package ringcentral-video --language es --require-complete`
+  reports `51/51` demo steps, `12/12` Q&A questions, and `12/12` Q&A answers.
+- `questionAliases.es` is present on `26/27` RingCentral Video entrypoints with
+  `69` aliases.
+- Spanish package Q&A and package-owned aliases use Latin-diacritic-insensitive
+  match keys, so unaccented prompts such as `Donde esta el menu de camara?`
+  can still route to curated package knowledge.
+- The normalizer strips combining marks only after Latin base characters using
+  canonical decomposition. It must not be treated as Japanese width folding,
+  transliteration, stemming, semantic matching, or runtime language promotion.
+- `doctor --require-localization --localization-language es` may inspect
+  Spanish package content and should report `[OK] localization` plus `[FAIL]
+  runtime language support` until Spanish is promoted.
+- `demo --language es` and `controller --language es` must remain unsupported
+  until a runtime-promotion cycle owns the full voice, provider, UI, CLI, and
+  acceptance surface.
 
 ## Future Cycle Rules
 
 - Use `--localization-language` for package coverage checks when the language may not be runtime-supported.
 - Use `--language` for runtime presenter voice selection.
 - Do not describe a language as runnable by the presenter, ready for voice output, ready for live demos, or accepted because package localization is complete.
+- Do not describe package query routing as runtime language support. A supported
+  runtime voice may answer a Spanish-looking prompt through package aliases, but
+  that is not the same as `--language es`.
 - Keep RingCentral UI labels literal inside localized narration when the user must find those labels in the product.
 - Keep privacy and state-changing controls confirmation-bound in every language.
 - Do not stage generated artifacts such as `.coverage` in language lifecycle or localization commits.

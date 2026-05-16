@@ -38,7 +38,7 @@ This is the append-only place to record what AiPresenter has actually observed a
 
 - Source: `packages/ringcentral-video.yaml`
 - Evidence type: repository package, not live app observation.
-- Known shape: 27 operation entrypoints, 4 demo flows, 21 explainers, 3 QA items, manual controls for `say`, `skip`, and `focus`.
+- Known shape: 27 operation entrypoints, 4 demo flows, 51 demo steps, 21 explainers, 12 Q&A items, 156 package-owned question aliases, and manual controls for `say`, `skip`, and `focus`.
 - Strong surfaces: meeting top bar, meeting toolbar, audio/video readiness, invite, participants, chat, reactions, notes, background, settings, recording explain-only, leave explain-only.
 - Limit: this does not prove the local RingCentral build still exposes the same UIA labels, menu order, or coordinates.
 

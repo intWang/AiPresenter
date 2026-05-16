@@ -41,10 +41,14 @@ Check package localization coverage without running automation:
 ```powershell
 .venv\Scripts\ai-presenter localization-report --package ringcentral-video --language zh
 .venv\Scripts\ai-presenter localization-report --package ringcentral-video --language zh --require-complete
+.venv\Scripts\ai-presenter localization-report --package ringcentral-video --language es --require-complete
 ```
 
 Use `doctor --require-localization --localization-language ...` when checking package
 localization keys that are separate from runtime presenter voice support.
+Spanish RingCentral Video package localization is complete, but `--language es`
+is still rejected by runtime demo and controller commands until a separate voice-promotion
+cycle lands.
 The language lifecycle and promotion gates are documented in
 `docs/knowledge/language-lifecycle.md`.
 

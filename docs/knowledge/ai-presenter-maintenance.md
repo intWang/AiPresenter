@@ -53,10 +53,17 @@ Choose the smallest artifact that makes the next cycle safer or more useful.
 ## Localization Wedge Rules
 
 - Add languages in small wedges unless the package has complete demo, Q&A, alias, voice, and provider coverage.
-- Separate package localization from runtime language support. A partial report-only language is not automatically a demo-ready presenter language.
+- Separate package localization from runtime language support. A package-only
+  language, even when `--require-complete` passes, is not automatically a
+  demo-ready presenter language.
 - Update diagnostic counts deliberately when aliases, Q&A prompts, or localized answers change.
 - Use `localization-report --require-complete` only for languages expected to be complete.
 - Avoid wording that implies live RingCentral acceptance, voice availability, or provider compatibility from package text alone.
+- Treat package query readiness as a separate state from runtime voice support.
+  Spanish package-owned aliases can match accented or unaccented prompts through
+  Latin-diacritic folding, but `--language es` remains unsupported until a
+  runtime promotion cycle owns voice routing, CLI/controller choices, tests, and
+  acceptance evidence.
 
 ## Docs Navigation Rules
 
@@ -92,7 +99,7 @@ These candidates are intentionally repo-local notes. Do not install or activate 
 | --- | --- | --- |
 | AiPresenter maintenance steward | Future cycles repeatedly need the artifact chooser and staging checklist. | At least several cycles use this playbook successfully; a separate spec defines install location, test fixtures, rollback, and repo boundary rules. |
 | RingCentral evidence reviewer | RingCentral docs and package changes keep needing evidence-level review. | Current source-index, evidence-index, privacy, locator, state, and runtime safety docs are stable and have a fixture-based review test. |
-| Localization wedge planner | More partial languages are added beyond Chinese, Japanese, and Spanish seeds. | Language lifecycle, report semantics, voice/provider compatibility, and diagnostics counts are captured in source-backed tests. |
+| Localization wedge planner | More package-only or partial languages are added, or an existing package-local language is promoted toward runtime support. | Language lifecycle, report semantics, voice/provider compatibility, and diagnostics counts are captured in source-backed tests. |
 | Presenter prompt skill editor | Runtime presenter skills change often enough to need a dedicated authoring workflow. | Packaged-copy parity, profile prompt assertions, and example provider prompts are part of the normal test suite. |
 
 The default path is to improve this playbook first. Promote a candidate only when the guidance has proven reusable, the repository can verify it, and the user explicitly wants active skill behavior.

@@ -19,6 +19,22 @@ The core invariant is simple: question routing may identify a useful control or 
 | Tone rendering | `src/ai_presenter/runtime/voice.py` | Tone applies after route and eligibility are decided. `careful` and aliases such as `privacy` are style hints, not policy engines. |
 | Package diagnostics | `runtime.diagnostics` and CLI `doctor` | Alias duplicate, Q&A duplicate, alias overlap, and alias substring signals are regression tripwires for future package growth. |
 
+## Question Normalization Boundary
+
+Runtime question matching and diagnostics share the package-level
+`normalize_question_prompt()` match key.
+
+- Q&A exact prompts, Q&A fragments, package-owned aliases, token fallback, legacy
+  aliases, and diagnostics all use the same normalized key.
+- Latin diacritics are folded for Latin base characters, so Spanish prompts can
+  match with or without accents: `menú de cámara` and `menu de camara` have the
+  same match key.
+- The normalizer uses canonical decomposition, not compatibility decomposition.
+  Do not rely on it to fold halfwidth Japanese, fullwidth Latin, ligatures,
+  transliterations, variants, stemming, or semantic intent.
+- Q&A-first precedence still comes before entrypoint alias routing. A safety Q&A
+  can block an otherwise matching Spanish, Chinese, Japanese, or English alias.
+
 ## Sensitive Surface Rules
 
 ### Notes And Transcript
@@ -27,7 +43,7 @@ Notes, transcript, captions, translation, summaries, and post-meeting artifacts 
 
 - Safe default: explain where the related panel or artifact surface is.
 - Unsafe default: start notes or transcription, read or summarize transcript or notes content, copy, save, export, or promise artifact availability.
-- Runtime guard: English, Japanese, and Chinese Notes/Transcript action or content prompts route to an answer-only safety Q&A when they are not location lookups.
+- Runtime guard: English, Japanese, and Chinese Notes/Transcript action or content prompts route to an answer-only safety Q&A when they are not location lookups. Authored Spanish safety Q&A prompts still win through Q&A-first matching, including unaccented variants, but broad Spanish action-term expansion is a separate future slice.
 - Location guard: location-style prompts must remain helpful. They may identify the Notes/Transcript surface, but still must not queue an interrupt when the entrypoint is `answerOnly`.
 
 ### Recording
@@ -87,15 +103,22 @@ Cycle 110 added a route-parity regression matrix for sensitive RingCentral promp
 
 Runtime-only safety hardening should not change package counts. Treat count drift as a review trigger unless the cycle explicitly changes YAML.
 
-Current expected package signals, verified on 2026-05-16 with `localization-report` and `doctor`:
+Current expected package signals, verified on 2026-05-17 with `localization-report` and `doctor`:
 
 - Operation entrypoints: 27.
-- Package-owned aliases: 87.
-- Q&A prompts: 71.
+- Demo flows: 4, with 51 total demo steps.
+- Explainers: 21, covering 27/27 entrypoints.
+- Q&A items: 12.
+- Q&A question prompts: 84.
+- Package-owned aliases: 156.
 - Chinese aliases: 15/27 entrypoints, 49 aliases.
 - Japanese aliases: 13/27 entrypoints, 34 aliases.
-- Chinese and Japanese localization coverage: 51/51 demo steps, 12/12 Q&A questions, 12/12 Q&A answers.
-- `doctor` may report one INFO-level Q&A alias substring risk summary; this is expected until the package design changes.
+- Spanish aliases: 26/27 entrypoints, 69 aliases.
+- Chinese, Japanese, and Spanish required package localization coverage: 51/51 demo steps, 12/12 Q&A questions, 12/12 Q&A answers.
+- Spanish is package-local only. Its localization can be complete while
+  `demo --language es` remains unsupported.
+- `doctor` may report one INFO-level Q&A alias substring risk summary covering
+  11 prompts; this is expected until the package design changes.
 
 ## Verification Commands
 
@@ -108,8 +131,20 @@ Use these commands after changing question routing, voice tone behavior, package
 .\.venv\Scripts\ai-presenter doctor --profile ringcentral-video-bind-speaker --package ringcentral-video --flow meeting-control-map-demo
 .\.venv\Scripts\ai-presenter localization-report --package ringcentral-video --language zh --require-complete
 .\.venv\Scripts\ai-presenter localization-report --package ringcentral-video --language ja --require-complete
+.\.venv\Scripts\ai-presenter localization-report --package ringcentral-video --language es --require-complete
 git diff --check
 ```
+
+For package-only languages, also keep the negative runtime boundary explicit:
+
+```powershell
+.\.venv\Scripts\ai-presenter doctor --profile ringcentral-video-bind-speaker --package ringcentral-video --flow meeting-control-map-demo --require-localization --localization-language es
+.\.venv\Scripts\ai-presenter demo --profile ringcentral-video-bind-speaker --package ringcentral-video --flow meeting-control-map-demo --language es --dry-run
+```
+
+Expected result: Spanish package localization is OK, while runtime language
+support and `demo --language es` still fail until a promotion cycle changes
+runtime voice support.
 
 Focused sentinels:
 
@@ -130,6 +165,9 @@ Focused sentinels:
 | 108 | `1a0d358` | Chinese Notes/Transcript action and content prompts route to safety Q&A while location prompts remain useful. |
 | 109 | `35a34dd` | `careful` tone and privacy/safety aliases are rendering hints only. |
 | 110 | `f45ea46` | Sensitive RingCentral prompt routing is invariant across selected tones. |
+| 124 | `346fd0c` | Spanish package localization became complete across demo narration and Q&A while runtime Spanish stayed unsupported. |
+| 125 | `9e2ac26` | Spanish package-owned aliases expanded to 26/27 entrypoints with Q&A-first precedence preserved. |
+| 126 | `6177d10` | Latin diacritic folding made Spanish aliases and Q&A prompts accent-insensitive without compatibility-folding Japanese width forms. |
 
 ## Maintenance Checklist
 

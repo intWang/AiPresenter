@@ -50,6 +50,7 @@ operationEntrypoints:
   area: Meeting top bar
   purpose: Open meeting details including meeting title, host, meeting ID, copy link, dial-in info, encryption,
     and end-to-end encryption option.
+  questionPolicy: answerOnly
   questionAliases:
     ja:
     - 会議情報の場所
@@ -473,6 +474,7 @@ operationEntrypoints:
   title: Notes and transcript
   area: Meeting toolbar
   purpose: Open the Notes and Transcript side panel.
+  questionPolicy: answerOnly
   questionAliases:
     zh:
     - 笔记

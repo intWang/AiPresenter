@@ -925,7 +925,8 @@ def test_ringcentral_notes_location_fragment_question_still_routes_to_entrypoint
     )
 
     assert response.entrypoint_id == "ringcentral.video.more.notes"
-    assert response.can_operate is True
+    assert response.can_operate is False
+    assert create_question_interrupt_step(package, response) is None
     assert response.answer_text.startswith("Notes and transcript:")
 
 
@@ -1042,6 +1043,9 @@ def test_ringcentral_chinese_questions_match_package_aliases_without_legacy_tabl
         assert response.entrypoint_id == entrypoint_id
         if entrypoint_id == "ringcentral.video.top.network-quality":
             assert response.can_operate is True
+        if entrypoint_id == "ringcentral.video.more.notes":
+            assert response.can_operate is False
+            assert create_question_interrupt_step(package, response) is None
 
 
 def test_ringcentral_japanese_meeting_control_questions_match_package_aliases_without_legacy_table(
@@ -1271,6 +1275,39 @@ def test_meeting_info_privacy_gate_does_not_depend_on_risky_words(
     assert response.can_operate is False
 
 
+def test_notes_privacy_gate_does_not_depend_on_risky_words(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    monkeypatch.setattr(questions_module, "_RISKY_ENTRYPOINT_WORDS", frozenset())
+
+    response = answer_question(
+        package=package,
+        question="notes",
+        voice=PresenterVoiceSettings(),
+    )
+
+    assert response.entrypoint_id == "ringcentral.video.more.notes"
+    assert response.can_operate is False
+    assert create_question_interrupt_step(package, response) is None
+
+
+def test_network_quality_question_remains_operable_without_answer_only_policy(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    monkeypatch.setattr(questions_module, "_RISKY_ENTRYPOINT_WORDS", frozenset())
+
+    response = answer_question(
+        package=package,
+        question="network quality",
+        voice=PresenterVoiceSettings(),
+    )
+
+    assert response.entrypoint_id == "ringcentral.video.top.network-quality"
+    assert response.can_operate is True
+
+
 def test_legacy_alias_table_remains_dynamic_for_runtime_matching(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -1325,6 +1362,8 @@ def test_notes_matches_notes_entrypoint() -> None:
     )
 
     assert response.entrypoint_id == "ringcentral.video.more.notes"
+    assert response.can_operate is False
+    assert create_question_interrupt_step(package, response) is None
 
 
 def test_participants_matches_participants_entrypoint() -> None:

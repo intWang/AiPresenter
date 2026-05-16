@@ -39,11 +39,6 @@ _RISKY_ENTRYPOINT_WORDS = {
     "unmute",
 }
 _GENERIC_ENTRYPOINT_TOKENS = {"people"}
-_QUESTION_EXPLAIN_ONLY_ENTRYPOINT_IDS = frozenset(
-    {
-        "ringcentral.video.top.meeting-info",
-    }
-)
 _RECORDING_SAFETY_ENTRYPOINT_ID = "ringcentral.video.more.recording"
 _JAPANESE_RECORDING_TERMS = ("録画",)
 _JAPANESE_RECORDING_ACTION_TERMS = (
@@ -426,9 +421,9 @@ def _render_text(text: str, voice: PresenterVoiceSettings) -> str:
 def _can_operate(package: MaterialPackage, entrypoint_id: str | None) -> bool:
     if entrypoint_id is None:
         return False
-    if entrypoint_id in _QUESTION_EXPLAIN_ONLY_ENTRYPOINT_IDS:
-        return False
     entrypoint = package.entrypoint_by_id(entrypoint_id)
+    if entrypoint.question_policy == "answerOnly":
+        return False
     if not entrypoint.open_steps:
         return False
     lowered = " ".join([entrypoint.id, entrypoint.title, entrypoint.purpose]).casefold()

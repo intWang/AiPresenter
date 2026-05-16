@@ -59,6 +59,11 @@ def test_loads_ringcentral_video_app_material_package() -> None:
     assert notes_entrypoint.open_steps[1].match["controlType"] == "menuitem"
     assert notes_entrypoint.open_steps[1].match["alternateTargets"] == "Notes"
     assert notes_entrypoint.open_steps[-1].match["cleanup"] == "sidePanel"
+    assert notes_entrypoint.question_policy == "answerOnly"
+    assert (
+        package.entrypoint_by_id("ringcentral.video.top.meeting-info").question_policy
+        == "answerOnly"
+    )
     assert package.entrypoint_by_id("ringcentral.video.toolbar.audio-menu").purpose.startswith(
         "Open microphone and speaker"
     )

@@ -147,3 +147,21 @@ def test_session_does_not_create_interrupt_for_risky_answer() -> None:
     response = session.answer_question("leave meeting")
 
     assert session.create_interrupt_step(response) is None
+
+
+def test_session_does_not_create_interrupt_for_notes_question_policy() -> None:
+    session = ControllerSession()
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    session.select_target(
+        MaterialPackageTarget(
+            profile=load_desktop_profile(),
+            package=package,
+            flow_id="meeting-control-map-demo",
+        )
+    )
+
+    response = session.answer_question("Where are Notes and transcript")
+
+    assert response.entrypoint_id == "ringcentral.video.more.notes"
+    assert response.can_operate is False
+    assert session.create_interrupt_step(response) is None

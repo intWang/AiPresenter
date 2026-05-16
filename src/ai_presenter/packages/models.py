@@ -49,6 +49,10 @@ class OperationEntrypoint(CamelModel):
     title: str
     area: str
     purpose: str
+    question_policy: Literal["default", "answerOnly"] = Field(
+        default="default",
+        alias="questionPolicy",
+    )
     open_steps: list[PackageOpenStep] = Field(default_factory=list, alias="openSteps")
     presenter_notes: list[str] = Field(default_factory=list, alias="presenterNotes")
     question_aliases: dict[str, list[str]] = Field(default_factory=dict, alias="questionAliases")

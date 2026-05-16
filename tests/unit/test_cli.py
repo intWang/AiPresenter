@@ -30,6 +30,16 @@ VALIDATION_TARGETS_EVIDENCE_SOURCE = (
 )
 
 
+def assert_acceptance_draft_boundary(text: str) -> None:
+    assert "Draft only" in text
+    assert "not acceptance evidence" in text
+    assert "No live RingCentral action has been performed by this helper." in text
+    lowered = text.casefold()
+    assert "accepted" not in lowered
+    assert "passed" not in lowered
+    assert "live validated" not in lowered
+
+
 def test_cli_help_renders() -> None:
     result = CliRunner().invoke(app, ["--help"])
 
@@ -1041,7 +1051,7 @@ def test_acceptance_draft_outputs_entrypoint_template() -> None:
     )
 
     assert result.exit_code == 0
-    assert "Draft only" in result.stdout
+    assert_acceptance_draft_boundary(result.stdout)
     assert "Package: `ringcentral-video`" in result.stdout
     assert "ringcentral.video.toolbar.chat" in result.stdout
     assert "- Privacy notes:" in result.stdout
@@ -1062,6 +1072,7 @@ def test_acceptance_draft_outputs_flow_template() -> None:
     )
 
     assert result.exit_code == 0
+    assert_acceptance_draft_boundary(result.stdout)
     assert "meeting-control-map-demo" in result.stdout
     assert "Meeting Control Map" in result.stdout
     assert "ringcentral.video.main.add-coworkers" in result.stdout
@@ -1156,7 +1167,8 @@ def test_acceptance_draft_can_write_to_output_file(tmp_path: Path) -> None:
     assert f"Wrote acceptance draft: {output_path}" in result.stdout
     text = output_path.read_text(encoding="utf-8")
     assert "ringcentral.video.main.add-coworkers" in text
-    assert "Draft only" in text
+    assert_acceptance_draft_boundary(text)
+    assert "acceptance evidence" not in result.stdout.casefold()
 
 
 def test_acceptance_draft_rejects_existing_output_file(tmp_path: Path) -> None:

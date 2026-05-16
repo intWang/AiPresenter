@@ -672,6 +672,7 @@ demoFlows:
       text: Report opens the troubleshooting dialog for audio, video, screen sharing, joining, notes, transcript,
         or other issues. It blocks the meeting controls, so I close it before moving on.
       localizedText:
+        ja: Report は、音声、ビデオ、画面共有、参加、Notes、Transcript、その他の問題について確認するトラブルシューティング用のダイアログを開きます。観測値がないまま原因を決めつけません。このダイアログは会議コントロールを遮るため、説明したら閉じます。
         zh: Report 会打开故障反馈窗口，适合处理音频、视频、屏幕共享、入会、笔记、转录或其他问题。它会挡住会议控制区，所以讲完后需要关闭。
       placement: during
       actionOffsetMs: 450

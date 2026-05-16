@@ -123,7 +123,7 @@ def test_ringcentral_localization_status_reports_japanese_demo_and_qa_coverage()
 
     assert report.package_id == "ringcentral-video"
     assert report.language == "ja"
-    assert report.demo_localized_steps == 11
+    assert report.demo_localized_steps == 12
     assert report.demo_total_steps == 51
     assert report.qa_localized_questions == 12
     assert report.qa_localized_answers == 12
@@ -136,7 +136,7 @@ def test_ringcentral_localization_status_reports_japanese_demo_and_qa_coverage()
     assert report.flow_by_id["vbg-blur-demo"].total_steps == 4
     assert report.flow_by_id["meeting-basics-demo"].localized_steps == 3
     assert report.flow_by_id["meeting-basics-demo"].total_steps == 3
-    assert report.flow_by_id["meeting-controls-tour"].localized_steps == 4
+    assert report.flow_by_id["meeting-controls-tour"].localized_steps == 5
     assert report.flow_by_id["meeting-controls-tour"].total_steps == 22
 
 
@@ -876,6 +876,21 @@ def test_meeting_controls_tour_has_japanese_top_bar_narration() -> None:
 
     view_layout = next(step for step in flow.steps if step.id == "explain-view-layout")
     assert "他の参加者" in view_layout.narration.localized_text["ja"]
+
+
+def test_meeting_controls_tour_has_japanese_report_issue_narration() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    flow = package.demo_flow_by_id("meeting-controls-tour")
+    step = next(step for step in flow.steps if step.id == "explain-report-issue")
+
+    ja_text = step.narration.localized_text["ja"]
+    assert ja_text.strip()
+    assert has_cjk(ja_text)
+    assert "Report" in ja_text
+    assert "原因" in ja_text
+    assert "決めつけません" in ja_text
+    assert "閉じます" in ja_text
+    assert "送信" not in ja_text
 
 
 def test_rejects_duplicate_operation_entrypoint_ids(tmp_path: Path) -> None:

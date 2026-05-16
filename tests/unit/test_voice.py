@@ -120,6 +120,7 @@ def test_voice_settings_normalize_expanded_tones() -> None:
     assert PresenterVoiceSettings(tone="calm").tone == "support"
     assert PresenterVoiceSettings(tone="steady").tone == "support"
     assert PresenterVoiceSettings(tone="reassuring").tone == "support"
+    assert PresenterVoiceSettings(tone="empathetic").tone == "support"
     assert PresenterVoiceSettings(tone="careful").tone == "careful"
     assert PresenterVoiceSettings(tone="safety").tone == "careful"
     assert PresenterVoiceSettings(tone="safe").tone == "careful"
@@ -148,8 +149,11 @@ def test_presenter_tone_aliases_and_description_are_public() -> None:
         "calm",
         "steady",
         "reassuring",
+        "empathetic",
     )
     assert "recovery-focused" in voice.presenter_tone_description("support")
+    assert voice.tone_label("empathetic") == "Support"
+    assert "recovery-focused" in voice.presenter_tone_description("empathetic")
     assert voice.presenter_tone_aliases("privacy") == (
         "careful",
         "safety",

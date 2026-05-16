@@ -111,6 +111,7 @@ _TONE_ALIASES: dict[str, PresenterTone] = {
     "calm": "support",
     "steady": "support",
     "reassuring": "support",
+    "empathetic": "support",
     "careful": "careful",
     "safety": "careful",
     "safe": "careful",

@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 from types import MappingProxyType
 
@@ -12,6 +13,10 @@ from ai_presenter.runtime.voice import PresenterVoiceSettings
 from ai_presenter.runtime.voice import render_narration_text
 
 EXECUTABLE_DEMO_STEP_OPERATIONS = {"open", "toggle", "select"}
+RINGCENTRAL_KNOWLEDGE_DOC_REF_RE = re.compile(
+    r"docs/knowledge/ringcentral-video/([A-Za-z0-9._-]+\.md)"
+)
+RINGCENTRAL_KNOWLEDGE_DRAFT_PREFIXES = ("draft-", "scratch-")
 
 
 def has_cjk(text: str) -> bool:
@@ -735,6 +740,47 @@ def test_ringcentral_validation_checklist_covers_package_routes() -> None:
     assert "ringcentral.video.more.recording" in checklist_text
     assert "ringcentral.video.toolbar.leave" in checklist_text
     assert "runbook checkboxes are not acceptance evidence" in checklist_text
+
+
+def test_ringcentral_knowledge_docs_are_registered_in_navigation_indexes() -> None:
+    knowledge_dir = Path("docs/knowledge/ringcentral-video")
+    source_text = (knowledge_dir / "source-index.md").read_text(encoding="utf-8")
+    evidence_text = (knowledge_dir / "evidence-index.md").read_text(encoding="utf-8")
+    navigation_text = f"{source_text}\n{evidence_text}"
+    doc_paths = [
+        path
+        for path in sorted(knowledge_dir.glob("*.md"))
+        if not path.name.startswith(RINGCENTRAL_KNOWLEDGE_DRAFT_PREFIXES)
+        and "<!-- nav: ignore -->" not in path.read_text(encoding="utf-8")
+    ]
+
+    missing_from_source_index = [
+        path.name
+        for path in doc_paths
+        if path.name != "source-index.md"
+        and f"`docs/knowledge/ringcentral-video/{path.name}`" not in source_text
+    ]
+    missing_from_evidence_index = [
+        path.name
+        for path in doc_paths
+        if path.name != "evidence-index.md"
+        and f"`docs/knowledge/ringcentral-video/{path.name}`" not in evidence_text
+    ]
+    missing_from_navigation = [
+        path.name
+        for path in doc_paths
+        if f"`docs/knowledge/ringcentral-video/{path.name}`" not in navigation_text
+    ]
+    dangling_knowledge_refs = sorted(
+        name
+        for name in set(RINGCENTRAL_KNOWLEDGE_DOC_REF_RE.findall(navigation_text))
+        if not (knowledge_dir / name).is_file()
+    )
+
+    assert missing_from_source_index == []
+    assert missing_from_evidence_index == []
+    assert missing_from_navigation == []
+    assert dangling_knowledge_refs == []
 
 
 def test_demo_flow_actions_use_supported_executor_steps() -> None:

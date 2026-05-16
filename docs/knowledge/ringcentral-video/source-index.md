@@ -31,6 +31,10 @@ This index separates product-scope sources from executable automation evidence f
 | `src/ai_presenter/runtime/adaptive_demo.py` | Demo adaptation | Current participant-count adjustment for empty-room vs active meeting behavior. |
 | `src/ai_presenter/runtime/questions.py` | Question matching | English token matching plus package-owned localized Q&A and `questionAliases`; Japanese Q&A now has localized no-match text, while legacy Python aliases remain as fallback. |
 | `docs/runbooks/ringcentral-manual-acceptance.md` | Manual acceptance checklist | Procedure only; dated acceptance evidence must be recorded in `docs/knowledge/ringcentral-video/acceptance-runs.md`. |
+| `docs/knowledge/ringcentral-video/observation-log.md` | Observation log | Append-only live and repo-derived observations by date, build, locale, meeting state, and source. |
+| `docs/knowledge/ringcentral-video/locator-matrix.md` | Locator evidence | Entrypoint locator strategy, confidence, cleanup mode, and current validation gaps. |
+| `docs/knowledge/ringcentral-video/state-matrix.md` | State coverage | RingCentral Video meeting states, adapter signals, package behavior, and missing-state backlog. |
+| `docs/knowledge/ringcentral-video/privacy-matrix.md` | Privacy and safety policy | Sensitive surfaces, allowed summaries, disallowed readings, and confirmation boundaries. |
 | `docs/knowledge/ringcentral-video/evidence-index.md` | Evidence navigation | Cross-links package entrypoints, observation evidence, locator confidence, privacy policy, and next acceptance targets. |
 | `docs/knowledge/ringcentral-video/runtime-safety-routing.md` | Runtime safety-routing guide | Consolidates recent Q&A-first, `answerOnly`, Notes/Transcript, recording, and tone-as-style-only rules with verification anchors. |
 | `docs/knowledge/ringcentral-video/validation-checklist-index.md` | Manual validation procedure | Operator-ready checklist for turning evidence gaps into privacy-safe manual runs; proof still belongs in `acceptance-runs.md`. |

@@ -123,7 +123,7 @@ def test_ringcentral_localization_status_reports_japanese_demo_and_qa_coverage()
 
     assert report.package_id == "ringcentral-video"
     assert report.language == "ja"
-    assert report.demo_localized_steps == 42
+    assert report.demo_localized_steps == 43
     assert report.demo_total_steps == 51
     assert report.qa_localized_questions == 12
     assert report.qa_localized_answers == 12
@@ -138,10 +138,10 @@ def test_ringcentral_localization_status_reports_japanese_demo_and_qa_coverage()
     assert report.flow_by_id["meeting-basics-demo"].total_steps == 3
     assert report.flow_by_id["meeting-controls-tour"].localized_steps == 22
     assert report.flow_by_id["meeting-controls-tour"].total_steps == 22
-    assert report.flow_by_id["meeting-control-map-demo"].localized_steps == 13
+    assert report.flow_by_id["meeting-control-map-demo"].localized_steps == 14
     assert report.flow_by_id["meeting-control-map-demo"].total_steps == 22
     assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids[0] == (
-        "control-map-reactions"
+        "control-map-raise-hand"
     )
 
 
@@ -1975,7 +1975,7 @@ def test_meeting_control_map_has_japanese_camera_menu_narration() -> None:
     assert report.entrypoints_with_aliases == 3
     assert report.alias_total == 9
     assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids[0] == (
-        "control-map-reactions"
+        "control-map-raise-hand"
     )
     assert len(camera_menu_entrypoint.open_steps) == 1
     open_step = camera_menu_entrypoint.open_steps[0]
@@ -2037,7 +2037,7 @@ def test_meeting_control_map_has_japanese_share_narration() -> None:
     assert report.entrypoints_with_aliases == 3
     assert report.alias_total == 9
     assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids[0] == (
-        "control-map-reactions"
+        "control-map-raise-hand"
     )
     assert len(share_entrypoint.open_steps) == 1
     open_step = share_entrypoint.open_steps[0]
@@ -2056,7 +2056,7 @@ def test_meeting_control_map_has_japanese_share_narration() -> None:
     assert "ja" in camera_menu_step.narration.localized_text
     reactions_step = next(step for step in flow.steps if step.id == "control-map-reactions")
     assert reactions_step.action.entrypoint_id == "ringcentral.video.toolbar.react"
-    assert "ja" not in reactions_step.narration.localized_text
+    assert "ja" in reactions_step.narration.localized_text
     ja_text = step.narration.localized_text["ja"]
     assert ja_text.strip()
     assert has_cjk(ja_text)
@@ -2082,6 +2082,75 @@ def test_meeting_control_map_has_japanese_share_narration() -> None:
     assert "選択します" not in ja_text
     assert "選びます" not in ja_text
     assert "オンにします" not in ja_text
+    assert "自動" not in ja_text
+    assert "必ず" not in ja_text
+
+
+def test_meeting_control_map_has_japanese_reactions_narration() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    flow = package.demo_flow_by_id("meeting-control-map-demo")
+    step = next(step for step in flow.steps if step.id == "control-map-reactions")
+
+    assert step.action.entrypoint_id == "ringcentral.video.toolbar.react"
+    assert step.action.operation == "open"
+    assert step.narration.placement == "during"
+    assert step.narration.action_offset_ms == 350
+    report = build_localization_status(package, language="ja")
+    reactions_entrypoint = package.entrypoint_by_id("ringcentral.video.toolbar.react")
+    assert "ja" not in reactions_entrypoint.question_aliases
+    assert report.entrypoints_with_aliases == 3
+    assert report.alias_total == 9
+    assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids[0] == (
+        "control-map-raise-hand"
+    )
+    assert len(reactions_entrypoint.open_steps) == 1
+    open_step = reactions_entrypoint.open_steps[0]
+    assert open_step.action == "clickWindowControl"
+    assert open_step.target == "React"
+    assert open_step.match["controlType"] == "button"
+    assert open_step.match["cleanup"] == "escape"
+    assert "lightweight feedback signals" in reactions_entrypoint.presenter_notes[0]
+    assert "Observed reactions include" in reactions_entrypoint.presenter_notes[2]
+    assert "heart" in reactions_entrypoint.presenter_notes[2]
+    assert "thumbs up" in reactions_entrypoint.presenter_notes[2]
+    assert "celebration" in reactions_entrypoint.presenter_notes[2]
+    assert "clap" in reactions_entrypoint.presenter_notes[2]
+    assert "smile" in reactions_entrypoint.presenter_notes[2]
+    assert "Be right back" in reactions_entrypoint.presenter_notes[2]
+    assert "Close the reaction strip with Escape" in reactions_entrypoint.presenter_notes[3]
+    share_step = next(step for step in flow.steps if step.id == "control-map-share")
+    assert "ja" in share_step.narration.localized_text
+    raise_hand_step = next(step for step in flow.steps if step.id == "control-map-raise-hand")
+    assert raise_hand_step.action.entrypoint_id == "ringcentral.video.toolbar.raise-hand"
+    assert raise_hand_step.action.operation == "toggle"
+    assert "ja" not in raise_hand_step.narration.localized_text
+    ja_text = step.narration.localized_text["ja"]
+    assert ja_text.strip()
+    assert has_cjk(ja_text)
+    assert "Reactions" in ja_text
+    assert "リアクション" in ja_text
+    assert "軽いフィードバック" in ja_text
+    assert "承認" in ja_text
+    assert "祝福" in ja_text
+    assert "拍手" in ja_text
+    assert "Be right back" in ja_text
+    assert "会議中に見えるシグナル" in ja_text
+    assert "ユーザー" in ja_text
+    assert "明示的" in ja_text
+    assert "送信しません" in ja_text
+    assert "閉じます" in ja_text
+    assert "Raise hand" not in ja_text
+    assert "手を上げ" not in ja_text
+    assert "手を下げ" not in ja_text
+    assert "発言機会" not in ja_text
+    assert "リアクションを送信します" not in ja_text
+    assert "送信します" not in ja_text
+    assert "送ります" not in ja_text
+    assert "選択します" not in ja_text
+    assert "選びます" not in ja_text
+    assert "クリックします" not in ja_text
+    assert "押します" not in ja_text
+    assert "リアクションを送ります" not in ja_text
     assert "自動" not in ja_text
     assert "必ず" not in ja_text
 

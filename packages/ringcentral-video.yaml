@@ -1073,6 +1073,7 @@ demoFlows:
       text: For lightweight interaction, Reactions gives quick feedback such as approval, celebration, applause,
         or be-right-back without interrupting the speaker.
       localizedText:
+        ja: Reactions は、発話を遮らずに承認、祝福、拍手、Be right back などの軽いフィードバックを確認できるリアクション欄を開きます。リアクションは会議中に見えるシグナルなので、ここでは選択肢の場所と役割だけを説明し、ユーザーが明示的に求めるまで送信しません。説明だけの場合は何も選ばずに閉じます。
         zh: Reactions 适合轻量互动。比如点赞、庆祝、鼓掌，或者提示马上回来；它能表达反馈，又不会打断正在说话的人。
       placement: during
       actionOffsetMs: 350

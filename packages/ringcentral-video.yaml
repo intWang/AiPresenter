@@ -1403,6 +1403,23 @@ qa:
     context is verified.
   localizedAnswers:
     zh: 可以把 Notes and Transcript 作为转录相关控制的已知查找入口，也可以在功能可用时从 Settings 查看 Translation 相关会议偏好。不要自动开启笔记、转录、字幕或翻译，不要朗读字幕或转录内容，也不要承诺会后摘要；只有在用户明确要求并且可见上下文已验证时才继续。
+- question: Where can I find post-meeting recordings, transcripts, summaries, or insights?
+  localizedQuestions:
+    en:
+    - Where are RingCentral meeting recordings after the meeting?
+    - Can AiPresenter read post-meeting transcripts?
+    - Can you summarize the meeting after it ends?
+    - Where are post-meeting summaries or insights?
+    zh:
+    - 会后录制在哪里
+    - 会后转录在哪里
+    - 会议摘要和洞察在哪里
+  answer: RingCentral post-meeting artifacts such as recordings, transcripts, summaries, and insights may be available
+    only after they are generated, enabled, and visible to a user with permission. AiPresenter can explain where to
+    check after the meeting, but should not claim an artifact exists, open or read artifact content, or summarize it
+    unless the user explicitly asks and the visible context is verified.
+  localizedAnswers:
+    zh: RingCentral 的会后资料（例如录制、转录、摘要和洞察）通常只有在会议后生成、功能已启用，并且当前用户有权限时才可能可用。AiPresenter 可以说明会后去哪里查看，但不要承诺资料一定存在，不要打开或朗读资料内容，也不要总结内容；只有在用户明确要求并且可见上下文已验证时才继续。
 - question: How do I handle meeting recording safely?
   localizedQuestions:
     zh:

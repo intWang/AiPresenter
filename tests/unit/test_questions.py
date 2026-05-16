@@ -450,6 +450,72 @@ def test_ringcentral_localized_caption_translation_questions_are_answer_only(
     assert "\u5df2\u9a8c\u8bc1" in response.answer_text
 
 
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Where can I find post-meeting recordings, transcripts, summaries, or insights?",
+        "Where are RingCentral meeting recordings after the meeting?",
+        "Can AiPresenter read post-meeting transcripts?",
+        "Can you summarize the meeting after it ends?",
+        "Where are post-meeting summaries or insights?",
+    ],
+)
+def test_ringcentral_post_meeting_artifact_questions_are_answer_only(
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(),
+    )
+
+    assert response.entrypoint_id is None
+    assert response.can_operate is False
+    assert "post-meeting artifacts" in response.answer_text
+    assert "recordings" in response.answer_text
+    assert "transcripts" in response.answer_text
+    assert "summaries" in response.answer_text
+    assert "insights" in response.answer_text
+    assert "may be available" in response.answer_text
+    assert "explicitly asks" in response.answer_text
+    assert "visible context is verified" in response.answer_text
+    assert "Start recording:" not in response.answer_text
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "\u4f1a\u540e\u5f55\u5236\u5728\u54ea\u91cc",
+        "\u4f1a\u540e\u8f6c\u5f55\u5728\u54ea\u91cc",
+        "\u4f1a\u8bae\u6458\u8981\u548c\u6d1e\u5bdf\u5728\u54ea\u91cc",
+    ],
+)
+def test_ringcentral_localized_post_meeting_artifact_questions_are_answer_only(
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(language="zh", tone="professional"),
+    )
+
+    assert response.entrypoint_id is None
+    assert response.can_operate is False
+    assert "\u4f1a\u540e" in response.answer_text
+    assert "\u5f55\u5236" in response.answer_text
+    assert "\u8f6c\u5f55" in response.answer_text
+    assert "\u6458\u8981" in response.answer_text
+    assert "\u6d1e\u5bdf" in response.answer_text
+    assert "\u53ef\u80fd" in response.answer_text
+    assert "\u6743\u9650" in response.answer_text
+    assert "\u53ef\u89c1\u4e0a\u4e0b\u6587\u5df2\u9a8c\u8bc1" in response.answer_text
+    assert "Start recording:" not in response.answer_text
+
+
 def test_exact_qa_match_uses_precomputed_question_index() -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
     package._qa_question_candidates = ()

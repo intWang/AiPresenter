@@ -13,6 +13,7 @@ Primary sources:
 - `docs/knowledge/ringcentral-video/locator-matrix.md`
 - `docs/knowledge/ringcentral-video/state-matrix.md`
 - `docs/knowledge/ringcentral-video/privacy-matrix.md`
+- `docs/knowledge/ringcentral-video/runtime-safety-routing.md`
 - `docs/knowledge/ringcentral-video/validation-checklist-index.md`
 - `docs/knowledge/ringcentral-video/acceptance-runs.md`
 - `docs/runbooks/ringcentral-manual-acceptance.md`

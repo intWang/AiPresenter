@@ -687,6 +687,172 @@ def test_ringcentral_japanese_recording_artifact_requests_stay_non_operable(
     assert create_question_interrupt_step(package, response) is None
 
 
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Start notes をクリックして",
+        "Start notes を押して",
+        "ノートを開始して",
+    ],
+)
+def test_ringcentral_japanese_notes_action_requests_do_not_match_start_meeting(
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(language="ja"),
+    )
+
+    assert response.entrypoint_id is None
+    assert response.entrypoint_id != "ringcentral.develop.video.start"
+    assert response.can_operate is False
+    assert create_question_interrupt_step(package, response) is None
+    assert "Notes and Transcript" in response.answer_text
+    assert "開始" in response.answer_text
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Transcript を要約して",
+        "Transcript の内容を読んで",
+        "文字起こしを要約して",
+    ],
+)
+def test_ringcentral_japanese_transcript_content_requests_stay_answer_only(
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(language="ja"),
+    )
+
+    assert response.entrypoint_id is None
+    assert response.entrypoint_id != "ringcentral.video.more.notes"
+    assert response.can_operate is False
+    assert create_question_interrupt_step(package, response) is None
+    assert "Notes and Transcript" in response.answer_text
+    assert "要約" in response.answer_text
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Start notes",
+        "Click Start notes",
+    ],
+)
+def test_ringcentral_english_notes_action_requests_do_not_match_start_meeting(
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(),
+    )
+
+    assert response.entrypoint_id is None
+    assert response.entrypoint_id != "ringcentral.develop.video.start"
+    assert response.can_operate is False
+    assert create_question_interrupt_step(package, response) is None
+    assert "Notes and Transcript" in response.answer_text
+    assert "start notes" in response.answer_text.casefold()
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Summarize the transcript",
+        "Read the transcript",
+    ],
+)
+def test_ringcentral_english_transcript_content_requests_stay_answer_only(
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(),
+    )
+
+    assert response.entrypoint_id is None
+    assert response.entrypoint_id != "ringcentral.video.more.notes"
+    assert response.can_operate is False
+    assert create_question_interrupt_step(package, response) is None
+    assert "Notes and Transcript" in response.answer_text
+    assert "transcript" in response.answer_text.casefold()
+
+
+def test_ringcentral_show_me_where_notes_remains_location_lookup() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question="Show me where Notes and Transcript is",
+        voice=PresenterVoiceSettings(),
+    )
+
+    assert response.entrypoint_id == "ringcentral.video.more.notes"
+    assert response.can_operate is False
+    assert create_question_interrupt_step(package, response) is None
+    assert "notes and transcript panel" in response.answer_text.casefold()
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "start meeting",
+        "Start meeting をクリックして",
+    ],
+)
+def test_ringcentral_start_meeting_questions_still_match_start_meeting(
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(language="ja"),
+    )
+
+    assert response.entrypoint_id == "ringcentral.develop.video.start"
+    assert response.can_operate is False
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Notes and Transcript の場所はどこですか",
+        "ノートと文字起こしの場所はどこですか",
+    ],
+)
+def test_ringcentral_japanese_notes_location_routes_still_match_notes(
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(language="ja"),
+    )
+
+    assert response.entrypoint_id == "ringcentral.video.more.notes"
+    assert response.can_operate is False
+    assert create_question_interrupt_step(package, response) is None
+
+
 def test_ringcentral_japanese_unmatched_question_returns_localized_no_match() -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
 

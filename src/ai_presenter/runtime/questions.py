@@ -40,6 +40,9 @@ _RISKY_ENTRYPOINT_WORDS = {
 }
 _GENERIC_ENTRYPOINT_TOKENS = {"people"}
 _RECORDING_SAFETY_ENTRYPOINT_ID = "ringcentral.video.more.recording"
+_NOTES_TRANSCRIPT_SAFETY_QUESTION = (
+    "Where are captions, live transcription, and translation controls?"
+)
 _JAPANESE_RECORDING_TERMS = ("録画",)
 _JAPANESE_RECORDING_ACTION_TERMS = (
     "して",
@@ -60,6 +63,49 @@ _JAPANESE_RECORDING_ACTION_TERMS = (
     "ダウンロード",
     "内容",
     "要約",
+)
+_NOTES_TRANSCRIPT_TERMS = (
+    "start notes",
+    "transcript",
+    "notes and transcript",
+    "ノート",
+    "文字起こし",
+    "議事録",
+    "会議メモ",
+)
+_NOTES_TRANSCRIPT_ACTION_OR_CONTENT_TERMS = (
+    "click",
+    "start",
+    "summarize",
+    "read",
+    "content",
+    "copy",
+    "save",
+    "export",
+    "create",
+    "show",
+    "クリック",
+    "押して",
+    "開始",
+    "始め",
+    "オン",
+    "読ん",
+    "読み上げ",
+    "要約",
+    "内容",
+    "コピー",
+    "保存",
+    "エクスポート",
+    "作って",
+    "作成",
+    "見せて",
+)
+_LOCATION_LOOKUP_TERMS = (
+    "where",
+    "location",
+    "場所",
+    "どこ",
+    "入口",
 )
 _NO_MATCH_ANSWERS = {
     "en": "I could not find a matching control in the active app context.",
@@ -233,6 +279,12 @@ def _match_qa(package: MaterialPackage, normalized_question: str) -> QuestionAns
     safety_match = _match_recording_safety_qa(package, normalized_question)
     if safety_match is not None:
         return safety_match
+    notes_safety_match = _match_notes_transcript_safety_qa(
+        package,
+        normalized_question,
+    )
+    if notes_safety_match is not None:
+        return notes_safety_match
 
     if _is_entrypoint_title_lookup(package, normalized_question):
         return None
@@ -274,6 +326,24 @@ def _match_recording_safety_qa(
     if not any(term in normalized_question for term in _JAPANESE_RECORDING_ACTION_TERMS):
         return None
     return _qa_by_related_entrypoint(package, _RECORDING_SAFETY_ENTRYPOINT_ID)
+
+
+def _match_notes_transcript_safety_qa(
+    package: MaterialPackage,
+    normalized_question: str,
+) -> QuestionAnswer | None:
+    if not any(term in normalized_question for term in _NOTES_TRANSCRIPT_TERMS):
+        return None
+    if any(term in normalized_question for term in _LOCATION_LOOKUP_TERMS):
+        return None
+    if not any(
+        term in normalized_question
+        for term in _NOTES_TRANSCRIPT_ACTION_OR_CONTENT_TERMS
+    ):
+        return None
+    return package.qa_questions_by_normalized.get(
+        normalize_question_prompt(_NOTES_TRANSCRIPT_SAFETY_QUESTION)
+    )
 
 
 def _qa_by_related_entrypoint(

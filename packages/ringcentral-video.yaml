@@ -1163,6 +1163,7 @@ demoFlows:
       text: Leave is the exit path. It can end your presence in the meeting, so I describe it but do not click it
         without explicit confirmation.
       localizedText:
+        ja: Leave は現在の会議から退出するための出口です。実行すると会議内での参加状態が終わり、ホストの場合は全員に影響する終了系の選択肢が表示されることもあります。このコントロールマップでは場所と役割だけを説明し、ユーザーが明確に求め、表示された選択肢と影響を口頭で確認できるまで、Leave をクリックしたり、退出や会議終了を確定したりしません。
         zh: Leave 是离开会议的入口。它会结束你在当前会议里的状态，所以我只说明作用，不会在没有确认时替你点击。
       placement: before
   - id: control-map-summary

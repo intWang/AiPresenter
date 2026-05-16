@@ -338,6 +338,7 @@ def test_render_validation_target_lines_keeps_normal_draft_command() -> None:
 
     text = "\n".join(render_validation_target_lines(catalog, target_id="rcv-add-coworkers-modal"))
 
+    assert "repo-derived planning list only; not live acceptance evidence" in text
     assert "draft:" in text
     assert (
         "ai-presenter acceptance-draft --package ringcentral-video "

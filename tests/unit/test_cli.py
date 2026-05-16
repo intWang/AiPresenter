@@ -18,6 +18,11 @@ from ai_presenter.runtime.voice import PresenterVoiceSettings
 from ai_presenter.runtime.voice_assets import VoiceAssetAvailability
 
 
+VALIDATION_TARGETS_NON_EVIDENCE_NOTE = (
+    "Note: repo-derived planning list only; not live acceptance evidence."
+)
+
+
 def test_cli_help_renders() -> None:
     result = CliRunner().invoke(app, ["--help"])
 
@@ -1199,6 +1204,7 @@ def test_validation_targets_lists_ringcentral_targets() -> None:
     assert result.exit_code == 0
     assert "Package: ringcentral-video" in result.stdout
     assert "validation-checklist-index.md" in result.stdout
+    assert VALIDATION_TARGETS_NON_EVIDENCE_NOTE in result.stdout
     assert "rcv-add-coworkers-modal" in result.stdout
     assert "rcv-controller-chat-question" in result.stdout
     assert "Loaded profile" not in result.stdout
@@ -1218,6 +1224,7 @@ def test_validation_targets_detail_outputs_draft_command() -> None:
 
     assert result.exit_code == 0
     assert "ringcentral.video.main.add-coworkers" in result.stdout
+    assert VALIDATION_TARGETS_NON_EVIDENCE_NOTE in result.stdout
     assert "Modal close" in result.stdout
     assert "invite links" in result.stdout
     assert (
@@ -1239,6 +1246,7 @@ def test_validation_targets_mixed_target_outputs_flow_and_entrypoint_draft_comma
     )
 
     assert result.exit_code == 0
+    assert VALIDATION_TARGETS_NON_EVIDENCE_NOTE in result.stdout
     assert "flows: meeting-control-map-demo" in result.stdout
     assert "entrypoints: ringcentral.video.toolbar.chat" in result.stdout
     assert (
@@ -1327,6 +1335,7 @@ def test_validation_targets_blocked_target_omits_draft_command() -> None:
 
     assert result.exit_code == 0
     assert "rcv-recording" in result.stdout
+    assert VALIDATION_TARGETS_NON_EVIDENCE_NOTE in result.stdout
     assert "blocked:" in result.stdout
     assert "Do not execute" in result.stdout
     assert "draft:" not in result.stdout

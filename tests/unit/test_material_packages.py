@@ -325,14 +325,14 @@ def test_ringcentral_spanish_seed_qa_and_aliases_are_present() -> None:
     }
 
 
-def test_ringcentral_localization_status_reports_spanish_meeting_controls_tour() -> None:
+def test_ringcentral_localization_status_reports_complete_spanish_package() -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
 
     report = build_localization_status(package, language="es")
 
     assert report.package_id == "ringcentral-video"
     assert report.language == "es"
-    assert report.demo_localized_steps == 29
+    assert report.demo_localized_steps == 51
     assert report.demo_total_steps == 51
     assert report.qa_localized_questions == 12
     assert report.qa_localized_answers == 12
@@ -340,7 +340,7 @@ def test_ringcentral_localization_status_reports_spanish_meeting_controls_tour()
     assert report.entrypoints_with_aliases == 1
     assert report.entrypoint_total == 27
     assert report.alias_total == 3
-    assert report.required_localization_complete is False
+    assert report.required_localization_complete is True
     assert report.flow_by_id["vbg-blur-demo"].localized_steps == 4
     assert report.flow_by_id["vbg-blur-demo"].total_steps == 4
     assert report.flow_by_id["vbg-blur-demo"].missing_step_ids == ()
@@ -350,7 +350,9 @@ def test_ringcentral_localization_status_reports_spanish_meeting_controls_tour()
     assert report.flow_by_id["meeting-controls-tour"].localized_steps == 22
     assert report.flow_by_id["meeting-controls-tour"].total_steps == 22
     assert report.flow_by_id["meeting-controls-tour"].missing_step_ids == ()
-    assert report.flow_by_id["meeting-control-map-demo"].localized_steps == 0
+    assert report.flow_by_id["meeting-control-map-demo"].localized_steps == 22
+    assert report.flow_by_id["meeting-control-map-demo"].total_steps == 22
+    assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids == ()
 
 
 def test_localization_status_completion_ignores_alias_coverage_gaps() -> None:
@@ -954,7 +956,7 @@ def test_all_ringcentral_demo_flow_steps_have_chinese_localized_narration() -> N
             assert has_cjk(zh_text), f"{flow.id}:{step.id}"
 
 
-def test_ringcentral_spanish_qas_and_meeting_controls_tour_are_localized() -> None:
+def test_ringcentral_spanish_qas_and_demo_flows_are_localized() -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
     expected_spanish_demo_steps = [
         "vbg-blur-demo:open-video-settings",
@@ -986,6 +988,28 @@ def test_ringcentral_spanish_qas_and_meeting_controls_tour_are_localized() -> No
         "meeting-controls-tour:explain-background-settings",
         "meeting-controls-tour:explain-settings",
         "meeting-controls-tour:explain-leave",
+        "meeting-control-map-demo:control-map-overview",
+        "meeting-control-map-demo:control-map-meeting-info",
+        "meeting-control-map-demo:control-map-network",
+        "meeting-control-map-demo:control-map-views",
+        "meeting-control-map-demo:control-map-report",
+        "meeting-control-map-demo:control-map-add-coworkers",
+        "meeting-control-map-demo:control-map-participants",
+        "meeting-control-map-demo:control-map-chat",
+        "meeting-control-map-demo:control-map-microphone",
+        "meeting-control-map-demo:control-map-audio-menu",
+        "meeting-control-map-demo:control-map-camera",
+        "meeting-control-map-demo:control-map-camera-menu",
+        "meeting-control-map-demo:control-map-share",
+        "meeting-control-map-demo:control-map-reactions",
+        "meeting-control-map-demo:control-map-raise-hand",
+        "meeting-control-map-demo:control-map-more",
+        "meeting-control-map-demo:control-map-recording",
+        "meeting-control-map-demo:control-map-notes",
+        "meeting-control-map-demo:control-map-background",
+        "meeting-control-map-demo:control-map-settings",
+        "meeting-control-map-demo:control-map-leave",
+        "meeting-control-map-demo:control-map-summary",
     ]
 
     missing_questions = [
@@ -1051,6 +1075,33 @@ def test_ringcentral_spanish_qas_and_meeting_controls_tour_are_localized() -> No
     assert "Settings" in controls_text_by_step["explain-settings"]
     assert "Leave" in controls_text_by_step["explain-leave"]
     assert "no hago clic" in controls_text_by_step["explain-leave"]
+
+    map_flow = package.demo_flow_by_id("meeting-control-map-demo")
+    map_text_by_step = {
+        step.id: step.narration.localized_text["es"] for step in map_flow.steps
+    }
+    assert "RingCentral Video" in map_text_by_step["control-map-overview"]
+    assert "Meeting information" in map_text_by_step["control-map-meeting-info"]
+    assert "Network quality" in map_text_by_step["control-map-network"]
+    assert "Views" in map_text_by_step["control-map-views"]
+    assert "Report" in map_text_by_step["control-map-report"]
+    assert "Add coworkers" in map_text_by_step["control-map-add-coworkers"]
+    assert "Participants" in map_text_by_step["control-map-participants"]
+    assert "Chat" in map_text_by_step["control-map-chat"]
+    assert "Mute" in map_text_by_step["control-map-microphone"]
+    assert "Audio options" in map_text_by_step["control-map-audio-menu"]
+    assert "Start video" in map_text_by_step["control-map-camera"]
+    assert "More video settings" in map_text_by_step["control-map-camera-menu"]
+    assert "Share" in map_text_by_step["control-map-share"]
+    assert "Reactions" in map_text_by_step["control-map-reactions"]
+    assert "Raise hand" in map_text_by_step["control-map-raise-hand"]
+    assert "More" in map_text_by_step["control-map-more"]
+    assert "Recording" in map_text_by_step["control-map-recording"]
+    assert "Notes" in map_text_by_step["control-map-notes"]
+    assert "Background" in map_text_by_step["control-map-background"]
+    assert "Settings" in map_text_by_step["control-map-settings"]
+    assert "Leave" in map_text_by_step["control-map-leave"]
+    assert "no hago clic" in map_text_by_step["control-map-leave"]
 
 
 def test_meeting_controls_tour_renders_chinese_narration_text() -> None:

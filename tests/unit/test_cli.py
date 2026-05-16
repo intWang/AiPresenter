@@ -463,7 +463,7 @@ def test_localization_report_outputs_japanese_demo_and_qa_coverage() -> None:
     assert "questionAliases.ja present on 13/27 entrypoints (34 aliases)" in result.stdout
 
 
-def test_localization_report_outputs_spanish_meeting_controls_tour() -> None:
+def test_localization_report_outputs_complete_spanish_package() -> None:
     result = CliRunner().invoke(
         app,
         ["localization-report", "--package", "ringcentral-video", "--language", "es"],
@@ -474,15 +474,15 @@ def test_localization_report_outputs_spanish_meeting_controls_tour() -> None:
     assert "- vbg-blur-demo: 4/4 narration localized" in result.stdout
     assert "- meeting-basics-demo: 3/3 narration localized" in result.stdout
     assert "- meeting-controls-tour: 22/22 narration localized" in result.stdout
-    assert "- meeting-control-map-demo: 0/22 narration localized" in result.stdout
-    assert "Localization report: 29/51 demo steps" in result.stdout
+    assert "- meeting-control-map-demo: 22/22 narration localized" in result.stdout
+    assert "Localization report: 51/51 demo steps" in result.stdout
     assert "- localized questions: 12/12" in result.stdout
     assert "- localized answers: 12/12" in result.stdout
     assert "questionAliases.es present on 1/27 entrypoints (3 aliases)" in result.stdout
     assert "Localization coverage incomplete" not in result.stdout
 
 
-def test_localization_report_require_complete_fails_for_spanish_meeting_controls_tour() -> None:
+def test_localization_report_require_complete_passes_for_spanish_package() -> None:
     result = CliRunner().invoke(
         app,
         [
@@ -495,16 +495,16 @@ def test_localization_report_require_complete_fails_for_spanish_meeting_controls
         ],
     )
 
-    assert result.exit_code == 1
+    assert result.exit_code == 0
     assert "Language: es" in result.stdout
     assert "- vbg-blur-demo: 4/4 narration localized" in result.stdout
     assert "- meeting-basics-demo: 3/3 narration localized" in result.stdout
     assert "- meeting-controls-tour: 22/22 narration localized" in result.stdout
-    assert "- meeting-control-map-demo: 0/22 narration localized" in result.stdout
-    assert "Localization report: 29/51 demo steps" in result.stdout
+    assert "- meeting-control-map-demo: 22/22 narration localized" in result.stdout
+    assert "Localization report: 51/51 demo steps" in result.stdout
     assert "- localized questions: 12/12" in result.stdout
     assert "- localized answers: 12/12" in result.stdout
-    assert "Localization coverage incomplete for es." in result.stdout
+    assert "Localization coverage incomplete for es." not in result.stdout
 
 
 def test_localization_report_require_complete_passes_for_chinese() -> None:
@@ -1321,8 +1321,8 @@ def test_doctor_require_localization_accepts_package_only_spanish_language(
     )
 
     assert result.exit_code == 1
-    assert "[FAIL] localization: required es localization incomplete" in result.stdout
-    assert "29/51 demo steps" in result.stdout
+    assert "[OK] localization: required es localization complete" in result.stdout
+    assert "51/51 demo steps" in result.stdout
     assert "12/12 Q&A questions" in result.stdout
     assert "12/12 Q&A answers" in result.stdout
     assert "[FAIL] runtime language support:" in result.stdout
@@ -1353,7 +1353,8 @@ def test_doctor_require_localization_language_overrides_runtime_voice(
     )
 
     assert result.exit_code == 1
-    assert "[FAIL] localization: required es localization incomplete" in result.stdout
+    assert "[OK] localization: required es localization complete" in result.stdout
+    assert "51/51 demo steps" in result.stdout
     assert "[FAIL] runtime language support:" in result.stdout
     assert "[OK] voice: Chinese / Professional supported" in result.stdout
 

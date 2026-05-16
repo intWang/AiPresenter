@@ -18,6 +18,7 @@ from ai_presenter.runtime.voice import PRESENTER_LANGUAGE_CHOICES
 from ai_presenter.runtime.voice import PRESENTER_TONE_CHOICES
 from ai_presenter.runtime.voice import PresenterVoiceSettings
 from ai_presenter.runtime.voice import language_label
+from ai_presenter.runtime.voice import normalize_presenter_language
 from ai_presenter.runtime.voice import presenter_language_aliases
 from ai_presenter.runtime.voice import presenter_tone_aliases
 from ai_presenter.runtime.voice import presenter_tone_description
@@ -69,6 +70,14 @@ def resolve_voice_settings(language: str, tone: str) -> PresenterVoiceSettings:
         return PresenterVoiceSettings(language=language, tone=tone)
     except ValueError as exc:
         raise typer.BadParameter(str(exc)) from exc
+
+
+def resolve_package_language_key(language: str) -> str:
+    value = language.strip()
+    try:
+        return normalize_presenter_language(value)
+    except ValueError:
+        return value
 
 
 def validate_cli_voice_profile(
@@ -266,7 +275,7 @@ def entrypoints(
     loaded_package = load_material_package(resolve_material_package(package))
     typer.echo(f"Package: {loaded_package.app_id}")
     area_filter = None if area is None else area.strip().lower()
-    language_filter = None if language is None else language.strip()
+    language_filter = None if language is None else resolve_package_language_key(language)
     if language_filter:
         typer.echo(f"Language: {language_filter}")
     for entrypoint in loaded_package.operation_entrypoints:
@@ -307,7 +316,10 @@ def localization_report(
 ) -> None:
     """Report material-package localization coverage without running automation."""
     loaded_package = load_material_package(resolve_material_package(package))
-    report = build_localization_status(loaded_package, language=language)
+    report = build_localization_status(
+        loaded_package,
+        language=resolve_package_language_key(language),
+    )
     typer.echo("\n".join(render_localization_status_lines(report)))
     if require_complete and not report.required_localization_complete:
         typer.echo(f"Localization coverage incomplete for {report.language}.")

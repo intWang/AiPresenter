@@ -568,6 +568,40 @@ def test_localization_report_outputs_complete_spanish_package() -> None:
     assert "Localization coverage incomplete" not in result.stdout
 
 
+def test_localization_report_normalizes_spanish_language_aliases() -> None:
+    result = CliRunner().invoke(
+        app,
+        ["localization-report", "--package", "ringcentral-video", "--language", "Spanish"],
+    )
+
+    assert result.exit_code == 0
+    assert "Language: es" in result.stdout
+    assert "- vbg-blur-demo: 4/4 narration localized" in result.stdout
+    assert "- meeting-basics-demo: 3/3 narration localized" in result.stdout
+    assert "- meeting-controls-tour: 22/22 narration localized" in result.stdout
+    assert "- meeting-control-map-demo: 22/22 narration localized" in result.stdout
+    assert "Localization report: 51/51 demo steps" in result.stdout
+    assert "- localized questions: 12/12" in result.stdout
+    assert "- localized answers: 12/12" in result.stdout
+    assert "questionAliases.es present on 26/27 entrypoints (69 aliases)" in result.stdout
+    assert "localizedTitles.es present on 5/27 entrypoints" in result.stdout
+    assert "localizedPurposes.es present on 5/27 entrypoints" in result.stdout
+    assert "Localization coverage incomplete" not in result.stdout
+
+
+def test_localization_report_keeps_unknown_package_language_key_raw() -> None:
+    result = CliRunner().invoke(
+        app,
+        ["localization-report", "--package", "ringcentral-video", "--language", "de"],
+    )
+
+    assert result.exit_code == 0
+    assert "Language: de" in result.stdout
+    assert "Localization report: 0/51 demo steps" in result.stdout
+    assert "Invalid value" not in result.output
+    assert "Unsupported presenter language" not in result.output
+
+
 def test_localization_report_require_complete_passes_for_spanish_package() -> None:
     result = CliRunner().invoke(
         app,
@@ -754,6 +788,40 @@ def test_entrypoints_language_inspects_ringcentral_localized_and_fallback_copy()
         "- ringcentral.video.more.recording: Start recording "
         "[More menu] (title: fallback)"
     ) in more_menu_result.stdout
+
+
+def test_entrypoints_language_normalizes_spanish_alias_for_display_metadata() -> None:
+    result = CliRunner().invoke(
+        app,
+        [
+            "entrypoints",
+            "--package",
+            "ringcentral-video",
+            "--area",
+            "Meeting top bar",
+            "--language",
+            "es-MX",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "Language: es" in result.stdout
+    assert (
+        "- ringcentral.video.top.network-quality: Calidad de red "
+        "[Meeting top bar] (title: localized)"
+    ) in result.stdout
+    assert (
+        "- ringcentral.video.top.views: Diseño de vista "
+        "[Meeting top bar] (title: localized)"
+    ) in result.stdout
+    assert (
+        "- ringcentral.video.top.meeting-info: Meeting information "
+        "[Meeting top bar] (title: fallback)"
+    ) in result.stdout
+    assert (
+        "  purpose: Open meeting details including meeting title, host, meeting ID, "
+        "copy link, dial-in info, encryption, and end-to-end encryption option. (fallback)"
+    ) in result.stdout
 
 
 def test_entrypoints_language_uses_package_local_metadata_without_runtime_voice_validation(

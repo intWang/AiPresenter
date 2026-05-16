@@ -402,6 +402,62 @@ def test_ringcentral_careful_tone_preserves_privacy_question_route() -> None:
     assert "verified" in careful.answer_text
 
 
+@pytest.mark.parametrize(
+    ("question", "expected_entrypoint_id", "expected_can_operate", "expected_interrupt"),
+    [
+        (
+            "how do I handle meeting recording safely?",
+            "ringcentral.video.more.recording",
+            False,
+            False,
+        ),
+        ("Read the transcript", None, False, False),
+        ("meeting information", "ringcentral.video.top.meeting-info", False, False),
+        (
+            "Can AiPresenter read meeting messages or participant names?",
+            None,
+            False,
+            False,
+        ),
+        ("invite people", "ringcentral.video.toolbar.invite", False, False),
+        ("share screen", "ringcentral.video.toolbar.share", False, False),
+        ("participants", "ringcentral.video.toolbar.participants", True, True),
+        ("leave meeting", "ringcentral.video.toolbar.leave", False, False),
+        ("network quality", "ringcentral.video.top.network-quality", True, True),
+    ],
+)
+def test_ringcentral_sensitive_prompt_routing_is_tone_invariant(
+    question: str,
+    expected_entrypoint_id: str | None,
+    expected_can_operate: bool,
+    expected_interrupt: bool,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    baseline = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(tone="professional"),
+    )
+    baseline_interrupt = create_question_interrupt_step(package, baseline) is not None
+
+    assert baseline.entrypoint_id == expected_entrypoint_id
+    assert baseline.can_operate is expected_can_operate
+    assert baseline_interrupt is expected_interrupt
+
+    for tone in ("friendly", "coach", "support", "privacy"):
+        response = answer_question(
+            package=package,
+            question=question,
+            voice=PresenterVoiceSettings(tone=tone),
+        )
+
+        assert response.entrypoint_id == baseline.entrypoint_id
+        assert response.can_operate is baseline.can_operate
+        assert (create_question_interrupt_step(package, response) is not None) is (
+            baseline_interrupt
+        )
+
+
 def test_ringcentral_localized_host_controls_question_returns_chinese_guidance() -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
 

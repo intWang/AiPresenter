@@ -793,6 +793,62 @@ def test_ringcentral_english_transcript_content_requests_stay_answer_only(
     assert "transcript" in response.answer_text.casefold()
 
 
+@pytest.mark.parametrize(
+    "question",
+    [
+        "\u5f00\u59cb\u4f1a\u8bae\u7b14\u8bb0",
+        "\u542f\u52a8\u4f1a\u8bae\u7b14\u8bb0",
+        "\u70b9\u51fb Start notes",
+    ],
+)
+def test_ringcentral_chinese_notes_action_requests_stay_answer_only(
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(language="zh"),
+    )
+
+    assert response.entrypoint_id is None
+    assert response.entrypoint_id != "ringcentral.video.more.notes"
+    assert response.can_operate is False
+    assert create_question_interrupt_step(package, response) is None
+    assert "Notes and Transcript" in response.answer_text
+    assert "\u4e0d\u8981\u81ea\u52a8\u5f00\u542f" in response.answer_text
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "\u8bfb\u53d6\u8f6c\u5f55\u5185\u5bb9",
+        "\u603b\u7ed3\u4f1a\u8bae\u7b14\u8bb0",
+        "\u603b\u7ed3\u8f6c\u5f55",
+        "\u590d\u5236\u8f6c\u5f55\u5185\u5bb9",
+        "\u5bfc\u51fa\u8f6c\u5f55",
+    ],
+)
+def test_ringcentral_chinese_transcript_content_requests_stay_answer_only(
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(language="zh"),
+    )
+
+    assert response.entrypoint_id is None
+    assert response.entrypoint_id != "ringcentral.video.more.notes"
+    assert response.can_operate is False
+    assert create_question_interrupt_step(package, response) is None
+    assert "Notes and Transcript" in response.answer_text
+    assert "\u4e0d\u8981\u81ea\u52a8\u5f00\u542f" in response.answer_text
+
+
 def test_ringcentral_show_me_where_notes_remains_location_lookup() -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
 
@@ -806,6 +862,30 @@ def test_ringcentral_show_me_where_notes_remains_location_lookup() -> None:
     assert response.can_operate is False
     assert create_question_interrupt_step(package, response) is None
     assert "notes and transcript panel" in response.answer_text.casefold()
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "\u8f6c\u5f55\u5728\u54ea\u91cc",
+        "\u4f1a\u8bae\u7b14\u8bb0\u5728\u54ea\u91cc",
+        "\u8f6c\u5f55\u5165\u53e3\u5728\u54ea",
+    ],
+)
+def test_ringcentral_chinese_notes_location_routes_still_match_notes(
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(language="zh"),
+    )
+
+    assert response.entrypoint_id == "ringcentral.video.more.notes"
+    assert response.can_operate is False
+    assert create_question_interrupt_step(package, response) is None
 
 
 @pytest.mark.parametrize(

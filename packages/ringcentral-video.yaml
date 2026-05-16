@@ -46,6 +46,11 @@ operationEntrypoints:
   area: Meeting top bar
   purpose: Open meeting details including meeting title, host, meeting ID, copy link, dial-in info, encryption,
     and end-to-end encryption option.
+  questionAliases:
+    zh:
+    - 会议信息
+    - 会议号
+    - 会议链接
   openSteps:
   - action: clickWindowRelative
     target: Meeting information
@@ -62,6 +67,11 @@ operationEntrypoints:
   title: Network quality
   area: Meeting top bar
   purpose: Show diagnostic network quality for sharing, video, and audio, including packet loss, jitter, and latency.
+  questionAliases:
+    zh:
+    - 网络质量
+    - 连接质量
+    - 卡顿
   openSteps:
   - action: clickWindowRelative
     target: Network quality
@@ -108,12 +118,16 @@ operationEntrypoints:
   title: Add coworkers
   area: Meeting canvas
   purpose: Open the Invite others dialog from the empty-meeting callout.
+  questionAliases:
+    zh:
+    - 加同事
+    - 邀请同事
+    - 拉人入会
   openSteps:
-  - action: clickWindowRelative
+  - action: clickWindowControl
     target: Add coworkers
     match:
-      x: '461'
-      y: '462'
+      controlType: button
       cleanup: modal
   presenterNotes:
   - The dialog includes a name/email field, suggestions, Copy meeting link, Cancel, and Invite.
@@ -125,6 +139,11 @@ operationEntrypoints:
   title: Microphone control
   area: Meeting toolbar
   purpose: Toggle mute and unmute in the live meeting.
+  questionAliases:
+    zh:
+    - 麦克风
+    - 静音
+    - 声音
   openSteps:
   - action: clickWindowControl
     target: Mute
@@ -139,6 +158,11 @@ operationEntrypoints:
   area: Meeting toolbar
   purpose: Open microphone and speaker device controls, audio level indicators, leave-computer-audio, phone-audio,
     and more audio settings.
+  questionAliases:
+    zh:
+    - 音频设置
+    - 换麦克风
+    - 换扬声器
   openSteps:
   - action: clickWindowControl
     target: More
@@ -155,6 +179,11 @@ operationEntrypoints:
   title: Camera control
   area: Meeting toolbar
   purpose: Toggle local camera on or off.
+  questionAliases:
+    zh:
+    - 摄像头
+    - 开视频
+    - 关视频
   openSteps:
   - action: clickWindowControl
     target: Start video
@@ -168,6 +197,11 @@ operationEntrypoints:
   title: Camera menu
   area: Meeting toolbar
   purpose: Open camera device selection and the More video settings shortcut.
+  questionAliases:
+    zh:
+    - 视频设置
+    - 换摄像头
+    - 摄像头菜单
   openSteps:
   - action: clickWindowControl
     target: More
@@ -200,6 +234,12 @@ operationEntrypoints:
   title: Background settings
   area: Settings
   purpose: Configure blur, built-in virtual backgrounds, video backgrounds, or custom uploads.
+  questionAliases:
+    zh:
+    - 背景
+    - 虚拟背景
+    - 模糊背景
+    - 设置背景
   openSteps:
   - action: clickWindowControl
     target: More
@@ -236,6 +276,12 @@ operationEntrypoints:
   title: Screen sharing
   area: Meeting toolbar
   purpose: Start sharing a screen, window, or selected content.
+  questionAliases:
+    zh:
+    - 共享屏幕
+    - 分享屏幕
+    - 屏幕共享
+    - 共享
   openSteps:
   - action: clickWindowControl
     target: Share
@@ -251,6 +297,12 @@ operationEntrypoints:
   title: Invite participants
   area: Meeting toolbar
   purpose: Invite coworkers or copy meeting details.
+  questionAliases:
+    zh:
+    - 邀请
+    - 邀请别人
+    - 拉人
+    - 加人
   openSteps:
   - action: clickWindowControl
     target: Invite
@@ -267,6 +319,11 @@ operationEntrypoints:
   title: Participants panel
   area: Meeting toolbar
   purpose: Open participant list and meeting people controls.
+  questionAliases:
+    zh:
+    - 参会者
+    - 参会人列表
+    - 谁在会议里
   openSteps:
   - action: clickWindowControl
     target: Participants
@@ -282,6 +339,12 @@ operationEntrypoints:
   title: Chat panel
   area: Meeting toolbar
   purpose: Open in-meeting chat.
+  questionAliases:
+    zh:
+    - 聊天
+    - 聊天室
+    - 消息
+    - 聊天在哪里
   openSteps:
   - action: clickWindowControl
     target: Chat
@@ -343,6 +406,11 @@ operationEntrypoints:
   title: Start recording
   area: More menu
   purpose: Start recording the meeting.
+  questionAliases:
+    zh:
+    - 录制
+    - 录像
+    - 记录会议
   openSteps: []
   presenterNotes:
   - Observed under More as Start recording.
@@ -352,6 +420,11 @@ operationEntrypoints:
   title: Notes and transcript
   area: Meeting toolbar
   purpose: Open the Notes and Transcript side panel.
+  questionAliases:
+    zh:
+    - 笔记
+    - 转录
+    - 会议笔记
   openSteps:
   - action: clickWindowControl
     target: More
@@ -411,6 +484,11 @@ operationEntrypoints:
   title: Leave meeting
   area: Meeting toolbar
   purpose: Leave or end the meeting.
+  questionAliases:
+    zh:
+    - 离开会议
+    - 退出会议
+    - 结束会议
   openSteps: []
   presenterNotes:
   - Treat this as destructive during a tour.
@@ -429,6 +507,8 @@ demoFlows:
       operation: open
     narration:
       text: I am opening the video settings from the camera control so we can configure the visual presentation.
+      localizedText:
+        zh: 我先从摄像头控制进入 Settings，这样可以调整视频呈现方式，而不需要改变会议里其他人的状态。
       placement: before
   - id: open-background-panel
     title: Open background panel
@@ -437,6 +517,8 @@ demoFlows:
       operation: open
     narration:
       text: The Background panel contains blur, built-in virtual backgrounds, and custom background upload.
+      localizedText:
+        zh: Background 面板集中管理模糊、内置虚拟背景和自定义背景上传，是保护真实环境和提升展示效果的入口。
       placement: during
       actionOffsetMs: 400
   - id: select-blur
@@ -447,6 +529,8 @@ demoFlows:
       target: Blur
     narration:
       text: Blur keeps the presenter visible while reducing detail from the real room.
+      localizedText:
+        zh: 选择 Blur 会保留演示者本人，同时弱化真实房间细节，适合在不暴露环境的情况下继续开会。
       placement: during
       actionOffsetMs: 300
   - id: verify-meeting-video
@@ -457,6 +541,8 @@ demoFlows:
       target: Stop video
     narration:
       text: Back in the meeting, the live tile confirms video is on and the real background is blurred.
+      localizedText:
+        zh: 回到会议画面后，确认本地视频仍然开启，并且背景已经被模糊处理。
       placement: after
 - id: meeting-basics-demo
   title: Meeting basics demo
@@ -470,6 +556,8 @@ demoFlows:
     narration:
       text: The microphone control shows whether local audio is muted and lets the presenter quickly recover before
         speaking.
+      localizedText:
+        zh: 麦克风按钮显示当前是否静音。发言前先看这里，可以快速确认自己是否会被听到。
       placement: before
   - id: show-participants
     title: Show participants
@@ -479,6 +567,8 @@ demoFlows:
     narration:
       text: The Participants panel is the fastest way to confirm who is in the room and whether the meeting is still
         empty.
+      localizedText:
+        zh: Participants 面板用来确认谁在会议里，也能判断会议是否还处于空房间状态。
       placement: during
       actionOffsetMs: 300
   - id: show-chat
@@ -488,6 +578,8 @@ demoFlows:
       operation: open
     narration:
       text: Chat supports side-channel collaboration while the spoken demo continues.
+      localizedText:
+        zh: Chat 是文字协作通道，适合发送链接和补充信息；聊天内容默认保持隐私，除非用户明确要求读取。
       placement: during
       actionOffsetMs: 300
 - id: meeting-controls-tour
@@ -504,6 +596,8 @@ demoFlows:
       text: RingCentral Video is organized around the live meeting canvas. The top bar covers meeting identity,
         connection health, layout, and reporting. The bottom toolbar covers audio, video, sharing, people, chat,
         reactions, and safety actions.
+      localizedText:
+        zh: RingCentral Video 的会议窗口可以分成三块：上方看会议身份、连接状态、视图和问题反馈；下方管理音频、视频、共享、成员、聊天、互动和安全操作；中间是实时会议画面。
       placement: before
   - id: explain-meeting-info
     title: Meeting information
@@ -513,6 +607,8 @@ demoFlows:
     narration:
       text: 'First, the info button opens meeting details: host, meeting ID, copy link, dial-in information, and
         encryption status. I treat those values as private unless you ask for them.'
+      localizedText:
+        zh: 先看 info 按钮。它会打开主持人、会议 ID、复制链接、拨入信息和加密状态；这些值默认属于敏感信息，我只说明位置，不主动朗读。
       placement: during
       actionOffsetMs: 400
   - id: explain-network-quality
@@ -523,6 +619,8 @@ demoFlows:
     narration:
       text: Next is network quality. This is where you check packet loss, jitter, and latency for sharing, video,
         and audio when the meeting feels unstable.
+      localizedText:
+        zh: 接着是 Network quality。会议不稳定时，可以从这里查看共享、视频和音频的丢包、抖动和延迟。
       placement: during
       actionOffsetMs: 350
   - id: explain-view-layout
@@ -533,6 +631,8 @@ demoFlows:
     narration:
       text: Views changes how you see the meeting. It includes Gallery view and Full screen, so it affects layout
         without changing anyone in the call.
+      localizedText:
+        zh: Views 用来调整你看到会议的布局，比如 Gallery view 或 Full screen；它只改变本地显示，不会影响通话里的其他人。
       placement: during
       actionOffsetMs: 350
   - id: explain-report-issue
@@ -543,6 +643,8 @@ demoFlows:
     narration:
       text: Report opens the troubleshooting dialog for audio, video, screen sharing, joining, notes, transcript,
         or other issues. It blocks the meeting controls, so I close it before moving on.
+      localizedText:
+        zh: Report 会打开故障反馈窗口，适合处理音频、视频、屏幕共享、入会、笔记、转录或其他问题。它会挡住会议控制区，所以讲完后需要关闭。
       placement: during
       actionOffsetMs: 450
   - id: explain-add-coworkers
@@ -553,6 +655,8 @@ demoFlows:
     narration:
       text: Moving into people controls, Add coworkers opens the invite dialog from the empty meeting view. You can
         search for a coworker, copy the meeting link, or send an invite.
+      localizedText:
+        zh: 进入成员相关控制。空会议里的 Add coworkers 会打开邀请窗口，可以搜索同事、复制会议链接或发送邀请。
       placement: during
       actionOffsetMs: 400
   - id: explain-invite
@@ -563,6 +667,8 @@ demoFlows:
     narration:
       text: The Invite button in the toolbar opens the same invite flow. It is the regular place to bring someone
         into an active meeting.
+      localizedText:
+        zh: 工具栏里的 Invite 是活跃会议中邀请他人的常规入口，可以继续添加同事或复制会议详情。
       placement: during
       actionOffsetMs: 350
   - id: explain-participants
@@ -573,6 +679,8 @@ demoFlows:
     narration:
       text: Participants opens the roster panel. From here you can confirm who is in the room and access people
         controls such as invite, lock, mute, and more options.
+      localizedText:
+        zh: Participants 会打开参会人列表。这里可以确认谁在会议里，也能进入邀请、锁定会议、静音和更多成员操作。
       placement: during
       actionOffsetMs: 350
   - id: explain-chat
@@ -583,6 +691,8 @@ demoFlows:
     narration:
       text: Chat opens the message panel. It supports messages to everyone and private conversations, but I do not
         read chat content unless you ask.
+      localizedText:
+        zh: Chat 会打开消息面板，支持发给所有人的消息和私聊。聊天内容默认保持隐私，除非用户明确要求读取。
       placement: during
       actionOffsetMs: 350
   - id: explain-microphone
@@ -593,6 +703,8 @@ demoFlows:
     narration:
       text: Now the media controls. Mute is the main privacy switch for your microphone. Before speaking, this is
         the first control to check.
+      localizedText:
+        zh: 现在看媒体控制。Mute 是麦克风的主要隐私开关；发言前，最先应该确认这里的状态。
       placement: before
   - id: explain-audio-menu
     title: Audio menu
@@ -602,6 +714,8 @@ demoFlows:
     narration:
       text: The microphone arrow opens audio devices. You can switch microphone and speaker, leave computer audio,
         use phone audio, or go to more audio settings.
+      localizedText:
+        zh: 麦克风箭头会打开音频设备菜单，可以切换麦克风和扬声器、离开电脑音频、使用电话音频，或进入更多音频设置。
       placement: during
       actionOffsetMs: 350
   - id: explain-camera
@@ -611,6 +725,8 @@ demoFlows:
       operation: point
     narration:
       text: Start video turns on your local camera. Once the camera is on, the same control becomes Stop video.
+      localizedText:
+        zh: Start video 会打开本地摄像头；开启后，同一个按钮会变成 Stop video，用来关闭视频。
       placement: before
   - id: explain-camera-menu
     title: Camera menu
@@ -620,6 +736,8 @@ demoFlows:
     narration:
       text: The camera arrow opens camera selection and a shortcut to more video settings, including background
         configuration.
+      localizedText:
+        zh: 摄像头箭头会打开摄像头选择，并提供进入更多视频设置的入口，包括背景配置。
       placement: during
       actionOffsetMs: 350
   - id: explain-share
@@ -630,6 +748,8 @@ demoFlows:
     narration:
       text: Share opens the picker for your screen or application windows. It can also share system audio, but I
         do not press the final Share button unless you confirm.
+      localizedText:
+        zh: Share 会打开屏幕或应用窗口选择器，也可以共享系统音频。但在你确认要展示哪个内容前，我不会点击最终的 Share 按钮。
       placement: during
       actionOffsetMs: 400
   - id: explain-reactions
@@ -640,6 +760,8 @@ demoFlows:
     narration:
       text: For lightweight interaction, React opens quick feedback such as heart, thumbs up, celebration, clap,
         smile, and Be right back.
+      localizedText:
+        zh: React 适合轻量反馈，比如爱心、点赞、庆祝、鼓掌、微笑和 Be right back，不需要打断正在说话的人。
       placement: during
       actionOffsetMs: 350
   - id: explain-raise-hand
@@ -650,6 +772,8 @@ demoFlows:
     narration:
       text: Raise hand signals that you want attention without speaking over someone. It is a toggle, so I lower
         the hand again after showing it.
+      localizedText:
+        zh: Raise hand 表示你想获得发言机会，而不用打断别人。它是开关，所以展示后会再把手放下。
       placement: during
       actionOffsetMs: 350
   - id: explain-more
@@ -660,6 +784,8 @@ demoFlows:
     narration:
       text: Finally, More is the expansion menu for deeper meeting tools. In this build, Notes is already on the
         toolbar, while More keeps Start recording, Background, and Settings.
+      localizedText:
+        zh: 最后是 More，它是更深层会议工具的扩展菜单。当前版本里 Notes 已在工具栏上，More 主要保留 Start recording、Background 和 Settings。
       placement: during
       actionOffsetMs: 350
   - id: explain-recording
@@ -670,6 +796,8 @@ demoFlows:
     narration:
       text: Start recording changes the meeting state, so I only explain it in a tour. I would ask before starting
         or stopping recording.
+      localizedText:
+        zh: Start recording 会改变会议状态，所以在导览里只解释入口；开始或停止录制前都需要先询问并确认。
       placement: before
   - id: explain-notes
     title: Notes and transcript
@@ -679,6 +807,8 @@ demoFlows:
     narration:
       text: Notes opens the Notes and Transcript panel. It can start meeting notes and can also record the meeting,
         so those actions stay under user control.
+      localizedText:
+        zh: Notes 会打开 Notes and Transcript 面板。这里可以启动会议笔记，也可能涉及录制相关操作，所以这些动作继续由用户控制。
       placement: during
       actionOffsetMs: 400
   - id: explain-background-settings
@@ -689,6 +819,8 @@ demoFlows:
     narration:
       text: Background opens the settings page for visual presentation. You can turn effects off, blur the room,
         choose a built-in background, use a video background, or upload your own.
+      localizedText:
+        zh: Background 会打开视觉呈现设置，可以关闭效果、模糊房间、选择内置背景、使用视频背景或上传自己的背景。
       placement: during
       actionOffsetMs: 400
   - id: explain-settings
@@ -699,6 +831,8 @@ demoFlows:
     narration:
       text: 'Settings is the complete configuration area: audio, video, background, translation, join preferences,
         and general meeting preferences.'
+      localizedText:
+        zh: Settings 是完整配置区域，包含音频、视频、背景、翻译、入会偏好和通用会议偏好。
       placement: during
       actionOffsetMs: 400
   - id: explain-leave
@@ -709,6 +843,8 @@ demoFlows:
     narration:
       text: Leave exits the meeting. It is a destructive control, so the presenter explains it but does not click
         it without explicit confirmation.
+      localizedText:
+        zh: Leave 会离开会议，是破坏性控制；Presenter 只说明它的作用，不会在没有明确确认时点击。
       placement: before
 - id: meeting-control-map-demo
   title: Meeting Control Map
@@ -1145,21 +1281,108 @@ explainers:
     - ringcentral.video.toolbar.leave
 qa:
 - question: How do I protect my real background?
+  localizedQuestions:
+    zh:
+    - 怎么保护我的真实背景
+    - 怎么模糊背景
   answer: Open Settings, choose Background, and select Blur or a virtual background. Blur is the safest default
     for privacy because it hides room detail while keeping the person visible.
+  localizedAnswers:
+    zh: 打开 Settings，选择 Background，然后选择 Blur 或虚拟背景。Blur 是最稳妥的隐私默认项，因为它会隐藏房间细节，同时保留人物可见。
   relatedEntrypointIds:
   - ringcentral.video.settings.background
   - ringcentral.video.settings.background.blur
 - question: Can the presenter describe shared-screen content?
+  localizedQuestions:
+    zh:
+    - 你能说明共享屏幕内容吗
+    - 能读共享的文档吗
+    - 共享屏幕内容可以讲吗
   answer: Only after the content is captured by an approved observation source and the user allows it. The default
     policy is to avoid inferring or reading private shared content.
+  localizedAnswers:
+    zh: 只有在共享内容来自已批准的观察来源，并且用户明确允许时，Presenter 才会说明它。默认策略是避免推断或朗读私人共享内容；可以安全解释 Share 入口本身。
   relatedEntrypointIds:
   - ringcentral.video.toolbar.share
 - question: How can I bring people into the meeting?
+  localizedQuestions:
+    zh:
+    - 怎么邀请参会人入会
+    - 我是第一个人怎么邀请同事入会
+    - 怎么复制会议邀请
   answer: Use Invite to add coworkers or copy meeting details. The presenter should avoid reading private invite
     links aloud unless explicitly requested.
+  localizedAnswers:
+    zh: 如果会议里只有你，可以用 Add coworkers；在工具栏里也可以用 Invite 添加同事或复制会议邀请。Presenter 不要朗读私人邀请链接、邮箱、姓名或建议列表，除非用户明确要求并且内容已验证。
   relatedEntrypointIds:
   - ringcentral.video.toolbar.invite
+- question: Can the presenter read meeting messages or participant names?
+  localizedQuestions:
+    zh:
+    - 你能读聊天内容吗
+    - 能说出参会人名字吗
+    - 参会者和聊天内容能讲吗
+  answer: The presenter can explain where Chat and Participants are and summarize visible counts when verified. It
+    should not read chat messages, participant names, roles, or private tabs unless the user explicitly asks and the
+    content is verified.
+  localizedAnswers:
+    zh: Presenter 可以说明 Chat 和 Participants 在哪里，也可以在已验证时概括可见人数。默认不要朗读聊天消息、参会人姓名、角色或私人标签页，除非用户明确要求并且内容已经验证。
+  relatedEntrypointIds:
+  - ringcentral.video.toolbar.chat
+  - ringcentral.video.toolbar.participants
+- question: How do I make sure my audio and video are ready?
+  localizedQuestions:
+    zh:
+    - 怎么检查麦克风和摄像头
+    - 开会前怎么确认声音视频
+    - 声音和视频怎么准备
+  answer: Check the microphone and camera state first, then use the audio or video menu for device recovery. Do not
+    toggle real meeting media unless the user intends to change the state.
+  localizedAnswers:
+    zh: 先确认麦克风和摄像头当前状态，再用音频或视频菜单处理设备选择和恢复。不要在真实会议里随意切换麦克风或摄像头，除非用户明确要改变状态。
+  relatedEntrypointIds:
+  - ringcentral.video.toolbar.audio
+  - ringcentral.video.toolbar.audio-menu
+  - ringcentral.video.toolbar.video
+  - ringcentral.video.toolbar.video-menu
+- question: How do I troubleshoot choppy audio or video?
+  localizedQuestions:
+    zh:
+    - 声音或视频卡顿怎么办
+    - 怎么看网络质量
+    - 连接质量在哪里看
+  answer: Open Network quality to inspect packet loss, jitter, latency, or related meeting diagnostics. Use Report
+    issue only as an escalation path, and avoid guessing exact causes without observed values.
+  localizedAnswers:
+    zh: 打开 Network quality 查看丢包、抖动、延迟或相关会议诊断。Report issue 适合升级反馈；在没有观察到具体数值前，不要猜测准确原因。
+  relatedEntrypointIds:
+  - ringcentral.video.top.network-quality
+  - ringcentral.video.top.report-issue
+- question: Where are notes and transcript controls?
+  localizedQuestions:
+    zh:
+    - 笔记和转录在哪里
+    - 会议笔记在哪里
+    - 转录在哪里
+  answer: Notes opens the notes and transcript panel. Starting notes can change the meeting state, so use it only
+    when the user asks and the meeting context allows it.
+  localizedAnswers:
+    zh: Notes 会打开笔记和转录面板。启动笔记可能改变会议状态，所以只在用户明确要求并且会议上下文允许时使用。
+  relatedEntrypointIds:
+  - ringcentral.video.more.notes
+- question: How do I handle meeting recording safely?
+  localizedQuestions:
+    zh:
+    - 怎么录制会议
+    - 录制会议在哪里
+    - 会议录制怎么开
+    - 记录会议
+  answer: Recording changes the meeting state and can affect everyone in the room. Treat it as explain-only until
+    the user explicitly confirms, the role is allowed, and participant consent is clear.
+  localizedAnswers:
+    zh: 录制会改变会议状态，也会影响房间里的所有人。除非用户明确确认、当前角色允许，并且参会者同意已经清楚，否则只解释入口，不自动开始录制。
+  relatedEntrypointIds:
+  - ringcentral.video.more.recording
 manualControls:
 - name: say
   examples:

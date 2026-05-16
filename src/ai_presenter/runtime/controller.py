@@ -4,19 +4,34 @@ import threading
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
+from ai_presenter.config.models import AppProfile
 from ai_presenter.desktop.base import VisibleWindow, WindowHandle
 from ai_presenter.desktop.windows import WindowsDesktopDriver
 from ai_presenter.packages.models import DemoFlow, DemoStep
 from ai_presenter.runtime.catalog import ControllerAppCatalog
 from ai_presenter.runtime.control import DemoControl
+from ai_presenter.runtime.controller_view_model import ControllerOperatorSnapshot
+from ai_presenter.runtime.controller_view_model import ControllerOperatorViewModel
+from ai_presenter.runtime.controller_view_model import ControllerSourceMode
+from ai_presenter.runtime.controller_view_model import ControllerVoiceReadiness
+from ai_presenter.runtime.controller_view_model import build_controller_operator_view_model
+from ai_presenter.runtime.controller_view_model import render_controller_operator_summary_rows
+from ai_presenter.runtime.controller_view_model import render_voice_label as _render_voice_label
 from ai_presenter.runtime.factory import run_existing_window_material_demo
 from ai_presenter.runtime.factory import run_material_demo
 from ai_presenter.runtime.questions import answer_question
 from ai_presenter.runtime.session import ControllerSession, MaterialPackageTarget, RunningAppTarget
 from ai_presenter.runtime.session import create_question_interrupt_step
-from ai_presenter.runtime.voice import PresenterTone, PresenterVoiceSettings
+from ai_presenter.runtime.voice import PRESENTER_LANGUAGE_CHOICES
+from ai_presenter.runtime.voice import PRESENTER_TONE_CHOICES
+from ai_presenter.runtime.voice import PresenterVoiceSettings
+from ai_presenter.runtime.voice import language_label
+from ai_presenter.runtime.voice import tone_label
+from ai_presenter.runtime.voice import validate_profile_voice
+from ai_presenter.runtime.voice_assets import VoiceAssetAvailability
+from ai_presenter.runtime.voice_assets import check_voice_asset_availability
 
 if TYPE_CHECKING:
     from tkinter import Tk
@@ -30,7 +45,8 @@ NO_RUNNING_APPS_LABEL = "No running apps found"
 RUNNING_APP_SCAN_REQUIRED_MESSAGE = "Scan the selected running app before asking questions."
 QUESTION_FLOW_ID = "question-answer-demo"
 
-QuestionDemonstrationStatus = Literal["text_only", "interrupting", "started"]
+QuestionDemonstrationStatus = Literal["text_only", "interrupting", "queued", "started"]
+VoiceAssetChecker = Callable[[AppProfile, PresenterVoiceSettings], VoiceAssetAvailability | None]
 
 
 @dataclass(frozen=True)
@@ -44,6 +60,8 @@ class QuestionSubmitResult:
     answer_text: str
     demonstration_status: QuestionDemonstrationStatus = "text_only"
     demonstration_message: str = ""
+    entrypoint_id: str | None = None
+    can_operate: bool = False
 
 
 @dataclass(frozen=True)
@@ -64,16 +82,55 @@ class ControllerStatusUpdate:
     mark_session_stopped: bool = False
 
 
+@dataclass(frozen=True)
+class ControllerAppliedStatusState:
+    status: str
+    pause_label: str
+
+
+@dataclass(frozen=True)
+class ControllerStatusApplication:
+    state: ControllerAppliedStatusState
+    status_changed: bool
+    pause_label_changed: bool
+    mark_session_stopped: bool
+    refresh_operator_view: bool
+
+
+def plan_controller_status_application(
+    current: ControllerAppliedStatusState,
+    update: ControllerStatusUpdate,
+) -> ControllerStatusApplication:
+    status_changed = current.status != update.status
+    pause_label_changed = current.pause_label != update.pause_label
+    return ControllerStatusApplication(
+        state=ControllerAppliedStatusState(
+            status=update.status,
+            pause_label=update.pause_label,
+        ),
+        status_changed=status_changed,
+        pause_label_changed=pause_label_changed,
+        mark_session_stopped=update.mark_session_stopped,
+        refresh_operator_view=(
+            status_changed or pause_label_changed or update.mark_session_stopped
+        ),
+    )
+
+
 def format_chat_turns(turns: Sequence[ChatTurn]) -> str:
     return "\n\n".join(f"{turn.speaker}: {turn.message}" for turn in turns)
+
+
+def render_operator_summary_text(view_model: ControllerOperatorViewModel) -> str:
+    return "\n".join(render_controller_operator_summary_rows(view_model))
 
 
 def resolve_controller_status(snapshot: ControllerStatusSnapshot) -> ControllerStatusUpdate:
     if snapshot.last_error is not None:
         return ControllerStatusUpdate(
-            status=f"Error: {snapshot.last_error}",
+            status=f"Error: {_exception_message(snapshot.last_error)}",
             pause_label="Pause",
-            mark_session_stopped=True,
+            mark_session_stopped=snapshot.session_is_running,
         )
     if snapshot.is_running:
         if snapshot.is_switching_targets:
@@ -90,6 +147,84 @@ def resolve_controller_status(snapshot: ControllerStatusSnapshot) -> ControllerS
             mark_session_stopped=True,
         )
     return ControllerStatusUpdate(status=snapshot.current_status, pause_label="Pause")
+
+
+def _exception_message(exc: Exception) -> str:
+    if isinstance(exc, KeyError) and exc.args:
+        return str(exc.args[0])
+    return str(exc)
+
+
+def describe_question_result(result: QuestionSubmitResult) -> str:
+    if result.demonstration_status == "queued" and result.entrypoint_id is not None:
+        return f"Queued safe demo: {result.entrypoint_id}"
+    if result.demonstration_status == "started" and result.entrypoint_id is not None:
+        return f"Demonstrating: {result.entrypoint_id}"
+    if result.entrypoint_id is not None and not result.can_operate:
+        return f"Answered only: {result.entrypoint_id} is not safe to operate automatically"
+    if result.entrypoint_id is None:
+        return "Answered only: no matching safe control"
+    return f"Answered only: {result.entrypoint_id}"
+
+
+def render_voice_label(voice: PresenterVoiceSettings) -> str:
+    return _render_voice_label(voice)
+
+
+def _check_controller_voice_readiness(
+    profile: AppProfile,
+    voice: PresenterVoiceSettings,
+    *,
+    checker: VoiceAssetChecker = check_voice_asset_availability,
+) -> ControllerVoiceReadiness | None:
+    try:
+        availability = checker(profile, voice)
+    except Exception as exc:
+        return ControllerVoiceReadiness(
+            status="FAIL",
+            label="FAIL",
+            detail=f"voice asset check failed: {exc}",
+        )
+    if availability is None:
+        return None
+    return ControllerVoiceReadiness(
+        status=availability.status,
+        label=availability.status,
+        detail=availability.detail,
+    )
+
+
+def _voice_readiness_failure_message(
+    readiness: ControllerVoiceReadiness | None,
+) -> str | None:
+    if readiness is None or readiness.status == "OK":
+        return None
+    return readiness.detail or readiness.label
+
+
+@dataclass
+class _ControllerVoiceReadinessCache:
+    profile: AppProfile
+    checker: VoiceAssetChecker
+    _cached_key: tuple[str, str] | None = None
+    _cached_readiness: ControllerVoiceReadiness | None = None
+
+    def get(self, voice: PresenterVoiceSettings) -> ControllerVoiceReadiness | None:
+        key = (voice.language, voice.tone)
+        if self._cached_key == key:
+            return self._cached_readiness
+        readiness = _check_controller_voice_readiness(
+            self.profile,
+            voice,
+            checker=self.checker,
+        )
+        self._cached_key = key
+        self._cached_readiness = readiness
+        return readiness
+
+    def refresh(self, voice: PresenterVoiceSettings) -> ControllerVoiceReadiness | None:
+        self._cached_key = None
+        return self.get(voice)
 
 
 @dataclass
@@ -164,6 +299,7 @@ class PresenterController:
         control: DemoControl | None = None,
         runner: Callable[..., None] | None = None,
         window_runner: Callable[..., None] | None = None,
+        voice: PresenterVoiceSettings | None = None,
     ) -> None:
         self._profile = profile
         self._target = _ControllerRunTarget(material_package, flow_id)
@@ -172,7 +308,7 @@ class PresenterController:
         self._window_runner = window_runner or run_existing_window_material_demo
         self._thread: threading.Thread | None = None
         self._last_error: Exception | None = None
-        self._voice = PresenterVoiceSettings()
+        self._voice = voice or PresenterVoiceSettings()
         self._state_lock = threading.Lock()
         self._pending_target: _ControllerRunTarget | None = None
         self._pending_voice: PresenterVoiceSettings | None = None
@@ -223,26 +359,41 @@ class PresenterController:
         )
         interrupt = create_question_interrupt_step(target.material_package, response)
         if interrupt is None:
-            return QuestionSubmitResult(answer_text=response.answer_text)
-        question_target = _target_with_question_flow(target, interrupt)
-        if self.is_running:
-            self._switch_to_target_after_current_step(question_target, voice)
             return QuestionSubmitResult(
                 answer_text=response.answer_text,
-                demonstration_status="interrupting",
-                demonstration_message="I am switching to that now.",
+                entrypoint_id=response.entrypoint_id,
+                can_operate=response.can_operate,
+            )
+        question_target = _target_with_question_flow(target, interrupt)
+        if self.is_running and not self.is_stopping:
+            self._control.enqueue_interrupt(interrupt)
+            return QuestionSubmitResult(
+                answer_text=response.answer_text,
+                demonstration_status="queued",
+                demonstration_message="I queued that for the next safe step.",
+                entrypoint_id=response.entrypoint_id,
+                can_operate=response.can_operate,
+            )
+        if self.is_running:
+            return QuestionSubmitResult(
+                answer_text=response.answer_text,
+                demonstration_message="I answered in text because the current demo is ending.",
+                entrypoint_id=response.entrypoint_id,
+                can_operate=response.can_operate,
             )
         if self._start_target(question_target, voice):
             return QuestionSubmitResult(
                 answer_text=response.answer_text,
                 demonstration_status="started",
                 demonstration_message="Demonstrating it now.",
+                entrypoint_id=response.entrypoint_id,
+                can_operate=response.can_operate,
             )
-        self._switch_to_target_after_current_step(question_target, voice)
         return QuestionSubmitResult(
             answer_text=response.answer_text,
-            demonstration_status="interrupting",
-            demonstration_message="I am switching to that now.",
+            demonstration_message="I answered in text because another demo is already running.",
+            entrypoint_id=response.entrypoint_id,
+            can_operate=response.can_operate,
         )
 
     def join(self, timeout: float | None = None) -> None:
@@ -271,6 +422,7 @@ class PresenterController:
         return self._last_error
 
     def _start_target(self, target: _ControllerRunTarget, voice: PresenterVoiceSettings) -> bool:
+        validate_profile_voice(self._profile, voice)
         if self._thread is not None and self._thread.is_alive():
             return False
         self._last_error = None
@@ -358,21 +510,34 @@ def _target_with_question_flow(
         goal="Answer the user's question with a focused UI demonstration.",
         steps=[step],
     )
-    package = target.material_package.model_copy(
-        update={"demo_flows": [*target.material_package.demo_flows, flow]},
-    )
+    package = target.material_package.with_demo_flow(flow)
     return _ControllerRunTarget(package, QUESTION_FLOW_ID, target.handle)
+
+
+def _apply_button_state(button: Any, enabled: bool) -> bool:
+    desired_state = "normal" if enabled else "disabled"
+    if button.cget("state") == desired_state:
+        return False
+    button.configure(state=desired_state)
+    return True
 
 
 def run_controller(
     profile: DesktopAppProfile,
     material_package: MaterialPackage,
     flow_id: str,
+    *,
+    voice: PresenterVoiceSettings | None = None,
+    voice_asset_checker: VoiceAssetChecker = check_voice_asset_availability,
 ) -> None:
     import tkinter as tk
 
+    voice_settings = voice or PresenterVoiceSettings()
+    validate_profile_voice(profile, voice_settings)
+    material_package.demo_flow_by_id(flow_id)
     desktop = WindowsDesktopDriver()
     session = ControllerSession()
+    session.set_voice(voice_settings)
     session.select_target(
         MaterialPackageTarget(profile=profile, package=material_package, flow_id=flow_id)
     )
@@ -387,26 +552,30 @@ def run_controller(
         profile=profile,
         material_package=material_package,
         flow_id=flow_id,
+        voice=voice_settings,
     )
     root = tk.Tk()
     root.title("AiPresenter Controller")
     root.geometry("720x500")
 
     status = tk.StringVar(value="Ready")
+    operator_summary = tk.StringVar(value="Target ready")
     pause_label = tk.StringVar(value="Pause")
     source = tk.StringVar(value="Material package")
     package_choice = tk.StringVar(value=material_package.app_id)
     flow_choice = tk.StringVar(value=flow_id)
     app_choice = tk.StringVar(value="")
-    language = tk.StringVar(value="English")
-    tone = tk.StringVar(value="Professional")
+    language = tk.StringVar(value=language_label(voice_settings.language))
+    tone = tk.StringVar(value=tone_label(voice_settings.tone))
     question = tk.StringVar(value="")
     chat_turns: list[ChatTurn] = []
-    tone_values: dict[str, PresenterTone] = {
-        "Professional": "professional",
-        "Conversational": "conversational",
-        "Concise": "concise",
-    }
+    last_question_outcome = ""
+    language_values = dict(PRESENTER_LANGUAGE_CHOICES)
+    tone_values = dict(PRESENTER_TONE_CHOICES)
+    voice_readiness_cache = _ControllerVoiceReadinessCache(
+        profile=profile,
+        checker=voice_asset_checker,
+    )
 
     def running_app_label(window: VisibleWindow) -> str:
         title = window.title.strip() or window.window_class or "Untitled"
@@ -417,9 +586,45 @@ def run_controller(
 
     def current_voice() -> PresenterVoiceSettings:
         return PresenterVoiceSettings(
-            language="zh" if language.get() == "Chinese" else "en",
+            language=language_values[language.get()],
             tone=tone_values[tone.get()],
         )
+
+    def current_voice_readiness() -> ControllerVoiceReadiness | None:
+        return voice_readiness_cache.refresh(current_voice())
+
+    def source_mode() -> ControllerSourceMode:
+        return "running_desktop_app" if source.get() == "Running desktop app" else "material_package"
+
+    def refresh_operator_view() -> None:
+        voice = current_voice()
+        voice_readiness = voice_readiness_cache.get(voice)
+        view_model = build_controller_operator_view_model(
+            ControllerOperatorSnapshot(
+                source_mode=source_mode(),
+                material_package_id=material_package.app_id,
+                material_flow_id=flow_id,
+                running_app_label=app_choice.get(),
+                has_running_app_selection=selected_running_window() is not None,
+                has_scanned_running_app=scan_state.has_scanned_selection,
+                scanned_package_id=scanned_package_id,
+                scanned_flow_id=scanned_flow_id,
+                voice=voice,
+                voice_readiness=voice_readiness,
+                run_status=status.get(),
+                is_running=controller.is_running,
+                is_stopping=controller.is_stopping,
+                question_text=question.get(),
+                last_question_outcome=last_question_outcome,
+            )
+        )
+        operator_summary.set(render_operator_summary_text(view_model))
+        _apply_button_state(start_button, view_model.buttons.start_enabled)
+        _apply_button_state(pause_button, view_model.buttons.pause_enabled)
+        _apply_button_state(end_button, view_model.buttons.end_enabled)
+        _apply_button_state(refresh_button, view_model.buttons.refresh_enabled)
+        _apply_button_state(scan_button, view_model.buttons.scan_enabled)
+        _apply_button_state(submit_button, view_model.buttons.submit_enabled)
 
     def handle_from_window(window: VisibleWindow) -> WindowHandle:
         return WindowHandle(
@@ -437,11 +642,13 @@ def run_controller(
             else:
                 package_choice.set(f"{app_choice.get() or 'No running app selected'} needs scan")
                 flow_choice.set("")
+            refresh_operator_view()
             return
         package_choice.set(material_package.app_id)
         flow_choice.set(flow_id)
         if not controller.is_running:
             controller.set_target(material_package=material_package, flow_id=flow_id)
+        refresh_operator_view()
 
     def choose_running_app(label: str) -> None:
         previously_scanned = scan_state.has_scanned_selection
@@ -450,6 +657,7 @@ def run_controller(
         if previously_scanned and not scan_state.has_scanned_selection:
             status.set("Selected running app needs scanning")
         sync_target_choice()
+        refresh_operator_view()
 
     def refresh_running_windows() -> None:
         try:
@@ -459,6 +667,7 @@ def run_controller(
             app_choice.set(NO_RUNNING_APPS_LABEL)
             status.set(f"App refresh error: {exc}")
             sync_target_choice()
+            refresh_operator_view()
             return
 
         next_window_by_label: dict[str, VisibleWindow] = {}
@@ -479,6 +688,7 @@ def run_controller(
             sync_target_choice()
             if previously_scanned:
                 status.set("Selected running app needs scanning")
+            refresh_operator_view()
             return
 
         for label in scan_state.window_by_label:
@@ -487,12 +697,14 @@ def run_controller(
         if previously_scanned and not scan_state.has_scanned_selection:
             status.set("Selected running app needs scanning")
         sync_target_choice()
+        refresh_operator_view()
 
     def scan_selected_app() -> None:
         nonlocal scanned_flow_id, scanned_package_id, scanned_handle, scanned_package
         selected = selected_running_window()
         if selected is None:
             status.set("Scan error: select a running app first")
+            refresh_operator_view()
             return
         try:
             handle = handle_from_window(selected)
@@ -515,10 +727,12 @@ def run_controller(
             )
         except Exception as exc:
             status.set(f"Scan error: {exc}")
+        refresh_operator_view()
 
     def start() -> None:
         try:
             voice = current_voice()
+            validate_profile_voice(profile, voice)
             controller.set_voice(voice)
             if source.get() == "Running desktop app":
                 if (
@@ -528,6 +742,7 @@ def run_controller(
                     or not scanned_flow_id
                 ):
                     status.set(RUNNING_APP_SCAN_REQUIRED_MESSAGE)
+                    refresh_operator_view()
                     return
                 controller.set_target(
                     material_package=scanned_package,
@@ -544,6 +759,12 @@ def run_controller(
                     )
                 )
                 controller.set_target(material_package=material_package, flow_id=flow_id)
+            readiness = current_voice_readiness()
+            failure = _voice_readiness_failure_message(readiness)
+            if failure is not None:
+                status.set(f"Start error: {failure}")
+                refresh_operator_view()
+                return
             session.mark_running()
             controller.start()
             status.set("Running")
@@ -551,17 +772,20 @@ def run_controller(
         except Exception as exc:
             session.mark_stopped()
             status.set(f"Start error: {exc}")
+        refresh_operator_view()
 
     def pause_or_resume() -> None:
         paused = controller.pause_or_resume()
         status.set("Paused" if paused else "Running")
         pause_label.set("Resume" if paused else "Pause")
+        refresh_operator_view()
 
     def end() -> None:
         controller.end()
         session.mark_stopped()
         status.set("Ending")
         pause_label.set("Pause")
+        refresh_operator_view()
 
     def append_chat(speaker: str, message: str) -> None:
         chat_turns.append(ChatTurn(speaker, message))
@@ -572,8 +796,10 @@ def run_controller(
         chat_history.see("end")
 
     def submit_question() -> None:
+        nonlocal last_question_outcome
         text = question.get().strip()
         if not text:
+            refresh_operator_view()
             return
         append_chat("You", text)
         question.set("")
@@ -583,22 +809,33 @@ def run_controller(
             if source.get() == "Running desktop app":
                 if not scan_state.has_scanned_selection:
                     append_chat("AiPresenter", RUNNING_APP_SCAN_REQUIRED_MESSAGE)
+                    last_question_outcome = RUNNING_APP_SCAN_REQUIRED_MESSAGE
                     status.set(RUNNING_APP_SCAN_REQUIRED_MESSAGE)
+                    refresh_operator_view()
                     return
                 session.set_voice(voice)
             elif not controller.is_running:
                 controller.set_target(material_package=material_package, flow_id=flow_id)
+            readiness = current_voice_readiness()
+            failure = _voice_readiness_failure_message(readiness)
+            if failure is not None:
+                append_chat("AiPresenter", f"Question error: {failure}")
+                last_question_outcome = f"Question error: {failure}"
+                status.set(last_question_outcome)
+                refresh_operator_view()
+                return
             result = controller.submit_question(text)
             append_chat("AiPresenter", result.answer_text)
+            last_question_outcome = describe_question_result(result)
+            status.set(last_question_outcome)
             if result.demonstration_message:
                 append_chat("AiPresenter", result.demonstration_message)
             if result.demonstration_status == "started":
                 session.mark_running()
-                status.set("Demonstrating answer")
-            elif result.demonstration_status == "interrupting":
-                status.set("Switching to answer")
         except Exception as exc:
             append_chat("AiPresenter", f"Question error: {exc}")
+            last_question_outcome = f"Question error: {exc}"
+        refresh_operator_view()
 
     def refresh_status() -> None:
         update = resolve_controller_status(
@@ -612,15 +849,29 @@ def run_controller(
                 session_is_running=session.is_running,
             )
         )
-        if update.mark_session_stopped:
+        application = plan_controller_status_application(
+            ControllerAppliedStatusState(status=status.get(), pause_label=pause_label.get()),
+            update,
+        )
+        if application.mark_session_stopped:
             session.mark_stopped()
-        status.set(update.status)
-        pause_label.set(update.pause_label)
+        if application.status_changed:
+            status.set(application.state.status)
+        if application.pause_label_changed:
+            pause_label.set(application.state.pause_label)
+        if application.refresh_operator_view:
+            refresh_operator_view()
         root.after(500, refresh_status)
 
     frame = tk.Frame(root, padx=16, pady=16)
     frame.pack(fill="both", expand=True)
     tk.Label(frame, textvariable=status, anchor="w").pack(fill="x", pady=(0, 12))
+    tk.Label(
+        frame,
+        textvariable=operator_summary,
+        anchor="w",
+        justify="left",
+    ).pack(fill="x", pady=(0, 12))
 
     target_frame = tk.LabelFrame(frame, text="Target", padx=8, pady=8)
     target_frame.pack(fill="x", pady=(0, 12))
@@ -640,35 +891,57 @@ def run_controller(
         command=sync_target_choice,
     )
     running_app_menu.pack(side="left", padx=(8, 0))
-    tk.Button(target_frame, text="Refresh", command=refresh_running_windows, width=10).pack(
+    refresh_button = tk.Button(
+        target_frame,
+        text="Refresh",
+        command=refresh_running_windows,
+        width=10,
+    )
+    refresh_button.pack(
         side="left",
         padx=(8, 0),
     )
-    tk.Button(target_frame, text="Scan", command=scan_selected_app, width=8).pack(
+    scan_button = tk.Button(target_frame, text="Scan", command=scan_selected_app, width=8)
+    scan_button.pack(
         side="left",
         padx=(8, 0),
     )
 
     button_row = tk.Frame(frame)
     button_row.pack(fill="x")
-    tk.Button(button_row, text="Start", command=start, width=10).pack(side="left", padx=(0, 8))
-    tk.Button(button_row, textvariable=pause_label, command=pause_or_resume, width=10).pack(
+    start_button = tk.Button(button_row, text="Start", command=start, width=10)
+    start_button.pack(side="left", padx=(0, 8))
+    pause_button = tk.Button(button_row, textvariable=pause_label, command=pause_or_resume, width=10)
+    pause_button.pack(
         side="left",
         padx=(0, 8),
     )
-    tk.Button(button_row, text="End", command=end, width=10).pack(side="left")
+    end_button = tk.Button(button_row, text="End", command=end, width=10)
+    end_button.pack(side="left")
 
     voice_row = tk.Frame(frame)
     voice_row.pack(fill="x", pady=(24, 12))
-    tk.OptionMenu(voice_row, language, "English", "Chinese").pack(side="left", padx=(0, 8))
-    tk.OptionMenu(voice_row, tone, "Professional", "Conversational", "Concise").pack(side="left")
+    tk.OptionMenu(
+        voice_row,
+        language,
+        *(label for label, _ in PRESENTER_LANGUAGE_CHOICES),
+        command=lambda *_args: refresh_operator_view(),
+    ).pack(side="left", padx=(0, 8))
+    tk.OptionMenu(
+        voice_row,
+        tone,
+        *(label for label, _ in PRESENTER_TONE_CHOICES),
+        command=lambda *_args: refresh_operator_view(),
+    ).pack(side="left")
 
     question_row = tk.Frame(frame)
     question_row.pack(fill="x", pady=(12, 8))
     question_entry = tk.Entry(question_row, textvariable=question)
     question_entry.pack(side="left", fill="x", expand=True, padx=(0, 8))
     question_entry.bind("<Return>", lambda _event: submit_question())
-    tk.Button(question_row, text="Submit", command=submit_question, width=10).pack(side="left")
+    question.trace_add("write", lambda *_args: refresh_operator_view())
+    submit_button = tk.Button(question_row, text="Submit", command=submit_question, width=10)
+    submit_button.pack(side="left")
     chat_history = tk.Text(frame, height=8, wrap="word", state="disabled")
     chat_history.pack(fill="both", expand=True)
 

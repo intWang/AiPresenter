@@ -12,6 +12,12 @@ from ai_presenter.config.models import AppProfile
 from ai_presenter.config.models import DesktopAppProfile
 from ai_presenter.packages.models import MaterialPackage
 from ai_presenter.runtime.package_demo import demo_flow_by_id
+from ai_presenter.runtime.voice import PresenterVoiceSettings
+from ai_presenter.runtime.voice import language_label
+from ai_presenter.runtime.voice import resolve_speech_provider_name
+from ai_presenter.runtime.voice import tone_label
+from ai_presenter.runtime.voice import validate_profile_voice
+from ai_presenter.runtime.voice_assets import check_voice_asset_availability
 
 DiagnosticStatus = Literal["OK", "WARN", "FAIL"]
 
@@ -59,6 +65,7 @@ def diagnose_configuration(
     material_package: MaterialPackage | None = None,
     flow_id: str | None = None,
     ringcentral_config: Path | None = None,
+    voice: PresenterVoiceSettings | None = None,
 ) -> DiagnosticReport:
     checks = [
         DiagnosticCheck("OK", "profile", f"loaded {profile.id} ({profile.type.value})"),
@@ -79,6 +86,14 @@ def diagnose_configuration(
 
     if _is_ringcentral_video_profile(profile):
         checks.append(_diagnose_ringcentral_config(ringcentral_config))
+
+    if voice is not None:
+        voice_check = _diagnose_voice(profile, voice)
+        checks.append(voice_check)
+        if voice_check.status == "OK":
+            voice_assets_check = _diagnose_voice_assets(profile, voice)
+            if voice_assets_check is not None:
+                checks.append(voice_assets_check)
 
     return DiagnosticReport(tuple(checks))
 
@@ -160,6 +175,30 @@ def _diagnose_presenter_context(profile: AppProfile) -> DiagnosticCheck:
     return DiagnosticCheck("OK", "presenter context", ", ".join(parts))
 
 
+def _diagnose_voice(profile: AppProfile, voice: PresenterVoiceSettings) -> DiagnosticCheck:
+    label = f"{language_label(voice.language)} / {tone_label(voice.tone)}"
+    try:
+        validate_profile_voice(profile, voice)
+    except ValueError as exc:
+        return DiagnosticCheck("FAIL", "voice", str(exc))
+    route = resolve_speech_provider_name(profile, voice)
+    return DiagnosticCheck(
+        "OK",
+        "voice",
+        f"{label} supported via speech={route} (configured {profile.providers.speech})",
+    )
+
+
+def _diagnose_voice_assets(
+    profile: AppProfile,
+    voice: PresenterVoiceSettings,
+) -> DiagnosticCheck | None:
+    result = check_voice_asset_availability(profile, voice)
+    if result is None:
+        return None
+    return DiagnosticCheck(result.status, "voice assets", result.detail)
+
+
 def _diagnose_material_package(
     profile: AppProfile,
     material_package: MaterialPackage,
@@ -189,12 +228,12 @@ def _diagnose_material_package(
     if flow_id is not None:
         try:
             flow = demo_flow_by_id(material_package, flow_id)
-        except KeyError:
+        except KeyError as exc:
             checks.append(
                 DiagnosticCheck(
                     "FAIL",
                     "demo flow",
-                    f"{flow_id} was not found in package {material_package.app_id}",
+                    str(exc.args[0]),
                 )
             )
         else:

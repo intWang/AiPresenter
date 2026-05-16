@@ -215,8 +215,11 @@ def run_material_demo(
     control: DemoControl | None = None,
     voice: PresenterVoiceSettings | None = None,
 ) -> None:
+    voice_settings = voice or PresenterVoiceSettings()
+    validate_profile_voice(profile, voice_settings)
+    material_package.demo_flow_by_id(flow_id)
     desktop = WindowsDesktopDriver()
-    providers = registry or create_provider_registry(profile, voice=voice)
+    providers = registry or create_provider_registry(profile, voice=voice_settings)
     handle = create_profile_runner(profile, desktop).launch_and_bind()
     adapter = create_adapter(profile)
     _run_material_demo_on_handle(
@@ -227,7 +230,7 @@ def run_material_demo(
         providers=providers,
         handle=handle,
         control=control,
-        voice=voice,
+        voice=voice_settings,
         clear_blockers_before_start=True,
         clear_before_action=False,
         state_adjuster=lambda step: _adjust_demo_step(profile, desktop, adapter, handle, step),
@@ -244,8 +247,11 @@ def run_existing_window_material_demo(
     control: DemoControl | None = None,
     voice: PresenterVoiceSettings | None = None,
 ) -> None:
+    voice_settings = voice or PresenterVoiceSettings()
+    validate_profile_voice(profile, voice_settings)
+    material_package.demo_flow_by_id(flow_id)
     desktop = WindowsDesktopDriver()
-    providers = registry or create_provider_registry(profile, voice=voice)
+    providers = registry or create_provider_registry(profile, voice=voice_settings)
     _run_material_demo_on_handle(
         profile=profile,
         material_package=material_package,
@@ -254,7 +260,7 @@ def run_existing_window_material_demo(
         providers=providers,
         handle=handle,
         control=control,
-        voice=voice,
+        voice=voice_settings,
         clear_blockers_before_start=False,
         clear_before_action=False,
         state_adjuster=lambda step: step,

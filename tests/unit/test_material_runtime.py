@@ -74,6 +74,25 @@ def test_runtime_runs_queued_control_interrupt_before_next_flow_step() -> None:
     assert timeline.steps == ["interrupt", "one"]
 
 
+def test_runtime_resumes_main_flow_after_queued_interrupt_between_steps() -> None:
+    timeline = FakeTimeline()
+    control = DemoControl()
+    runtime = MaterialDemoRuntime(
+        flow_steps=[make_step("one"), make_step("two")],
+        timeline=timeline,
+        state_adjuster=lambda step: step,
+        interrupt_source=control.pop_interrupt,
+    )
+
+    runtime.run_next()
+    control.enqueue_interrupt(make_step("interrupt"))
+    runtime.run_next()
+    runtime.run_next()
+
+    assert timeline.steps == ["one", "interrupt", "two"]
+    assert runtime.is_complete is True
+
+
 def test_runtime_skips_none_adjusted_step_and_continues_flow() -> None:
     timeline = FakeTimeline()
     runtime = MaterialDemoRuntime(

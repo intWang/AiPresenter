@@ -1,7 +1,10 @@
+import logging
+
 import pytest
 
 from ai_presenter.desktop.base import WindowHandle
 from ai_presenter.packages.models import MaterialPackage
+from ai_presenter.runtime import package_demo as package_demo_module
 from ai_presenter.runtime.package_demo import PackageActionExecutor
 from ai_presenter.runtime.package_demo import PackageActionExecutionError
 
@@ -191,6 +194,24 @@ def make_package() -> MaterialPackage:
 
 def make_handle() -> WindowHandle:
     return WindowHandle("RingCentralVideo", 123, "RingCentralVideoClass", "RingCentral Video")
+
+
+def test_demo_flow_by_id_delegates_to_package_lookup() -> None:
+    package = make_package().model_copy(
+        update={
+            "demo_flows": [
+                {
+                    "id": "demo-flow",
+                    "title": "Demo",
+                    "goal": "Demo",
+                    "steps": [],
+                }
+            ]
+        }
+    )
+
+    with pytest.raises(KeyError, match="Unknown demo flow: missing. Available flows:"):
+        package_demo_module.demo_flow_by_id(package, "missing")
 
 
 def test_package_action_executor_clicks_coordinate_step_and_cleanup() -> None:
@@ -417,3 +438,60 @@ def test_package_action_executor_adds_context_to_open_step_failures() -> None:
     assert "ringcentral.video.toolbar.raise-hand-alternate" in str(error)
     assert "clickWindowControl" in str(error)
     assert "Raise hand" in str(error)
+
+
+def test_package_action_executor_logs_action_duration(
+    caplog: pytest.LogCaptureFixture,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    times = iter([2.0, 2.05])
+    monkeypatch.setattr(package_demo_module, "perf_counter", lambda: next(times), raising=False)
+    driver = RecordingDemoDriver()
+    executor = PackageActionExecutor(
+        package=make_package(),
+        driver=driver,
+        handle=make_handle(),
+        clear_before_action=False,
+        action_hold_seconds=0,
+    )
+
+    with caplog.at_level(logging.INFO, logger="ai_presenter.runtime.package_demo"):
+        executor.execute_action("ringcentral.video.toolbar.more-control", operation="open")
+
+    message = caplog.records[-1].getMessage()
+    assert "package_action_executed" in message
+    assert "status=ok" in message
+    assert "duration_ms=50.00" in message
+    assert "package=ringcentral-video" in message
+    assert "entrypoint=ringcentral.video.toolbar.more-control" in message
+    assert "operation=open" in message
+
+
+def test_package_action_executor_logs_action_failure_duration(
+    caplog: pytest.LogCaptureFixture,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    times = iter([3.0, 3.025])
+    monkeypatch.setattr(package_demo_module, "perf_counter", lambda: next(times), raising=False)
+    driver = RecordingDemoDriver()
+    driver.fail_controls.update({"Raise hand", "Lower hand"})
+    executor = PackageActionExecutor(
+        package=make_package(),
+        driver=driver,
+        handle=make_handle(),
+        clear_before_action=False,
+        action_hold_seconds=0,
+    )
+
+    with caplog.at_level(logging.INFO, logger="ai_presenter.runtime.package_demo"):
+        with pytest.raises(PackageActionExecutionError):
+            executor.execute_action("ringcentral.video.toolbar.raise-hand-alternate", operation="open")
+
+    message = caplog.records[-1].getMessage()
+    assert "package_action_executed" in message
+    assert "status=error" in message
+    assert "duration_ms=25.00" in message
+    assert "entrypoint=ringcentral.video.toolbar.raise-hand-alternate" in message
+    assert "Raise hand" not in message
+    assert "Lower hand" not in message
+    assert "missing control" not in message

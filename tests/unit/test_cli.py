@@ -1,3 +1,6 @@
+import json
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -10,6 +13,8 @@ from ai_presenter.cli import REPO_PROFILE_DIR
 from ai_presenter.cli import resolve_material_package
 from ai_presenter.cli import resolve_profile
 from ai_presenter.runtime import diagnostics
+from ai_presenter.runtime.voice import PresenterVoiceSettings
+from ai_presenter.runtime.voice_assets import VoiceAssetAvailability
 
 
 def test_cli_help_renders() -> None:
@@ -17,6 +22,86 @@ def test_cli_help_renders() -> None:
 
     assert result.exit_code == 0
     assert "AI presenter" in result.stdout
+
+
+def test_cli_import_does_not_load_desktop_runtime_modules() -> None:
+    code = (
+        "import json, sys; "
+        "import ai_presenter.cli; "
+        "names = ["
+        "'ai_presenter.desktop.windows', "
+        "'ai_presenter.runtime.factory', "
+        "'ai_presenter.runtime.controller', "
+        "'ai_presenter.runtime.diagnostics', "
+        "'ai_presenter.runtime.voice_assets', "
+        "'ai_presenter.providers.base', "
+        "'ai_presenter.providers.piper_provider', "
+        "'ai_presenter.providers.windows_speech'"
+        "]; "
+        "print(json.dumps({name: name in sys.modules for name in names}, sort_keys=True))"
+    )
+
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    assert json.loads(result.stdout) == {
+        "ai_presenter.desktop.windows": False,
+        "ai_presenter.runtime.controller": False,
+        "ai_presenter.runtime.diagnostics": False,
+        "ai_presenter.runtime.factory": False,
+        "ai_presenter.runtime.voice_assets": False,
+        "ai_presenter.providers.base": False,
+        "ai_presenter.providers.piper_provider": False,
+        "ai_presenter.providers.windows_speech": False,
+    }
+
+
+def test_localization_report_does_not_load_voice_asset_providers() -> None:
+    code = (
+        "import json, sys; "
+        "from typer.testing import CliRunner; "
+        "from ai_presenter.cli import app; "
+        "result = CliRunner().invoke("
+        "app, ["
+        "'localization-report', '--package', 'ringcentral-video', "
+        "'--language', 'zh', '--require-complete'"
+        "]"
+        "); "
+        "names = ["
+        "'ai_presenter.runtime.diagnostics', "
+        "'ai_presenter.runtime.voice_assets', "
+        "'ai_presenter.providers.base', "
+        "'ai_presenter.providers.piper_provider', "
+        "'ai_presenter.providers.windows_speech'"
+        "]; "
+        "print(json.dumps({"
+        "'exit_code': result.exit_code, "
+        "'output': result.output, "
+        "'loaded': {name: name in sys.modules for name in names}"
+        "}, sort_keys=True))"
+    )
+
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    payload = json.loads(result.stdout)
+
+    assert payload["exit_code"] == 0, payload["output"]
+    assert "Package: ringcentral-video" in payload["output"]
+    assert payload["loaded"] == {
+        "ai_presenter.runtime.diagnostics": False,
+        "ai_presenter.runtime.voice_assets": False,
+        "ai_presenter.providers.base": False,
+        "ai_presenter.providers.piper_provider": False,
+        "ai_presenter.providers.windows_speech": False,
+    }
 
 
 def test_run_dry_run_loads_profile() -> None:
@@ -55,6 +140,95 @@ def test_demo_dry_run_loads_profile_package_and_flow() -> None:
     assert "Loaded profile: ringcentral-video" in result.stdout
     assert "Loaded package: ringcentral-video" in result.stdout
     assert "Loaded flow: meeting-controls-tour" in result.stdout
+
+
+def test_demo_passes_language_and_tone_to_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[PresenterVoiceSettings] = []
+
+    def fake_run_material_demo(*_args: object, voice: PresenterVoiceSettings | None = None) -> None:
+        assert voice is not None
+        calls.append(voice)
+
+    monkeypatch.setattr("ai_presenter.cli.run_material_demo", fake_run_material_demo)
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "demo",
+            "--profile",
+            "ringcentral-video-bind-speaker",
+            "--package",
+            "ringcentral-video",
+            "--flow",
+            "meeting-control-map-demo",
+            "--language",
+            "zh-CN",
+            "--tone",
+            "friendly",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "Loaded voice: Chinese / Friendly" in result.stdout
+    assert calls == [PresenterVoiceSettings(language="zh", tone="friendly")]
+
+
+def test_demo_dry_run_reports_normalized_voice_aliases() -> None:
+    result = CliRunner().invoke(
+        app,
+        [
+            "demo",
+            "--profile",
+            "ringcentral-video",
+            "--package",
+            "ringcentral-video",
+            "--flow",
+            "meeting-controls-tour",
+            "--language",
+            "English",
+            "--tone",
+            "warm",
+            "--dry-run",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "Loaded voice: English / Friendly" in result.stdout
+
+
+def test_demo_rejects_unsupported_profile_voice_before_runtime(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    called = False
+
+    def fake_run_material_demo(*_args: object, **_kwargs: object) -> None:
+        nonlocal called
+        called = True
+
+    monkeypatch.setattr("ai_presenter.cli.run_material_demo", fake_run_material_demo)
+    result = CliRunner().invoke(
+        app,
+        [
+            "demo",
+            "--profile",
+            "ringcentral-video",
+            "--package",
+            "ringcentral-video",
+            "--flow",
+            "meeting-controls-tour",
+            "--language",
+            "zh-CN",
+            "--tone",
+            "friendly",
+            "--dry-run",
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert "ringcentral-video" in result.output
+    assert "speech provider fake" in result.output
+    assert "Chinese / Friendly" in result.output
+    assert called is False
 
 
 def test_demo_reports_available_flows_when_flow_is_missing() -> None:
@@ -100,6 +274,149 @@ def test_controller_dry_run_loads_profile_package_and_flow() -> None:
     assert "Controller dry run complete." in result.stdout
 
 
+def test_controller_reports_available_flows_when_flow_is_missing() -> None:
+    result = CliRunner().invoke(
+        app,
+        [
+            "controller",
+            "--profile",
+            "ringcentral-video-bind-speaker",
+            "--package",
+            "ringcentral-video",
+            "--flow",
+            "missing-flow",
+            "--dry-run",
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert "Unknown demo flow: missing-flow" in result.output
+    assert "Available flows:" in result.output
+
+
+def test_controller_passes_language_and_tone_to_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[PresenterVoiceSettings] = []
+
+    def fake_run_controller(*_args: object, voice: PresenterVoiceSettings | None = None) -> None:
+        assert voice is not None
+        calls.append(voice)
+
+    monkeypatch.setattr("ai_presenter.cli.run_controller", fake_run_controller)
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "controller",
+            "--profile",
+            "ringcentral-video-bind-speaker",
+            "--package",
+            "ringcentral-video",
+            "--flow",
+            "meeting-control-map-demo",
+            "--language",
+            "English",
+            "--tone",
+            "mentor",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "Loaded voice: English / Coach" in result.stdout
+    assert calls == [PresenterVoiceSettings(language="en", tone="coach")]
+
+
+def test_controller_rejects_unsupported_profile_voice_before_runtime(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    called = False
+
+    def fake_run_controller(*_args: object, **_kwargs: object) -> None:
+        nonlocal called
+        called = True
+
+    monkeypatch.setattr("ai_presenter.cli.run_controller", fake_run_controller)
+    result = CliRunner().invoke(
+        app,
+        [
+            "controller",
+            "--profile",
+            "ringcentral-video",
+            "--package",
+            "ringcentral-video",
+            "--flow",
+            "meeting-control-map-demo",
+            "--language",
+            "zh-CN",
+            "--tone",
+            "friendly",
+            "--dry-run",
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert "speech provider fake" in result.output
+    assert "Chinese / Friendly" in result.output
+    assert called is False
+
+
+def test_demo_rejects_unknown_language_before_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
+    called = False
+
+    def fake_run_material_demo(*_args: object, **_kwargs: object) -> None:
+        nonlocal called
+        called = True
+
+    monkeypatch.setattr("ai_presenter.cli.run_material_demo", fake_run_material_demo)
+    result = CliRunner().invoke(
+        app,
+        [
+            "demo",
+            "--profile",
+            "ringcentral-video",
+            "--package",
+            "ringcentral-video",
+            "--flow",
+            "meeting-controls-tour",
+            "--language",
+            "es",
+            "--dry-run",
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert "Unsupported presenter language: es" in result.output
+    assert called is False
+
+
+def test_controller_rejects_unknown_tone_before_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
+    called = False
+
+    def fake_run_controller(*_args: object, **_kwargs: object) -> None:
+        nonlocal called
+        called = True
+
+    monkeypatch.setattr("ai_presenter.cli.run_controller", fake_run_controller)
+    result = CliRunner().invoke(
+        app,
+        [
+            "controller",
+            "--profile",
+            "ringcentral-video-bind-speaker",
+            "--package",
+            "ringcentral-video",
+            "--flow",
+            "meeting-control-map-demo",
+            "--tone",
+            "shouty",
+            "--dry-run",
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert "Unsupported presenter tone: shouty" in result.output
+    assert called is False
+
+
 def test_flows_lists_material_package_demo_flows() -> None:
     result = CliRunner().invoke(app, ["flows", "--package", "ringcentral-video"])
 
@@ -107,6 +424,77 @@ def test_flows_lists_material_package_demo_flows() -> None:
     assert "Package: ringcentral-video" in result.stdout
     assert "- meeting-control-map-demo: Meeting Control Map" in result.stdout
     assert "steps" in result.stdout
+
+
+def test_localization_report_outputs_ringcentral_chinese_coverage() -> None:
+    result = CliRunner().invoke(
+        app,
+        ["localization-report", "--package", "ringcentral-video"],
+    )
+
+    assert result.exit_code == 0
+    assert "Package: ringcentral-video" in result.stdout
+    assert "Language: zh" in result.stdout
+    assert "- meeting-controls-tour: 22/22 narration localized" in result.stdout
+    assert "- localized questions: 8/8" in result.stdout
+    assert "- localized answers: 8/8" in result.stdout
+    assert "questionAliases.zh present on 15/27 entrypoints (49 aliases)" in result.stdout
+    assert "Localization report: 51/51 demo steps" in result.stdout
+    assert "Loaded profile" not in result.stdout
+
+
+def test_localization_report_outputs_zero_for_explicit_uncovered_language() -> None:
+    result = CliRunner().invoke(
+        app,
+        ["localization-report", "--package", "ringcentral-video", "--language", "ja"],
+    )
+
+    assert result.exit_code == 0
+    assert "Language: ja" in result.stdout
+    assert "- meeting-controls-tour: 0/22 narration localized" in result.stdout
+    assert "missing: meeting-overview" in result.stdout
+    assert "- localized questions: 0/8" in result.stdout
+    assert "- localized answers: 0/8" in result.stdout
+    assert "questionAliases.ja present on 0/27 entrypoints (0 aliases)" in result.stdout
+
+
+def test_localization_report_require_complete_passes_for_chinese() -> None:
+    result = CliRunner().invoke(
+        app,
+        [
+            "localization-report",
+            "--package",
+            "ringcentral-video",
+            "--language",
+            "zh",
+            "--require-complete",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "Localization report: 51/51 demo steps" in result.stdout
+    assert "Localization coverage incomplete" not in result.stdout
+
+
+def test_localization_report_require_complete_fails_for_uncovered_language() -> None:
+    result = CliRunner().invoke(
+        app,
+        [
+            "localization-report",
+            "--package",
+            "ringcentral-video",
+            "--language",
+            "ja",
+            "--require-complete",
+        ],
+    )
+
+    assert result.exit_code == 1
+    assert "Language: ja" in result.stdout
+    assert "missing: meeting-overview" in result.stdout
+    assert "- localized questions: 0/8" in result.stdout
+    assert "- localized answers: 0/8" in result.stdout
+    assert "Localization coverage incomplete for ja." in result.stdout
 
 
 def test_entrypoints_lists_material_package_entrypoints_by_area() -> None:
@@ -120,6 +508,327 @@ def test_entrypoints_lists_material_package_entrypoints_by_area() -> None:
     assert "ringcentral.video.toolbar.audio" in result.stdout
     assert "ringcentral.video.toolbar.leave" in result.stdout
     assert "ringcentral.video.top.meeting-info" not in result.stdout
+
+
+def test_acceptance_draft_outputs_entrypoint_template() -> None:
+    result = CliRunner().invoke(
+        app,
+        [
+            "acceptance-draft",
+            "--package",
+            "ringcentral-video",
+            "--entrypoint",
+            "ringcentral.video.toolbar.chat",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "Draft only" in result.stdout
+    assert "Package: `ringcentral-video`" in result.stdout
+    assert "ringcentral.video.toolbar.chat" in result.stdout
+    assert "- Privacy notes:" in result.stdout
+    assert "- Locator updates needed:" in result.stdout
+    assert "Loaded profile" not in result.stdout
+
+
+def test_acceptance_draft_outputs_flow_template() -> None:
+    result = CliRunner().invoke(
+        app,
+        [
+            "acceptance-draft",
+            "--package",
+            "ringcentral-video",
+            "--flow",
+            "meeting-control-map-demo",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "meeting-control-map-demo" in result.stdout
+    assert "Meeting Control Map" in result.stdout
+    assert "ringcentral.video.main.add-coworkers" in result.stdout
+
+
+def test_acceptance_draft_requires_target() -> None:
+    result = CliRunner().invoke(app, ["acceptance-draft", "--package", "ringcentral-video"])
+
+    assert result.exit_code != 0
+    assert "Provide at least one target" in result.output
+
+
+def test_acceptance_draft_rejects_missing_flow_with_available_flows() -> None:
+    result = CliRunner().invoke(
+        app,
+        ["acceptance-draft", "--package", "ringcentral-video", "--flow", "missing-flow"],
+    )
+
+    assert result.exit_code != 0
+    assert "Unknown demo flow: missing-flow" in result.output
+    assert "Available flows:" in result.output
+
+
+def test_acceptance_draft_can_write_to_output_file(tmp_path: Path) -> None:
+    output_path = tmp_path / "acceptance-draft.md"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "acceptance-draft",
+            "--package",
+            "ringcentral-video",
+            "--entrypoint",
+            "ringcentral.video.main.add-coworkers",
+            "--output",
+            str(output_path),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert f"Wrote acceptance draft: {output_path}" in result.stdout
+    text = output_path.read_text(encoding="utf-8")
+    assert "ringcentral.video.main.add-coworkers" in text
+    assert "Draft only" in text
+
+
+def test_acceptance_draft_rejects_existing_output_file(tmp_path: Path) -> None:
+    output_path = tmp_path / "acceptance-draft.md"
+    output_path.write_text("existing draft", encoding="utf-8")
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "acceptance-draft",
+            "--package",
+            "ringcentral-video",
+            "--entrypoint",
+            "ringcentral.video.main.add-coworkers",
+            "--output",
+            str(output_path),
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert "Output file already exists" in result.output
+    assert output_path.read_text(encoding="utf-8") == "existing draft"
+
+
+def test_acceptance_draft_rejects_acceptance_runs_output_file(tmp_path: Path) -> None:
+    output_path = tmp_path / "acceptance-runs.md"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "acceptance-draft",
+            "--package",
+            "ringcentral-video",
+            "--entrypoint",
+            "ringcentral.video.main.add-coworkers",
+            "--output",
+            str(output_path),
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert "Refusing to write acceptance draft to acceptance-runs.md" in result.output
+    assert not output_path.exists()
+
+
+def test_validation_targets_lists_ringcentral_targets() -> None:
+    result = CliRunner().invoke(
+        app,
+        ["validation-targets", "--package", "ringcentral-video", "--priority", "P0"],
+    )
+
+    assert result.exit_code == 0
+    assert "Package: ringcentral-video" in result.stdout
+    assert "validation-checklist-index.md" in result.stdout
+    assert "rcv-add-coworkers-modal" in result.stdout
+    assert "rcv-controller-chat-question" in result.stdout
+    assert "Loaded profile" not in result.stdout
+
+
+def test_validation_targets_detail_outputs_draft_command() -> None:
+    result = CliRunner().invoke(
+        app,
+        [
+            "validation-targets",
+            "--package",
+            "ringcentral-video",
+            "--target",
+            "rcv-add-coworkers-modal",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "ringcentral.video.main.add-coworkers" in result.stdout
+    assert "Modal close" in result.stdout
+    assert "invite links" in result.stdout
+    assert (
+        "ai-presenter acceptance-draft --package ringcentral-video "
+        "--entrypoint ringcentral.video.main.add-coworkers"
+    ) in result.stdout
+
+
+def test_validation_targets_mixed_target_outputs_flow_and_entrypoint_draft_command() -> None:
+    result = CliRunner().invoke(
+        app,
+        [
+            "validation-targets",
+            "--package",
+            "ringcentral-video",
+            "--target",
+            "rcv-controller-chat-question",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "flows: meeting-control-map-demo" in result.stdout
+    assert "entrypoints: ringcentral.video.toolbar.chat" in result.stdout
+    assert (
+        "ai-presenter acceptance-draft --package ringcentral-video "
+        "--flow meeting-control-map-demo "
+        "--entrypoint ringcentral.video.toolbar.chat "
+        '--checklist-target "P0 Controller queued Chat question"'
+    ) in result.stdout
+
+
+def test_validation_targets_rejects_unknown_target_with_available_ids() -> None:
+    result = CliRunner().invoke(
+        app,
+        [
+            "validation-targets",
+            "--package",
+            "ringcentral-video",
+            "--target",
+            "missing-target",
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert "Unknown validation target: missing-target" in result.output
+    assert "rcv-add-coworkers-modal" in result.output
+
+
+def test_validation_targets_rejects_unknown_checklist_reference(tmp_path: Path) -> None:
+    checklist_path = tmp_path / "validation-checklist-index.md"
+    checklist_path.write_text(
+        "\n".join(
+            [
+                "# Validation Checklist",
+                "",
+                "## Priority Checklist",
+                "",
+                "| Priority | Route Or Group | Entrypoints | Current State | Validate | Cleanup | Privacy Boundary | Record Result |",
+                "| --- | --- | --- | --- | --- | --- | --- | --- |",
+                "| P0 | Missing route | `ringcentral.video.missing` | Missing | Validate | Cleanup | Privacy | `acceptance-runs.md` |",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "validation-targets",
+            "--package",
+            "ringcentral-video",
+            "--checklist",
+            str(checklist_path),
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert "ringcentral.video.missing" in result.output
+
+
+def test_validation_targets_include_blocked_lists_do_not_execute_routes() -> None:
+    result = CliRunner().invoke(
+        app,
+        ["validation-targets", "--package", "ringcentral-video", "--include-blocked"],
+    )
+
+    assert result.exit_code == 0
+    assert "rcv-recording" in result.stdout
+    assert "rcv-leave-end-meeting" in result.stdout
+    assert "ringcentral.video.more.recording" in result.stdout
+    assert "ringcentral.video.toolbar.leave" in result.stdout
+    assert "Do not execute" in result.stdout
+
+
+def test_voices_lists_language_tone_choices() -> None:
+    result = CliRunner().invoke(app, ["voices"])
+
+    assert result.exit_code == 0
+    assert "Languages:" in result.stdout
+    assert "English aliases:" in result.stdout
+    assert "Chinese aliases:" in result.stdout
+    assert "Tones:" in result.stdout
+    assert "Coach aliases:" in result.stdout
+
+
+def test_voices_catalog_output_is_ascii_safe_for_legacy_windows_console() -> None:
+    result = CliRunner().invoke(app, ["voices"])
+
+    assert result.exit_code == 0
+    assert result.stdout.isascii()
+
+
+def test_voices_profile_reports_supported_and_unsupported_languages() -> None:
+    result = CliRunner().invoke(app, ["voices", "--profile", "ringcentral-video"])
+
+    assert result.exit_code == 0
+    assert "Profile: ringcentral-video" in result.stdout
+    assert "Configured speech provider: fake" in result.stdout
+    assert "English / Professional: supported via fake" in result.stdout
+    assert "Chinese / Professional: unsupported" in result.stdout
+
+
+def test_voices_profile_reports_local_asset_status(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        "ai_presenter.cli.check_voice_asset_availability",
+        lambda *_args, **_kwargs: VoiceAssetAvailability(
+            status="OK",
+            route="windows-sapi-zh",
+            detail="speech=windows-sapi-zh found installed SAPI voice matching Huihui",
+        ),
+    )
+
+    result = CliRunner().invoke(app, ["voices", "--profile", "ringcentral-video-bind-speaker"])
+
+    assert result.exit_code == 0
+    assert "assets OK" in result.stdout
+    assert "Huihui" in result.stdout
+
+
+def test_voices_targeted_incompatible_profile_voice_exits_nonzero() -> None:
+    result = CliRunner().invoke(
+        app,
+        ["voices", "--profile", "ringcentral-video", "--language", "zh-CN", "--tone", "friendly"],
+    )
+
+    assert result.exit_code == 1
+    assert "Selected voice: Chinese / Friendly" in result.stdout
+    assert "speech provider fake" in result.stdout
+
+
+def test_voices_targeted_missing_assets_exits_nonzero(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        "ai_presenter.cli.check_voice_asset_availability",
+        lambda *_args, **_kwargs: VoiceAssetAvailability(
+            status="FAIL",
+            route="windows-sapi-zh",
+            detail="speech=windows-sapi-zh requires installed SAPI voice matching Huihui",
+        ),
+    )
+
+    result = CliRunner().invoke(
+        app,
+        ["voices", "--profile", "ringcentral-video-bind-speaker", "--language", "zh-CN"],
+    )
+
+    assert result.exit_code == 1
+    assert "Selected voice assets unavailable" in result.stdout
+    assert "Huihui" in result.stdout
 
 
 def test_doctor_loads_profile_package_and_flow(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -147,6 +856,53 @@ def test_doctor_loads_profile_package_and_flow(monkeypatch: pytest.MonkeyPatch) 
     assert "[OK] presenter context" in result.stdout
     assert "[WARN] RingCentral config" in result.stdout
     assert "Doctor completed:" in result.stdout
+
+
+def test_doctor_accepts_language_and_tone_voice_preflight(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(diagnostics, "_iter_process_executable_paths", lambda process_name: [])
+    monkeypatch.setattr(
+        diagnostics,
+        "check_voice_asset_availability",
+        lambda *_args, **_kwargs: VoiceAssetAvailability(
+            status="OK",
+            route="windows-sapi-zh",
+            detail="speech=windows-sapi-zh found installed SAPI voice matching Huihui",
+        ),
+    )
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "doctor",
+            "--profile",
+            "ringcentral-video-bind-speaker",
+            "--language",
+            "zh-CN",
+            "--tone",
+            "friendly",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "[OK] voice: Chinese / Friendly supported via speech=windows-sapi-zh" in result.stdout
+    assert "[OK] voice assets:" in result.stdout
+
+
+def test_doctor_rejects_unsupported_profile_voice(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(diagnostics, "_iter_process_executable_paths", lambda process_name: [])
+
+    result = CliRunner().invoke(
+        app,
+        ["doctor", "--profile", "ringcentral-video", "--language", "zh-CN"],
+    )
+
+    assert result.exit_code == 1
+    assert "[FAIL] voice:" in result.stdout
+    assert "speech provider fake" in result.stdout
 
 
 def test_doctor_rejects_package_that_does_not_support_profile(tmp_path: Path) -> None:

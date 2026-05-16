@@ -1,22 +1,39 @@
 import threading
 from pathlib import Path
 
+import pytest
+
 from ai_presenter.config.loader import load_profile
 from ai_presenter.config.models import DesktopAppProfile
 from ai_presenter.desktop.base import VisibleControl
 from ai_presenter.packages.loader import load_material_package
 from ai_presenter.packages.models import MaterialPackage
 from ai_presenter.desktop.base import VisibleWindow, WindowHandle
+from ai_presenter.runtime import controller as controller_module
 from ai_presenter.runtime.control import DemoControl
 from ai_presenter.runtime.controller import NO_RUNNING_APPS_LABEL
 from ai_presenter.runtime.controller import ChatTurn
+from ai_presenter.runtime.controller import ControllerAppliedStatusState
 from ai_presenter.runtime.controller import ControllerStatusSnapshot
+from ai_presenter.runtime.controller import ControllerStatusUpdate
 from ai_presenter.runtime.controller import PresenterController
 from ai_presenter.runtime.controller import _RunningAppScanState
+from ai_presenter.runtime.controller import _apply_button_state
+from ai_presenter.runtime.controller import _check_controller_voice_readiness
+from ai_presenter.runtime.controller import _ControllerVoiceReadinessCache
+from ai_presenter.runtime.controller import _voice_readiness_failure_message
+from ai_presenter.runtime.controller import describe_question_result
 from ai_presenter.runtime.controller import format_chat_turns
+from ai_presenter.runtime.controller import plan_controller_status_application
+from ai_presenter.runtime.controller import QuestionSubmitResult
+from ai_presenter.runtime.controller import render_operator_summary_text
+from ai_presenter.runtime.controller import render_voice_label
 from ai_presenter.runtime.controller import resolve_controller_status
+from ai_presenter.runtime.controller_view_model import ControllerOperatorSnapshot
+from ai_presenter.runtime.controller_view_model import build_controller_operator_view_model
 from ai_presenter.runtime.temporary_package import build_temporary_package
 from ai_presenter.runtime.voice import PresenterVoiceSettings
+from ai_presenter.runtime.voice_assets import VoiceAssetAvailability
 
 
 def _controller_inputs() -> tuple[DesktopAppProfile, MaterialPackage]:
@@ -24,6 +41,74 @@ def _controller_inputs() -> tuple[DesktopAppProfile, MaterialPackage]:
     assert isinstance(profile, DesktopAppProfile)
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
     return profile, package
+
+
+def test_controller_voice_readiness_adapts_available_assets() -> None:
+    profile, _package = _controller_inputs()
+
+    readiness = _check_controller_voice_readiness(
+        profile,
+        PresenterVoiceSettings(language="zh"),
+        checker=lambda *_args: VoiceAssetAvailability(
+            status="OK",
+            route="windows-sapi-zh",
+            detail="speech=windows-sapi-zh found installed SAPI voice matching Huihui",
+        ),
+    )
+
+    assert readiness is not None
+    assert readiness.status == "OK"
+    assert readiness.label == "OK"
+
+
+def test_controller_voice_readiness_converts_checker_exception_to_failure() -> None:
+    profile, _package = _controller_inputs()
+
+    def checker(*_args: object) -> VoiceAssetAvailability | None:
+        raise RuntimeError("SAPI unavailable")
+
+    readiness = _check_controller_voice_readiness(
+        profile,
+        PresenterVoiceSettings(language="zh"),
+        checker=checker,
+    )
+
+    assert readiness is not None
+    assert readiness.status == "FAIL"
+    assert "SAPI unavailable" in readiness.detail
+    failure = _voice_readiness_failure_message(readiness)
+    assert failure is not None
+    assert "SAPI unavailable" in failure
+
+
+def test_controller_voice_readiness_cache_reuses_selected_voice_until_it_changes() -> None:
+    profile, _package = _controller_inputs()
+    calls: list[PresenterVoiceSettings] = []
+
+    def checker(
+        _profile: object,
+        voice: PresenterVoiceSettings,
+    ) -> VoiceAssetAvailability | None:
+        calls.append(voice)
+        return VoiceAssetAvailability(
+            status="OK",
+            route="windows-sapi-zh",
+            detail="speech=windows-sapi-zh found installed SAPI voice matching Huihui",
+        )
+
+    cache = _ControllerVoiceReadinessCache(profile=profile, checker=checker)
+
+    first = cache.get(PresenterVoiceSettings(language="zh", tone="friendly"))
+    second = cache.get(PresenterVoiceSettings(language="zh-CN", tone="friendly"))
+    third = cache.get(PresenterVoiceSettings(language="zh", tone="coach"))
+
+    assert first == second
+    assert third is not None
+    assert len(calls) == 2
+    assert calls == [
+        PresenterVoiceSettings(language="zh", tone="friendly"),
+        PresenterVoiceSettings(language="zh", tone="coach"),
+    ]
 
 
 def test_presenter_controller_exposes_running_state_and_runner_inputs() -> None:
@@ -72,6 +157,53 @@ def test_presenter_controller_exposes_running_state_and_runner_inputs() -> None:
             PresenterVoiceSettings(tone="conversational"),
         )
     ]
+
+
+def test_presenter_controller_forwards_initial_voice_without_setter() -> None:
+    profile, package = _controller_inputs()
+    calls: list[PresenterVoiceSettings] = []
+
+    def runner(*_args: object, voice: PresenterVoiceSettings | None = None, **_kwargs: object) -> None:
+        assert voice is not None
+        calls.append(voice)
+
+    controller = PresenterController(
+        profile=profile,
+        material_package=package,
+        flow_id="meeting-control-map-demo",
+        runner=runner,
+        voice=PresenterVoiceSettings(language="zh-CN", tone="friendly"),
+    )
+
+    controller.start()
+    controller.join(timeout=1)
+
+    assert calls == [PresenterVoiceSettings(language="zh", tone="friendly")]
+
+
+def test_presenter_controller_validates_voice_before_runner_thread() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video.yaml"))
+    assert isinstance(profile, DesktopAppProfile)
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    called = False
+
+    def runner(*_args: object, **_kwargs: object) -> None:
+        nonlocal called
+        called = True
+
+    controller = PresenterController(
+        profile=profile,
+        material_package=package,
+        flow_id="meeting-control-map-demo",
+        runner=runner,
+        voice=PresenterVoiceSettings(language="zh-CN", tone="friendly"),
+    )
+
+    with pytest.raises(ValueError, match="Chinese / Friendly"):
+        controller.start()
+
+    assert called is False
+    assert controller.is_running is False
 
 
 def test_presenter_controller_records_runner_errors() -> None:
@@ -141,12 +273,14 @@ def test_presenter_controller_runs_existing_window_target() -> None:
     assert calls == [("ringcentral-video-bind-speaker", "temp.demo.10", "temp-demo", handle)]
 
 
-def test_presenter_controller_interrupts_current_demo_for_safe_question() -> None:
+def test_presenter_controller_queues_safe_question_without_stopping_running_demo() -> None:
     profile, package = _controller_inputs()
     control = DemoControl()
     started = threading.Event()
-    stop_requested = threading.Event()
+    interrupt_seen = threading.Event()
+    release = threading.Event()
     calls: list[str] = []
+    queued_steps: list[str] = []
 
     def runner(
         captured_profile: DesktopAppProfile,
@@ -157,11 +291,13 @@ def test_presenter_controller_interrupts_current_demo_for_safe_question() -> Non
         voice: PresenterVoiceSettings | None = None,
     ) -> None:
         calls.append(captured_flow_id)
-        if captured_flow_id == "meeting-control-map-demo":
-            started.set()
-            while not control.is_stop_requested:
-                stop_requested.wait(timeout=0.01)
-            stop_requested.set()
+        started.set()
+        while not release.is_set():
+            interrupt = control.pop_interrupt()
+            if interrupt is not None:
+                queued_steps.append(interrupt.id)
+                interrupt_seen.set()
+            release.wait(timeout=0.01)
 
     controller = PresenterController(
         profile=profile,
@@ -175,19 +311,23 @@ def test_presenter_controller_interrupts_current_demo_for_safe_question() -> Non
     assert started.wait(timeout=1)
 
     result = controller.submit_question("chat")
-    assert stop_requested.wait(timeout=1)
+    assert interrupt_seen.wait(timeout=1)
+    release.set()
     controller.join(timeout=1)
 
     assert "Chat" in result.answer_text or "chat" in result.answer_text
-    assert result.demonstration_status == "interrupting"
-    assert calls == ["meeting-control-map-demo", "question-answer-demo"]
+    assert result.demonstration_status == "queued"
+    assert result.entrypoint_id == "ringcentral.video.toolbar.chat"
+    assert result.can_operate is True
+    assert control.is_stop_requested is False
+    assert calls == ["meeting-control-map-demo"]
+    assert queued_steps == ["question-ringcentral.video.toolbar.chat"]
 
 
-def test_presenter_controller_end_clears_pending_question_demo() -> None:
+def test_presenter_controller_end_clears_queued_question_before_next_run() -> None:
     profile, package = _controller_inputs()
     control = DemoControl()
     started = threading.Event()
-    stop_requested = threading.Event()
     release = threading.Event()
     calls: list[str] = []
 
@@ -200,12 +340,8 @@ def test_presenter_controller_end_clears_pending_question_demo() -> None:
         voice: PresenterVoiceSettings | None = None,
     ) -> None:
         calls.append(captured_flow_id)
-        if captured_flow_id == "meeting-control-map-demo":
-            started.set()
-            while not control.is_stop_requested:
-                stop_requested.wait(timeout=0.01)
-            stop_requested.set()
-            release.wait(timeout=1)
+        started.set()
+        release.wait(timeout=1)
 
     controller = PresenterController(
         profile=profile,
@@ -218,13 +354,14 @@ def test_presenter_controller_end_clears_pending_question_demo() -> None:
     controller.start()
     assert started.wait(timeout=1)
     result = controller.submit_question("chat")
-    assert result.demonstration_status == "interrupting"
-    assert stop_requested.wait(timeout=1)
+    assert result.demonstration_status == "queued"
 
     controller.end()
     release.set()
     controller.join(timeout=1)
 
+    control.reset()
+    assert control.pop_interrupt() is None
     assert calls == ["meeting-control-map-demo"]
 
 
@@ -276,6 +413,34 @@ def test_presenter_controller_starts_safe_question_demo_when_idle() -> None:
     ]
 
 
+def test_presenter_controller_starts_safe_question_demo_with_indexed_flow_lookup() -> None:
+    profile, package = _controller_inputs()
+    calls: list[str] = []
+
+    def runner(
+        _profile: DesktopAppProfile,
+        captured_package: MaterialPackage,
+        captured_flow_id: str,
+        *,
+        control: DemoControl,
+        voice: PresenterVoiceSettings | None = None,
+    ) -> None:
+        calls.append(captured_package.demo_flow_by_id(captured_flow_id).id)
+
+    controller = PresenterController(
+        profile=profile,
+        material_package=package,
+        flow_id="meeting-control-map-demo",
+        runner=runner,
+    )
+
+    result = controller.submit_question("chat")
+    controller.join(timeout=1)
+
+    assert result.demonstration_status == "started"
+    assert calls == ["question-answer-demo"]
+
+
 def test_presenter_controller_answers_risky_question_without_demo() -> None:
     profile, package = _controller_inputs()
     calls: list[str] = []
@@ -300,6 +465,8 @@ def test_presenter_controller_answers_risky_question_without_demo() -> None:
     result = controller.submit_question("leave meeting")
 
     assert result.demonstration_status == "text_only"
+    assert result.entrypoint_id == "ringcentral.video.toolbar.leave"
+    assert result.can_operate is False
     assert result.answer_text
     assert calls == []
 
@@ -327,6 +494,82 @@ def test_controller_session_answers_question_text() -> None:
     result = controller.submit_question("chat")
 
     assert "Chat" in result.answer_text or "chat" in result.answer_text
+
+
+def test_run_controller_validates_initial_voice_before_desktop_driver(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    profile = load_profile(Path("profiles/ringcentral-video.yaml"))
+    assert isinstance(profile, DesktopAppProfile)
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    calls: list[str] = []
+
+    monkeypatch.setattr(controller_module, "WindowsDesktopDriver", lambda: calls.append("desktop"))
+
+    with pytest.raises(ValueError, match="Chinese / Friendly"):
+        controller_module.run_controller(
+            profile,
+            package,
+            "meeting-control-map-demo",
+            voice=PresenterVoiceSettings(language="zh-CN", tone="friendly"),
+        )
+
+    assert calls == []
+
+
+def test_run_controller_validates_flow_before_desktop_driver(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    profile, package = _controller_inputs()
+
+    def fail_desktop_setup() -> object:
+        raise AssertionError("desktop should not start")
+
+    monkeypatch.setattr(controller_module, "WindowsDesktopDriver", fail_desktop_setup)
+
+    with pytest.raises(KeyError, match="Unknown demo flow: missing-flow"):
+        controller_module.run_controller(profile, package, "missing-flow")
+
+
+def test_describe_question_result_distinguishes_queued_started_and_risky() -> None:
+    queued = QuestionSubmitResult(
+        answer_text="Chat: Open chat.",
+        demonstration_status="queued",
+        demonstration_message="I queued that for the next safe step.",
+        entrypoint_id="ringcentral.video.toolbar.chat",
+        can_operate=True,
+    )
+    started = QuestionSubmitResult(
+        answer_text="Chat: Open chat.",
+        demonstration_status="started",
+        demonstration_message="Demonstrating it now.",
+        entrypoint_id="ringcentral.video.toolbar.chat",
+        can_operate=True,
+    )
+    risky = QuestionSubmitResult(
+        answer_text="Leave meeting: Leave or end the meeting.",
+        entrypoint_id="ringcentral.video.toolbar.leave",
+        can_operate=False,
+    )
+
+    assert describe_question_result(queued) == "Queued safe demo: ringcentral.video.toolbar.chat"
+    assert describe_question_result(started) == "Demonstrating: ringcentral.video.toolbar.chat"
+    assert (
+        describe_question_result(risky)
+        == "Answered only: ringcentral.video.toolbar.leave is not safe to operate automatically"
+    )
+
+
+def test_render_voice_label_uses_controller_labels() -> None:
+    assert render_voice_label(PresenterVoiceSettings()) == "English / Professional"
+    assert (
+        render_voice_label(PresenterVoiceSettings(language="zh", tone="conversational"))
+        == "Chinese / Conversational"
+    )
+    assert (
+        render_voice_label(PresenterVoiceSettings(language="zh-CN", tone="friendly"))
+        == "Chinese / Friendly"
+    )
 
 
 def test_format_chat_turns_keeps_history_in_order() -> None:
@@ -379,6 +622,143 @@ def test_resolve_controller_status_reports_switching_before_running() -> None:
     assert update.status == "Switching to answer"
     assert update.pause_label == "Pause"
     assert update.mark_session_stopped is False
+
+
+def test_resolve_controller_status_uses_unquoted_key_error_message() -> None:
+    update = resolve_controller_status(
+        ControllerStatusSnapshot(
+            current_status="Ready",
+            last_error=KeyError("Unknown demo flow: missing-flow. Available flows: demo"),
+            is_running=False,
+            is_paused=False,
+            is_stopping=False,
+            is_switching_targets=False,
+            session_is_running=True,
+        )
+    )
+
+    assert update.status == "Error: Unknown demo flow: missing-flow. Available flows: demo"
+    assert update.mark_session_stopped is True
+
+
+def test_resolve_controller_status_does_not_repeat_error_stop_after_session_stopped() -> None:
+    update = resolve_controller_status(
+        ControllerStatusSnapshot(
+            current_status="Error: boom",
+            last_error=RuntimeError("boom"),
+            is_running=False,
+            is_paused=False,
+            is_stopping=False,
+            is_switching_targets=False,
+            session_is_running=False,
+        )
+    )
+
+    assert update.status == "Error: boom"
+    assert update.mark_session_stopped is False
+
+
+def test_controller_status_application_skips_operator_refresh_when_unchanged() -> None:
+    application = plan_controller_status_application(
+        ControllerAppliedStatusState(status="Ready", pause_label="Pause"),
+        ControllerStatusUpdate(status="Ready", pause_label="Pause"),
+    )
+
+    assert application.status_changed is False
+    assert application.pause_label_changed is False
+    assert application.mark_session_stopped is False
+    assert application.refresh_operator_view is False
+    assert application.state == ControllerAppliedStatusState(status="Ready", pause_label="Pause")
+
+
+def test_controller_status_application_refreshes_when_status_or_pause_changes() -> None:
+    application = plan_controller_status_application(
+        ControllerAppliedStatusState(status="Running", pause_label="Pause"),
+        ControllerStatusUpdate(status="Paused", pause_label="Resume"),
+    )
+
+    assert application.status_changed is True
+    assert application.pause_label_changed is True
+    assert application.refresh_operator_view is True
+    assert application.state == ControllerAppliedStatusState(status="Paused", pause_label="Resume")
+
+
+def test_controller_status_application_refreshes_for_session_stop_side_effect() -> None:
+    application = plan_controller_status_application(
+        ControllerAppliedStatusState(status="Ended", pause_label="Pause"),
+        ControllerStatusUpdate(status="Ended", pause_label="Pause", mark_session_stopped=True),
+    )
+
+    assert application.status_changed is False
+    assert application.pause_label_changed is False
+    assert application.mark_session_stopped is True
+    assert application.refresh_operator_view is True
+
+
+def test_render_operator_summary_text_uses_multiline_rows() -> None:
+    view_model = build_controller_operator_view_model(
+        ControllerOperatorSnapshot(
+            source_mode="material_package",
+            material_package_id="ringcentral-video",
+            material_flow_id="meeting-control-map-demo",
+            running_app_label="",
+            has_running_app_selection=False,
+            has_scanned_running_app=False,
+            scanned_package_id="",
+            scanned_flow_id="",
+            voice=PresenterVoiceSettings(),
+            voice_readiness=None,
+            run_status="Ready",
+            is_running=False,
+            is_stopping=False,
+            question_text="",
+            last_question_outcome="",
+        )
+    )
+
+    text = render_operator_summary_text(view_model)
+
+    assert text.splitlines() == [
+        "Target: Material package: ringcentral-video",
+        "Flow: meeting-control-map-demo",
+        "Voice: English / Professional | assets: Not required",
+        "State: Ready | scan: Package target ready",
+        "Question: No question yet",
+        "Actions: Submit blocked: Type a question to enable Submit.",
+    ]
+
+
+class _FakeButton:
+    def __init__(self, state: str) -> None:
+        self.state = state
+        self.configure_calls: list[str] = []
+
+    def cget(self, key: str) -> str:
+        assert key == "state"
+        return self.state
+
+    def configure(self, *, state: str) -> None:
+        self.configure_calls.append(state)
+        self.state = state
+
+
+def test_apply_button_state_skips_configure_when_state_matches() -> None:
+    button = _FakeButton("normal")
+
+    changed = _apply_button_state(button, enabled=True)
+
+    assert changed is False
+    assert button.configure_calls == []
+
+
+def test_apply_button_state_configures_only_on_state_change() -> None:
+    button = _FakeButton("disabled")
+
+    changed = _apply_button_state(button, enabled=True)
+
+    assert changed is True
+    assert button.configure_calls == ["normal"]
+    assert button.state == "normal"
 
 
 def test_running_app_scan_state_starts_unscanned() -> None:

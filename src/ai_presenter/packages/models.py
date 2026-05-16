@@ -1,6 +1,9 @@
+from collections.abc import Mapping
+from dataclasses import dataclass
+from types import MappingProxyType
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, field_validator, model_validator
 
 _PASSIVE_DEMO_OPERATIONS = frozenset({"explain", "point", "verify"})
 _EXECUTABLE_OPEN_STEP_ACTIONS = frozenset(
@@ -29,6 +32,15 @@ class OperationEntrypoint(CamelModel):
     purpose: str
     open_steps: list[PackageOpenStep] = Field(default_factory=list, alias="openSteps")
     presenter_notes: list[str] = Field(default_factory=list, alias="presenterNotes")
+    question_aliases: dict[str, list[str]] = Field(default_factory=dict, alias="questionAliases")
+
+
+@dataclass(frozen=True)
+class EntrypointQuestionAlias:
+    entrypoint_id: str
+    language: str
+    alias: str
+    normalized_alias: str
 
 
 class DemoStepAction(CamelModel):
@@ -67,6 +79,8 @@ class Explainer(CamelModel):
 class QuestionAnswer(CamelModel):
     question: str
     answer: str
+    localized_questions: dict[str, list[str]] = Field(default_factory=dict, alias="localizedQuestions")
+    localized_answers: dict[str, str] = Field(default_factory=dict, alias="localizedAnswers")
     related_entrypoint_ids: list[str] = Field(default_factory=list, alias="relatedEntrypointIds")
 
 
@@ -86,6 +100,11 @@ class MaterialPackage(CamelModel):
     explainers: dict[str, Explainer] = Field(default_factory=dict)
     qa: list[QuestionAnswer] = Field(default_factory=list)
     manual_controls: list[ManualControl] = Field(default_factory=list, alias="manualControls")
+    _entrypoints_by_id: dict[str, OperationEntrypoint] = PrivateAttr(default_factory=dict)
+    _demo_flows_by_id: dict[str, DemoFlow] = PrivateAttr(default_factory=dict)
+    _entrypoint_question_aliases: tuple[EntrypointQuestionAlias, ...] = PrivateAttr(
+        default_factory=tuple
+    )
 
     @field_validator("app_id", "app_name")
     @classmethod
@@ -99,13 +118,33 @@ class MaterialPackage(CamelModel):
     def validate_entrypoint_references(self) -> "MaterialPackage":
         entrypoint_ids: set[str] = set()
         entrypoints_by_id: dict[str, OperationEntrypoint] = {}
+        entrypoint_question_aliases: list[EntrypointQuestionAlias] = []
+        demo_flow_ids: set[str] = set()
+        demo_flows_by_id: dict[str, DemoFlow] = {}
         for entrypoint in self.operation_entrypoints:
             if entrypoint.id in entrypoint_ids:
                 raise ValueError(f"duplicate operation entrypoint id: {entrypoint.id}")
             entrypoint_ids.add(entrypoint.id)
             entrypoints_by_id[entrypoint.id] = entrypoint
+            for language, aliases in entrypoint.question_aliases.items():
+                for alias in aliases:
+                    normalized_alias = alias.strip().casefold()
+                    if not normalized_alias:
+                        continue
+                    entrypoint_question_aliases.append(
+                        EntrypointQuestionAlias(
+                            entrypoint_id=entrypoint.id,
+                            language=language,
+                            alias=alias.strip(),
+                            normalized_alias=normalized_alias,
+                        )
+                    )
 
         for flow in self.demo_flows:
+            if flow.id in demo_flow_ids:
+                raise ValueError(f"duplicate demo flow id: {flow.id}")
+            demo_flow_ids.add(flow.id)
+            demo_flows_by_id[flow.id] = flow
             for step in flow.steps:
                 if step.action.entrypoint_id not in entrypoint_ids:
                     raise ValueError(
@@ -131,13 +170,42 @@ class MaterialPackage(CamelModel):
                 related_ids=item.related_entrypoint_ids,
                 entrypoint_ids=entrypoint_ids,
             )
+        self._entrypoints_by_id = entrypoints_by_id
+        self._demo_flows_by_id = demo_flows_by_id
+        self._entrypoint_question_aliases = tuple(entrypoint_question_aliases)
         return self
 
+    @property
+    def entrypoints_by_id(self) -> Mapping[str, OperationEntrypoint]:
+        return MappingProxyType(self._entrypoints_by_id)
+
+    @property
+    def demo_flows_by_id(self) -> Mapping[str, DemoFlow]:
+        return MappingProxyType(self._demo_flows_by_id)
+
+    @property
+    def entrypoint_question_aliases(self) -> tuple[EntrypointQuestionAlias, ...]:
+        return self._entrypoint_question_aliases
+
     def entrypoint_by_id(self, entrypoint_id: str) -> OperationEntrypoint:
-        for entrypoint in self.operation_entrypoints:
-            if entrypoint.id == entrypoint_id:
-                return entrypoint
-        raise KeyError(f"Unknown operation entrypoint: {entrypoint_id}")
+        try:
+            return self._entrypoints_by_id[entrypoint_id]
+        except KeyError:
+            raise KeyError(f"Unknown operation entrypoint: {entrypoint_id}") from None
+
+    def demo_flow_by_id(self, flow_id: str) -> DemoFlow:
+        try:
+            return self._demo_flows_by_id[flow_id]
+        except KeyError:
+            available = ", ".join(self._demo_flows_by_id) or "none"
+            raise KeyError(
+                f"Unknown demo flow: {flow_id}. Available flows: {available}"
+            ) from None
+
+    def with_demo_flow(self, flow: DemoFlow) -> "MaterialPackage":
+        data = self.model_dump(by_alias=True)
+        data["demoFlows"] = [*data.get("demoFlows", []), flow.model_dump(by_alias=True)]
+        return MaterialPackage.model_validate(data)
 
 
 def _validate_demo_step_open_steps(

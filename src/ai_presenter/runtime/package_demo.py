@@ -1,11 +1,16 @@
 from __future__ import annotations
 
+import logging
 import time
 from collections.abc import Callable
+from time import perf_counter
 from typing import Protocol
 
 from ai_presenter.desktop.base import WindowHandle
 from ai_presenter.packages.models import DemoFlow, DemoStepAction, MaterialPackage, PackageOpenStep
+from ai_presenter.runtime.logging import elapsed_ms, log_timed_event
+
+logger = logging.getLogger("ai_presenter.runtime.package_demo")
 
 
 class PackageActionExecutionError(RuntimeError):
@@ -76,6 +81,27 @@ class PackageActionExecutor:
         self.execute_action(action.entrypoint_id, operation=action.operation)
 
     def execute_action(self, entrypoint_id: str, *, operation: str) -> None:
+        start = perf_counter()
+        status = "ok"
+        try:
+            self._execute_action(entrypoint_id, operation=operation)
+        except Exception:
+            status = "error"
+            raise
+        finally:
+            log_timed_event(
+                logger,
+                "package_action_executed",
+                duration_ms=elapsed_ms(start, perf_counter()),
+                status=status,
+                package=self._package.app_id,
+                entrypoint=entrypoint_id,
+                operation=operation,
+                deferred_cleanup=self._defer_cleanup,
+                pending_cleanup=self._pending_cleanup is not None,
+            )
+
+    def _execute_action(self, entrypoint_id: str, *, operation: str) -> None:
         if operation in {"explain", "point", "verify"}:
             return
 
@@ -311,8 +337,4 @@ def _cleanup_mode(steps: list[PackageOpenStep]) -> str:
 
 
 def demo_flow_by_id(package: MaterialPackage, flow_id: str) -> DemoFlow:
-    for flow in package.demo_flows:
-        if flow.id == flow_id:
-            return flow
-    available = ", ".join(flow.id for flow in package.demo_flows) or "none"
-    raise KeyError(f"Unknown demo flow: {flow_id}. Available flows: {available}")
+    return package.demo_flow_by_id(flow_id)

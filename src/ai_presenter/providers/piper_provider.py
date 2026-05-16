@@ -1,13 +1,23 @@
+import importlib.util
 import subprocess
 import sys
 import tempfile
 from collections.abc import Callable
+from dataclasses import dataclass
 from os import environ
 from pathlib import Path
 
 from ai_presenter.providers.base import SpeechAudio
 
 PiperRunner = Callable[[list[str], float], subprocess.CompletedProcess[str]]
+
+
+@dataclass(frozen=True)
+class PiperVoiceAssets:
+    voice: str
+    data_dir: Path
+    model_path: Path
+    config_path: Path
 
 
 class PiperSpeechProvider:
@@ -81,6 +91,28 @@ def _run_piper(command: list[str], timeout: float) -> subprocess.CompletedProces
         raise RuntimeError("Python executable was not found while running Piper TTS.") from exc
     except subprocess.TimeoutExpired as exc:
         raise RuntimeError("Piper TTS timed out.") from exc
+
+
+def default_piper_voice_assets(
+    voice: str = "en_US-lessac-medium",
+    data_dir: Path | None = None,
+) -> PiperVoiceAssets:
+    normalized_voice = _require_nonblank(voice, "Piper voice cannot be blank.")
+    root = data_dir or _default_data_dir()
+    return PiperVoiceAssets(
+        voice=normalized_voice,
+        data_dir=root,
+        model_path=root / f"{normalized_voice}.onnx",
+        config_path=root / f"{normalized_voice}.onnx.json",
+    )
+
+
+def piper_voice_assets_available(assets: PiperVoiceAssets) -> bool:
+    return assets.model_path.is_file() and assets.config_path.is_file()
+
+
+def piper_module_available(module_name: str = "piper") -> bool:
+    return importlib.util.find_spec(module_name) is not None
 
 
 def _require_nonblank(value: str, message: str) -> str:

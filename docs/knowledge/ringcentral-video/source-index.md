@@ -1,0 +1,55 @@
+# RingCentral Video Source Index
+
+Date: 2026-05-16
+
+## Purpose
+
+This index separates product-scope sources from executable automation evidence for the AiPresenter RingCentral Video package.
+
+- Official RingCentral sources describe product surfaces and feature taxonomy.
+- Repository-local sources describe what AiPresenter currently knows, tests, and may operate.
+- Live manual observations are required before a locator or flow is treated as current-build evidence.
+
+## Official RingCentral Sources
+
+| Source | URL | Supports | Use In Package |
+| --- | --- | --- | --- |
+| RingCentral Video introduction | https://support.ringcentral.com/es/es/shared/content/app/intro-to-ringcentral-video-.html | Product framing: start, schedule, join, manage meetings, view recordings, chat, background, captions, security. | Scope future lifecycle, recordings, captions, and security coverage. |
+| In-meeting controls index | https://support.ringcentral.com/au/en/video/in-meeting-controls.html | Attendee controls, host controls, virtual background, presentation mode, breakout rooms. | Coverage map for future entrypoints and QA. |
+| Attendee controls | https://support.ringcentral.com/es/es/shared/content/app/using-ringcentral-video-attendee-controls-desktop-web.html | Meeting ID, network, mute/unmute, video, share, invite, participants, chat, More, Leave. | Compare against current toolbar package coverage. |
+| Host controls side navigation | https://support.ringcentral.com/shared/sidenav/app/video/desktop-web/ringcentral-host-host-controls.html | Host/moderator topics: recording, participants, security, waiting room, moderator, mute others, turn off video. | Future host-control and permission-dependent coverage. |
+| Meeting settings index | https://support.ringcentral.com/ca/en/video/meeting-settings.html | Managing meetings, recordings, settings, entry/exit tones, end-to-end encryption, audio settings, screen-share DND, advanced insights. | Future before/after meeting and settings coverage. |
+
+## Repository-Local Sources
+
+| Source | Role | Repository Signal |
+| --- | --- | --- |
+| `packages/ringcentral-video.yaml` | Main package knowledge | 27 entrypoints, 4 flows, 21 explainers, 3 QA items, manual controls, safety notes. |
+| `profiles/ringcentral-video*.yaml` | Runtime profiles | Launch/bind paths and provider combinations for fake, OpenAI, Codex CLI, Piper, Windows SAPI paths. |
+| `src/ai_presenter/adapters/ringcentral.py` | State extraction | Meeting joined, mic, camera, participant count, permission/waiting-room dialogs, connection warning. |
+| `src/ai_presenter/runtime/package_demo.py` | Action execution | Supported actions and cleanup modes for package `openSteps`. |
+| `src/ai_presenter/runtime/adaptive_demo.py` | Demo adaptation | Current participant-count adjustment for empty-room vs active meeting behavior. |
+| `src/ai_presenter/runtime/questions.py` | Question matching | English token matching plus Cycle 006 package-owned localized Q&A and `questionAliases`; legacy Python aliases remain as fallback. |
+| `docs/runbooks/ringcentral-manual-acceptance.md` | Manual acceptance checklist | Procedure only; dated acceptance evidence must be recorded in `docs/knowledge/ringcentral-video/acceptance-runs.md`. |
+| `docs/knowledge/ringcentral-video/evidence-index.md` | Evidence navigation | Cross-links package entrypoints, observation evidence, locator confidence, privacy policy, and next acceptance targets. |
+| `docs/knowledge/ringcentral-video/validation-checklist-index.md` | Manual validation procedure | Operator-ready checklist for turning evidence gaps into privacy-safe manual runs; proof still belongs in `acceptance-runs.md`. |
+| `docs/agent-handoffs/cycle-000-ringcentral-knowledge.md` | Cycle 000 review | Identifies locator drift, state gaps, schema companion-doc need. |
+| `docs/agent-handoffs/cycle-001-retro.md` | Cycle 001 lessons | Notes encoding/alias risks and recommends knowledge package hardening. |
+| `tests/unit/test_material_packages.py` | Package validation | Validates package schema, references, explainers, QA, and localization coverage. |
+| `tests/unit/test_ringcentral_profile.py` and `tests/integration/test_ringcentral_profile.py` | Profile/runtime behavior | Protects RingCentral adapter/profile assumptions with fakes and dry-run style paths. |
+
+## Source Discipline
+
+- A feature listed in official docs may be added to backlog or explain-only package knowledge.
+- A feature should not become executable until it has a local observation record and a locator entry.
+- Sensitive surfaces require privacy policy entries before they are exposed in demos or Q&A.
+- Layout variants should be recorded as observations before changing YAML routes.
+
+## Coverage Implications
+
+Current package coverage is strongest for in-meeting attendee controls. The official sources indicate future coverage gaps:
+
+- Before meeting: scheduling, joining, calendar connections, personal meeting ID.
+- In meeting: closed captions, whiteboard, presentation mode, computer audio sharing, background noise, CPU/network detail.
+- Host/moderator: recording, security, waiting room, participant management, mute others, turn off video, moderator assignment.
+- After meeting: recordings, advanced insights, transcripts or summaries where available.

@@ -5,6 +5,8 @@ from pathlib import Path
 
 import pytest
 
+from ai_presenter.providers.piper_provider import default_piper_voice_assets
+from ai_presenter.providers.piper_provider import piper_voice_assets_available
 from ai_presenter.providers.piper_provider import PiperSpeechProvider
 
 
@@ -58,3 +60,22 @@ def test_piper_provider_reports_failed_command(tmp_path: Path) -> None:
 
     with pytest.raises(RuntimeError, match="missing model"):
         provider.synthesize("Hello.")
+
+
+def test_default_piper_voice_assets_use_provider_data_dir(tmp_path: Path) -> None:
+    assets = default_piper_voice_assets(data_dir=tmp_path)
+
+    assert assets.voice == "en_US-lessac-medium"
+    assert assets.model_path == tmp_path / "en_US-lessac-medium.onnx"
+    assert assets.config_path == tmp_path / "en_US-lessac-medium.onnx.json"
+
+
+def test_piper_voice_assets_available_requires_model_and_config(tmp_path: Path) -> None:
+    assets = default_piper_voice_assets(data_dir=tmp_path)
+    assert piper_voice_assets_available(assets) is False
+
+    assets.model_path.write_text("model", encoding="utf-8")
+    assert piper_voice_assets_available(assets) is False
+
+    assets.config_path.write_text("{}", encoding="utf-8")
+    assert piper_voice_assets_available(assets) is True

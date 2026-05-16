@@ -2,7 +2,10 @@ from pathlib import Path
 
 import pytest
 
+from ai_presenter.providers.windows_speech import InstalledSapiVoice
 from ai_presenter.providers.windows_speech import WindowsSapiSpeechProvider
+from ai_presenter.providers.windows_speech import list_installed_sapi_voices
+from ai_presenter.providers.windows_speech import sapi_voice_available
 
 
 def test_windows_sapi_speech_provider_returns_wav_audio() -> None:
@@ -61,3 +64,34 @@ def test_windows_sapi_speech_provider_validates_rate_and_volume() -> None:
 
     with pytest.raises(ValueError, match="volume"):
         WindowsSapiSpeechProvider(volume=101)
+
+
+def test_list_installed_sapi_voices_uses_injected_dispatcher() -> None:
+    class FakeToken:
+        Id = "token-id"
+
+        def GetDescription(self) -> str:
+            return "Microsoft Huihui Desktop"
+
+    class FakeVoice:
+        def GetVoices(self) -> list[FakeToken]:
+            return [FakeToken()]
+
+    def dispatch(name: str) -> FakeVoice:
+        assert name == "SAPI.SpVoice"
+        return FakeVoice()
+
+    voices = list_installed_sapi_voices(dispatcher=dispatch)
+
+    assert voices == (InstalledSapiVoice(name="Microsoft Huihui Desktop", token_id="token-id"),)
+
+
+def test_sapi_voice_available_matches_case_insensitive_substrings() -> None:
+    voices = (
+        InstalledSapiVoice(name="Microsoft Zira Desktop"),
+        InstalledSapiVoice(name="Microsoft Huihui Desktop"),
+    )
+
+    assert sapi_voice_available("zira", voices) is True
+    assert sapi_voice_available("Huihui", voices) is True
+    assert sapi_voice_available("Jenny", voices) is False

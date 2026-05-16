@@ -28,11 +28,32 @@ List available demo flows:
 .venv\Scripts\ai-presenter flows --package ringcentral-video
 ```
 
+Run this before scripted demos to confirm the exact `--flow` id you plan to use.
+
 List available package entrypoints, optionally filtered by area:
 
 ```powershell
 .venv\Scripts\ai-presenter entrypoints --package ringcentral-video --area "Meeting toolbar"
 ```
+
+Check package localization coverage without running automation:
+
+```powershell
+.venv\Scripts\ai-presenter localization-report --package ringcentral-video --language zh
+.venv\Scripts\ai-presenter localization-report --package ringcentral-video --language zh --require-complete
+```
+
+Discover presenter voice aliases and check a profile's voice routes:
+
+```powershell
+.venv\Scripts\ai-presenter voices
+.venv\Scripts\ai-presenter voices --profile ringcentral-video-bind-speaker
+.venv\Scripts\ai-presenter doctor --profile ringcentral-video-bind-speaker --language zh-CN --tone friendly
+```
+
+`voices --profile ...` also reports local speech asset status for supported local routes.
+For a strict pre-demo check, run `doctor --profile ... --language ... --tone ...`; missing SAPI
+voices or Piper model files fail before a demo launches.
 
 Before a real demo, run the diagnostic command to catch profile, package, flow, presenter-context,
 and RingCentral capture-prerequisite issues early. When RingCentralVideo is already running,
@@ -44,14 +65,20 @@ when you want to check a specific `config.ini`.
 ```
 
 ```powershell
-.venv\Scripts\ai-presenter demo --profile ringcentral-video --package ringcentral-video --flow meeting-control-map-demo
+.venv\Scripts\ai-presenter demo --profile ringcentral-video-bind-speaker --package ringcentral-video --flow meeting-control-map-demo --language zh-CN --tone friendly
 ```
 
 For a small local control surface with Start, Pause, and End:
 
 ```powershell
-.venv\Scripts\ai-presenter controller --profile ringcentral-video --package ringcentral-video --flow meeting-control-map-demo
+.venv\Scripts\ai-presenter controller --profile ringcentral-video-bind-speaker --package ringcentral-video --flow meeting-control-map-demo --language English --tone coach
 ```
+
+Regional aliases such as `zh-CN` and `en-US` normalize to the Chinese and English output
+families. Tone aliases such as `warm` and `mentor` normalize to canonical labels in the
+`Loaded voice` output.
+Voice compatibility is checked before demo launch. The fake speech profile is suitable for
+default English smoke tests; Chinese output requires OpenAI or the Windows SAPI Chinese route.
 
 The controller starts in Target > Material package mode and shows the selected package and flow.
 In Target > Running desktop app mode, Refresh lists visible windows, Scan reads the selected

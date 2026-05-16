@@ -1,12 +1,21 @@
 import importlib
 import tempfile
 from collections.abc import Callable
+from collections.abc import Iterable
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 from ai_presenter.providers.base import SpeechAudio
 
 Synthesizer = Callable[[str, Path, str | None, int, int], None]
+SapiDispatcher = Callable[[str], Any]
+
+
+@dataclass(frozen=True)
+class InstalledSapiVoice:
+    name: str
+    token_id: str | None = None
 
 
 class WindowsSapiSpeechProvider:
@@ -73,6 +82,37 @@ def _synthesize_with_sapi(
         voice.Speak(text)
     finally:
         stream.Close()
+
+
+def list_installed_sapi_voices(
+    *,
+    dispatcher: SapiDispatcher | None = None,
+) -> tuple[InstalledSapiVoice, ...]:
+    if dispatcher is None:
+        win32com_client = importlib.import_module("win32com.client")
+        dispatcher = win32com_client.Dispatch
+
+    voice = dispatcher("SAPI.SpVoice")
+    installed: list[InstalledSapiVoice] = []
+    for token in voice.GetVoices():
+        description = token.GetDescription()
+        if not isinstance(description, str) or not description.strip():
+            continue
+        token_id = getattr(token, "Id", None)
+        installed.append(
+            InstalledSapiVoice(
+                name=description.strip(),
+                token_id=token_id if isinstance(token_id, str) and token_id.strip() else None,
+            )
+        )
+    return tuple(installed)
+
+
+def sapi_voice_available(voice_name: str, voices: Iterable[InstalledSapiVoice]) -> bool:
+    expected = voice_name.strip().casefold()
+    if not expected:
+        return False
+    return any(expected in voice.name.casefold() for voice in voices)
 
 
 def _select_voice(voice: Any, voice_name: str | None) -> None:

@@ -7,6 +7,7 @@ from ai_presenter.config.loader import load_profile
 from ai_presenter.config.models import BrowserAppProfile, DesktopAppProfile, ObservationSource
 from ai_presenter.domain.state import RawObservation, WindowMetadata
 from ai_presenter.desktop.base import WindowHandle
+from ai_presenter.packages.loader import load_material_package
 from ai_presenter.packages.models import MaterialPackage
 from ai_presenter.runtime import factory as factory_module
 from ai_presenter.runtime.factory import create_adapter
@@ -319,6 +320,97 @@ def test_run_material_demo_captures_state_before_steps_and_rewrites_empty_room_i
         ("add-coworkers", "ringcentral.video.toolbar.invite"),
         ("participants", "ringcentral.video.toolbar.participants"),
     ]
+
+
+def test_run_material_demo_validates_voice_before_desktop_driver(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    profile = load_profile(Path("profiles/ringcentral-video.yaml"))
+    assert isinstance(profile, DesktopAppProfile)
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    calls: list[str] = []
+
+    def fake_desktop_driver() -> object:
+        calls.append("desktop")
+        raise AssertionError("desktop should not start")
+
+    monkeypatch.setattr(factory_module, "WindowsDesktopDriver", fake_desktop_driver)
+    monkeypatch.setattr(
+        factory_module,
+        "create_provider_registry",
+        lambda *_args, **_kwargs: calls.append("registry"),
+    )
+
+    with pytest.raises(ValueError, match="Chinese / Friendly"):
+        run_material_demo(
+            profile,
+            package,
+            "meeting-controls-tour",
+            voice=PresenterVoiceSettings(language="zh-CN", tone="friendly"),
+        )
+
+    assert calls == []
+
+
+def test_run_material_demo_validates_flow_before_desktop_driver(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
+    assert isinstance(profile, DesktopAppProfile)
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    calls: list[str] = []
+
+    monkeypatch.setattr(factory_module, "WindowsDesktopDriver", lambda: calls.append("desktop"))
+
+    with pytest.raises(KeyError, match="Unknown demo flow: missing-flow"):
+        run_material_demo(profile, package, "missing-flow")
+
+    assert calls == []
+
+
+def test_existing_window_material_demo_validates_voice_before_desktop_driver(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    profile = load_profile(Path("profiles/ringcentral-video.yaml"))
+    assert isinstance(profile, DesktopAppProfile)
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    handle = WindowHandle("RingCentralVideo", 1, "RingCentralVideoClass", "RingCentral Video")
+    calls: list[str] = []
+
+    monkeypatch.setattr(factory_module, "WindowsDesktopDriver", lambda: calls.append("desktop"))
+
+    with pytest.raises(ValueError, match="speech provider fake"):
+        run_existing_window_material_demo(
+            profile,
+            package,
+            "meeting-controls-tour",
+            handle=handle,
+            voice=PresenterVoiceSettings(language="zh"),
+        )
+
+    assert calls == []
+
+
+def test_existing_window_material_demo_validates_flow_before_desktop_driver(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
+    assert isinstance(profile, DesktopAppProfile)
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    handle = WindowHandle("RingCentralVideo", 1, "RingCentralVideoClass", "RingCentral Video")
+    calls: list[str] = []
+
+    monkeypatch.setattr(factory_module, "WindowsDesktopDriver", lambda: calls.append("desktop"))
+
+    with pytest.raises(KeyError, match="Unknown demo flow: missing-flow"):
+        run_existing_window_material_demo(
+            profile,
+            package,
+            "missing-flow",
+            handle=handle,
+        )
+
+    assert calls == []
 
 
 def test_existing_window_material_demo_applies_voice_to_narration(

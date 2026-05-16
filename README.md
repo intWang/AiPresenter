@@ -44,6 +44,17 @@ Check package localization coverage without running automation:
 .venv\Scripts\ai-presenter localization-report --package ringcentral-video --language es --require-complete
 ```
 
+Inspect package-local Spanish entrypoint display metadata:
+
+```powershell
+.\.venv\Scripts\ai-presenter entrypoints --package ringcentral-video --language es
+```
+
+This command inspects package-local localized and fallback entrypoint title and
+purpose metadata only. It does not validate runtime voice support, providers,
+local SAPI/Piper assets, controller or demo execution, or live RingCentral Video
+acceptance.
+
 Use `doctor --require-localization --localization-language ...` when checking package
 localization keys that are separate from runtime presenter voice support.
 Spanish RingCentral Video package localization is complete, and `--language es`

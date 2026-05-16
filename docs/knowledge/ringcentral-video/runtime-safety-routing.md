@@ -103,7 +103,7 @@ Cycle 110 added a route-parity regression matrix for sensitive RingCentral promp
 
 Runtime-only safety hardening should not change package counts. Treat count drift as a review trigger unless the cycle explicitly changes YAML.
 
-Current expected package signals, verified on 2026-05-17 with `localization-report` and `doctor`:
+Current expected package signals as of 2026-05-16:
 
 - Operation entrypoints: 27.
 - Demo flows: 4, with 51 total demo steps.

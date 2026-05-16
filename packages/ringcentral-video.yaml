@@ -786,6 +786,7 @@ demoFlows:
       text: Share opens the picker for your screen or application windows. It can also share system audio, but I
         do not press the final Share button unless you confirm.
       localizedText:
+        ja: Share は画面またはアプリケーションウィンドウの選択画面を開きます。システム音声も共有できますが、表示する内容をユーザーが確認するまで、最終的な Share ボタンは押しません。共有候補や画面内容は、明確な許可なしに読み上げません。説明したら選択画面を閉じます。
         zh: Share 会打开屏幕或应用窗口选择器，也可以共享系统音频。但在你确认要展示哪个内容前，我不会点击最终的 Share 按钮。
       placement: during
       actionOffsetMs: 400

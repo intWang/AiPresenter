@@ -451,11 +451,11 @@ def test_localization_report_outputs_japanese_demo_and_qa_coverage() -> None:
 
     assert result.exit_code == 0
     assert "Language: ja" in result.stdout
-    assert "Localization report: 20/51 demo steps" in result.stdout
+    assert "Localization report: 21/51 demo steps" in result.stdout
     assert "- vbg-blur-demo: 4/4 narration localized" in result.stdout
     assert "- meeting-basics-demo: 3/3 narration localized" in result.stdout
-    assert "- meeting-controls-tour: 13/22 narration localized" in result.stdout
-    assert "missing: explain-share" in result.stdout
+    assert "- meeting-controls-tour: 14/22 narration localized" in result.stdout
+    assert "missing: explain-reactions" in result.stdout
     assert "- localized questions: 12/12" in result.stdout
     assert "- localized answers: 12/12" in result.stdout
     assert "questionAliases.ja present on 3/27 entrypoints (9 aliases)" in result.stdout
@@ -494,11 +494,11 @@ def test_localization_report_require_complete_fails_for_japanese_demo_gap() -> N
 
     assert result.exit_code == 1
     assert "Language: ja" in result.stdout
-    assert "Localization report: 20/51 demo steps" in result.stdout
+    assert "Localization report: 21/51 demo steps" in result.stdout
     assert "- vbg-blur-demo: 4/4 narration localized" in result.stdout
     assert "- meeting-basics-demo: 3/3 narration localized" in result.stdout
-    assert "- meeting-controls-tour: 13/22 narration localized" in result.stdout
-    assert "missing: explain-share" in result.stdout
+    assert "- meeting-controls-tour: 14/22 narration localized" in result.stdout
+    assert "missing: explain-reactions" in result.stdout
     assert "- localized questions: 12/12" in result.stdout
     assert "- localized answers: 12/12" in result.stdout
     assert "Localization coverage incomplete for ja." in result.stdout

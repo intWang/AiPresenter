@@ -123,7 +123,7 @@ def test_ringcentral_localization_status_reports_japanese_demo_and_qa_coverage()
 
     assert report.package_id == "ringcentral-video"
     assert report.language == "ja"
-    assert report.demo_localized_steps == 7
+    assert report.demo_localized_steps == 11
     assert report.demo_total_steps == 51
     assert report.qa_localized_questions == 12
     assert report.qa_localized_answers == 12
@@ -136,7 +136,8 @@ def test_ringcentral_localization_status_reports_japanese_demo_and_qa_coverage()
     assert report.flow_by_id["vbg-blur-demo"].total_steps == 4
     assert report.flow_by_id["meeting-basics-demo"].localized_steps == 3
     assert report.flow_by_id["meeting-basics-demo"].total_steps == 3
-    assert report.flow_by_id["meeting-controls-tour"].localized_steps == 0
+    assert report.flow_by_id["meeting-controls-tour"].localized_steps == 4
+    assert report.flow_by_id["meeting-controls-tour"].total_steps == 22
 
 
 def test_localization_status_marks_required_chinese_coverage_complete() -> None:
@@ -849,6 +850,32 @@ def test_meeting_basics_demo_has_japanese_localized_narration() -> None:
     chat_text = chat_step.narration.localized_text["ja"]
     assert "Chat" in chat_text
     assert "非公開" in chat_text
+
+
+def test_meeting_controls_tour_has_japanese_top_bar_narration() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    flow = package.demo_flow_by_id("meeting-controls-tour")
+    expected_step_ids = [
+        "meeting-overview",
+        "explain-meeting-info",
+        "explain-network-quality",
+        "explain-view-layout",
+    ]
+
+    assert [step.id for step in flow.steps[:4]] == expected_step_ids
+    for step_id in expected_step_ids:
+        step = next(step for step in flow.steps if step.id == step_id)
+        ja_text = step.narration.localized_text["ja"]
+        assert ja_text.strip(), step_id
+        assert has_cjk(ja_text), step_id
+
+    meeting_info = next(step for step in flow.steps if step.id == "explain-meeting-info")
+    meeting_info_text = meeting_info.narration.localized_text["ja"]
+    assert "Meeting ID" in meeting_info_text
+    assert "読み上げません" in meeting_info_text
+
+    view_layout = next(step for step in flow.steps if step.id == "explain-view-layout")
+    assert "他の参加者" in view_layout.narration.localized_text["ja"]
 
 
 def test_rejects_duplicate_operation_entrypoint_ids(tmp_path: Path) -> None:

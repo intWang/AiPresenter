@@ -621,6 +621,7 @@ demoFlows:
         connection health, layout, and reporting. The bottom toolbar covers audio, video, sharing, people, chat,
         reactions, and safety actions.
       localizedText:
+        ja: RingCentral Video の会議画面は、中央のライブ会議キャンバスを中心に整理されています。上部バーでは会議情報、接続状態、表示レイアウト、問題報告を確認し、下部ツールバーでは音声、ビデオ、共有、参加者、Chat、リアクション、安全操作を扱います。
         zh: RingCentral Video 的会议窗口可以分成三块：上方看会议身份、连接状态、视图和问题反馈；下方管理音频、视频、共享、成员、聊天、互动和安全操作；中间是实时会议画面。
       placement: before
   - id: explain-meeting-info
@@ -632,6 +633,7 @@ demoFlows:
       text: 'First, the info button opens meeting details: host, meeting ID, copy link, dial-in information, and
         encryption status. I treat those values as private unless you ask for them.'
       localizedText:
+        ja: まず info ボタンを見ると、主催者、Meeting ID、リンクのコピー、ダイヤルイン情報、暗号化状態などの会議詳細を開けます。これらの値は、ユーザーが明示的に求めるまで非公開情報として扱い、こちらから読み上げません。
         zh: 先看 info 按钮。它会打开主持人、会议 ID、复制链接、拨入信息和加密状态；这些值默认属于敏感信息，我只说明位置，不主动朗读。
       placement: during
       actionOffsetMs: 400
@@ -644,6 +646,7 @@ demoFlows:
       text: Next is network quality. This is where you check packet loss, jitter, and latency for sharing, video,
         and audio when the meeting feels unstable.
       localizedText:
+        ja: 次は Network quality です。会議が不安定に感じるとき、共有、ビデオ、音声に関するパケットロス、ジッター、遅延をここで確認できます。観測値がないまま原因を決めつけません。
         zh: 接着是 Network quality。会议不稳定时，可以从这里查看共享、视频和音频的丢包、抖动和延迟。
       placement: during
       actionOffsetMs: 350
@@ -656,6 +659,7 @@ demoFlows:
       text: Views changes how you see the meeting. It includes Gallery view and Full screen, so it affects layout
         without changing anyone in the call.
       localizedText:
+        ja: Views は会議の見え方を切り替える入口です。Gallery view や Full screen などがあり、変更されるのは自分の表示レイアウトだけで、通話中の他の参加者の状態は変わりません。
         zh: Views 用来调整你看到会议的布局，比如 Gallery view 或 Full screen；它只改变本地显示，不会影响通话里的其他人。
       placement: during
       actionOffsetMs: 350

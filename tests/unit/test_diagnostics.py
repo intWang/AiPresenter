@@ -168,6 +168,41 @@ def test_diagnostics_reports_supported_voice(monkeypatch: pytest.MonkeyPatch) ->
     )
 
 
+def test_diagnostics_reports_spanish_openai_voice_supported() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-openai.example.yaml"))
+
+    report = diagnostics.diagnose_configuration(
+        profile=profile,
+        voice=PresenterVoiceSettings(language="es"),
+    )
+
+    assert any(
+        check.status == "OK"
+        and check.name == "voice"
+        and "Spanish / Professional" in check.detail
+        and "speech=openai" in check.detail
+        for check in report.checks
+    )
+
+
+def test_diagnostics_reports_spanish_local_voice_unsupported() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
+
+    report = diagnostics.diagnose_configuration(
+        profile=profile,
+        voice=PresenterVoiceSettings(language="es"),
+    )
+
+    assert any(
+        check.status == "FAIL"
+        and check.name == "voice"
+        and "Spanish / Professional" in check.detail
+        and "speech provider windows-sapi-en" in check.detail
+        and "openai" in check.detail
+        for check in report.checks
+    )
+
+
 def test_diagnostics_reports_unsupported_voice() -> None:
     profile = load_profile(Path("profiles/ringcentral-video.yaml"))
 
@@ -322,7 +357,7 @@ def test_diagnostics_require_localization_passes_for_ringcentral_chinese() -> No
     assert "Chinese" in runtime_language_check.detail
 
 
-def test_diagnostics_require_localization_flags_package_only_runtime_language() -> None:
+def test_diagnostics_require_localization_accepts_spanish_runtime_language() -> None:
     profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
 
@@ -344,9 +379,9 @@ def test_diagnostics_require_localization_flags_package_only_runtime_language() 
     runtime_language_check = next(
         check for check in report.checks if check.name == "runtime language support"
     )
-    assert runtime_language_check.status == "FAIL"
-    assert "localization language es is package-only" in runtime_language_check.detail
-    assert "does not support --language es" in runtime_language_check.detail
+    assert runtime_language_check.status == "OK"
+    assert "localization language es" in runtime_language_check.detail
+    assert "Spanish" in runtime_language_check.detail
 
 
 def test_diagnostics_runtime_language_support_stays_separate_after_package_localization_complete() -> None:
@@ -382,7 +417,7 @@ def test_diagnostics_runtime_language_support_stays_separate_after_package_local
                             "narration": {
                                 "text": "This explains the panel.",
                                 "localizedText": {
-                                    "es": "Esto explica el panel.",
+                                    "de": "Das erklaert das Panel.",
                                 },
                             },
                         }
@@ -394,10 +429,10 @@ def test_diagnostics_runtime_language_support_stays_separate_after_package_local
                     "question": "Where is the panel?",
                     "answer": "The panel is on screen.",
                     "localizedQuestions": {
-                        "es": ["¿Dónde está el panel?"],
+                        "de": ["Wo ist das Panel?"],
                     },
                     "localizedAnswers": {
-                        "es": "El panel está en pantalla.",
+                        "de": "Das Panel ist auf dem Bildschirm.",
                     },
                 }
             ],
@@ -409,14 +444,14 @@ def test_diagnostics_runtime_language_support_stays_separate_after_package_local
         profile=profile,
         material_package=package,
         require_localization=True,
-        localization_language="es",
+        localization_language="de",
     )
 
     localization_check = next(
         check for check in report.checks if check.name == "localization"
     )
     assert localization_check.status == "OK"
-    assert "required es localization complete" in localization_check.detail
+    assert "required de localization complete" in localization_check.detail
     assert "1/1 demo steps" in localization_check.detail
     assert "1/1 Q&A questions" in localization_check.detail
     assert "1/1 Q&A answers" in localization_check.detail
@@ -424,8 +459,8 @@ def test_diagnostics_runtime_language_support_stays_separate_after_package_local
         check for check in report.checks if check.name == "runtime language support"
     )
     assert runtime_language_check.status == "FAIL"
-    assert "localization language es is package-only" in runtime_language_check.detail
-    assert "does not support --language es" in runtime_language_check.detail
+    assert "localization language de" in runtime_language_check.detail
+    assert "presenter runtime does not support --language de" in runtime_language_check.detail
 
 
 def test_diagnostics_require_localization_passes_for_ringcentral_japanese() -> None:

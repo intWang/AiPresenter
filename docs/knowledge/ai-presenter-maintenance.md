@@ -61,9 +61,9 @@ Choose the smallest artifact that makes the next cycle safer or more useful.
 - Avoid wording that implies live RingCentral acceptance, voice availability, or provider compatibility from package text alone.
 - Treat package query readiness as a separate state from runtime voice support.
   Spanish package-owned aliases can match accented or unaccented prompts through
-  Latin-diacritic folding, but `--language es` remains unsupported until a
-  runtime promotion cycle owns voice routing, CLI/controller choices, tests, and
-  acceptance evidence.
+  Latin-diacritic folding. As of Cycle 128, `--language es` is supported only
+  for OpenAI-backed speech; local SAPI/Piper support and live acceptance still
+  require separate evidence.
 
 ## Docs Navigation Rules
 

@@ -378,13 +378,92 @@ def test_demo_rejects_unknown_language_before_runtime(monkeypatch: pytest.Monkey
             "--flow",
             "meeting-controls-tour",
             "--language",
+            "fr",
+            "--dry-run",
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert "Unsupported presenter language: fr" in result.output
+    assert called is False
+
+
+def test_demo_openai_profile_accepts_spanish_dry_run() -> None:
+    result = CliRunner().invoke(
+        app,
+        [
+            "demo",
+            "--profile",
+            "profiles/ringcentral-video-openai.example.yaml",
+            "--package",
+            "ringcentral-video",
+            "--flow",
+            "meeting-control-map-demo",
+            "--language",
+            "es",
+            "--dry-run",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "Loaded voice: Spanish / Professional" in result.stdout
+    assert "Dry run complete." in result.stdout
+
+
+def test_controller_openai_profile_accepts_spanish_dry_run() -> None:
+    result = CliRunner().invoke(
+        app,
+        [
+            "controller",
+            "--profile",
+            "profiles/ringcentral-video-openai.example.yaml",
+            "--package",
+            "ringcentral-video",
+            "--flow",
+            "meeting-control-map-demo",
+            "--language",
+            "es",
+            "--dry-run",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "Loaded voice: Spanish / Professional" in result.stdout
+    assert "Controller dry run complete." in result.stdout
+
+
+def test_demo_rejects_spanish_local_profile_before_runtime(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    called = False
+
+    def fake_run_material_demo(*_args: object, **_kwargs: object) -> None:
+        nonlocal called
+        called = True
+
+    monkeypatch.setattr("ai_presenter.cli.run_material_demo", fake_run_material_demo)
+    result = CliRunner().invoke(
+        app,
+        [
+            "demo",
+            "--profile",
+            "ringcentral-video-bind-speaker",
+            "--package",
+            "ringcentral-video",
+            "--flow",
+            "meeting-control-map-demo",
+            "--language",
             "es",
             "--dry-run",
         ],
     )
 
     assert result.exit_code != 0
-    assert "Unsupported presenter language: es" in result.output
+    assert "Spanish / Professional" in result.output
+    assert "speech provider" in result.output
+    assert "windows-sapi-en" in result.output
+    assert "openai" in result.output
+    assert "Unsupported presenter language" not in result.output
     assert called is False
 
 
@@ -890,6 +969,7 @@ def test_voices_lists_language_tone_choices() -> None:
     assert "English aliases:" in result.stdout
     assert "Chinese aliases:" in result.stdout
     assert "Japanese aliases:" in result.stdout
+    assert "Spanish aliases:" in result.stdout
     assert "Tones:" in result.stdout
     assert "Coach aliases:" in result.stdout
     assert "Support aliases:" in result.stdout
@@ -916,6 +996,7 @@ def test_voices_profile_reports_supported_and_unsupported_languages() -> None:
     assert "English / Professional: supported via fake" in result.stdout
     assert "Chinese / Professional: unsupported" in result.stdout
     assert "Japanese / Professional: unsupported" in result.stdout
+    assert "Spanish / Professional: unsupported" in result.stdout
 
 
 def test_voices_profile_reports_local_asset_status(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -944,6 +1025,23 @@ def test_voices_targeted_incompatible_profile_voice_exits_nonzero() -> None:
     assert result.exit_code == 1
     assert "Selected voice: Chinese / Friendly" in result.stdout
     assert "speech provider fake" in result.stdout
+
+
+def test_voices_targeted_openai_spanish_profile_is_supported() -> None:
+    result = CliRunner().invoke(
+        app,
+        [
+            "voices",
+            "--profile",
+            "profiles/ringcentral-video-openai.example.yaml",
+            "--language",
+            "es",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "Selected voice: Spanish / Professional" in result.stdout
+    assert "Selected voice supported via openai." in result.stdout
 
 
 def test_voices_targeted_missing_assets_exits_nonzero(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -1301,7 +1399,7 @@ def test_doctor_require_localization_passes_for_chinese_package(
     assert "[OK] runtime language support: localization language zh" in result.stdout
 
 
-def test_doctor_require_localization_accepts_package_only_spanish_language(
+def test_doctor_require_localization_accepts_spanish_runtime_language(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(diagnostics, "_iter_process_executable_paths", lambda process_name: [])
@@ -1320,15 +1418,114 @@ def test_doctor_require_localization_accepts_package_only_spanish_language(
         ],
     )
 
-    assert result.exit_code == 1
+    assert result.exit_code == 0
     assert "[OK] localization: required es localization complete" in result.stdout
     assert "51/51 demo steps" in result.stdout
     assert "12/12 Q&A questions" in result.stdout
     assert "12/12 Q&A answers" in result.stdout
-    assert "[FAIL] runtime language support:" in result.stdout
-    assert "localization language es is package-only" in result.stdout
-    assert "does not support --language es" in result.stdout
+    assert "[OK] runtime language support: localization language es" in result.stdout
+    assert "Spanish" in result.stdout
     assert "Invalid value" not in result.output
+
+
+def test_doctor_rejects_package_only_language_after_complete_localization(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(diagnostics, "_iter_process_executable_paths", lambda process_name: [])
+    package_path = tmp_path / "package-only-language.yaml"
+    package_path.write_text(
+        """
+appId: demo
+appName: Demo
+version: 1
+profileIds: [ringcentral-video-bind-speaker]
+operationEntrypoints:
+  - id: demo.panel
+    title: Panel
+    area: Main
+    purpose: Explain panel.
+    openSteps: []
+demoFlows:
+  - id: demo-tour
+    title: Demo tour
+    goal: Show one localized package-only step.
+    steps:
+      - id: show-panel
+        title: Show panel
+        action:
+          entrypointId: demo.panel
+          operation: explain
+        narration:
+          text: This explains the panel.
+          localizedText:
+            de: Das erklaert das Panel.
+qa:
+  - question: Where is the panel?
+    answer: The panel is on screen.
+    localizedQuestions:
+      de:
+        - Wo ist das Panel?
+    localizedAnswers:
+      de: Das Panel ist auf dem Bildschirm.
+manualControls: []
+""",
+        encoding="utf-8",
+    )
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "doctor",
+            "--profile",
+            "ringcentral-video-bind-speaker",
+            "--package",
+            str(package_path),
+            "--require-localization",
+            "--localization-language",
+            "de",
+        ],
+    )
+
+    assert result.exit_code == 1
+    assert "[OK] localization: required de localization complete" in result.stdout
+    assert "1/1 demo steps" in result.stdout
+    assert "1/1 Q&A questions" in result.stdout
+    assert "[FAIL] runtime language support: localization language de" in result.stdout
+    assert "presenter runtime does not support --language de" in result.stdout
+
+
+def test_doctor_openai_profile_accepts_spanish_runtime_language(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config_path = tmp_path / "config.ini"
+    config_path.write_text("DisableAffinityMask=true\n", encoding="utf-8")
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    monkeypatch.setenv("AI_PRESENTER_OPENAI_NARRATION_MODEL", "test-model")
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "doctor",
+            "--profile",
+            "profiles/ringcentral-video-openai.example.yaml",
+            "--package",
+            "ringcentral-video",
+            "--flow",
+            "meeting-control-map-demo",
+            "--language",
+            "es",
+            "--require-localization",
+            "--ringcentral-config",
+            str(config_path),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "[OK] localization: required es localization complete" in result.stdout
+    assert "[OK] runtime language support: localization language es" in result.stdout
+    assert "[OK] voice: Spanish / Professional supported via speech=openai" in result.stdout
 
 
 def test_doctor_require_localization_language_overrides_runtime_voice(
@@ -1352,10 +1549,10 @@ def test_doctor_require_localization_language_overrides_runtime_voice(
         ],
     )
 
-    assert result.exit_code == 1
+    assert result.exit_code == 0
     assert "[OK] localization: required es localization complete" in result.stdout
     assert "51/51 demo steps" in result.stdout
-    assert "[FAIL] runtime language support:" in result.stdout
+    assert "[OK] runtime language support: localization language es" in result.stdout
     assert "[OK] voice: Chinese / Professional supported" in result.stdout
 
 

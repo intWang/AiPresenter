@@ -4,7 +4,7 @@ from typing import Literal
 from ai_presenter.config.models import AppProfile
 from ai_presenter.packages.models import DemoStepNarration
 
-PresenterLanguage = Literal["en", "zh", "ja"]
+PresenterLanguage = Literal["en", "zh", "ja", "es"]
 PresenterTone = Literal[
     "professional",
     "conversational",
@@ -19,6 +19,7 @@ PRESENTER_LANGUAGE_CHOICES: tuple[tuple[str, PresenterLanguage], ...] = (
     ("English", "en"),
     ("Chinese", "zh"),
     ("Japanese", "ja"),
+    ("Spanish", "es"),
 )
 PRESENTER_TONE_CHOICES: tuple[tuple[str, PresenterTone], ...] = (
     ("Professional", "professional"),
@@ -45,6 +46,7 @@ _LANGUAGE_LABELS: dict[PresenterLanguage, str] = {
     "en": "English",
     "zh": "Chinese",
     "ja": "Japanese",
+    "es": "Spanish",
 }
 _TONE_LABELS: dict[PresenterTone, str] = {
     "professional": "Professional",
@@ -70,6 +72,11 @@ _LANGUAGE_ALIASES: dict[str, PresenterLanguage] = {
     "ja": "ja",
     "ja-jp": "ja",
     "japanese": "ja",
+    "es": "es",
+    "es-es": "es",
+    "es-mx": "es",
+    "spanish": "es",
+    "espanol": "es",
     "\u65e5\u672c\u8a9e": "ja",
     "中文": "zh",
 }
@@ -181,7 +188,7 @@ def render_voice_instruction(settings: PresenterVoiceSettings) -> str:
 def render_presenter_text(text: str, settings: PresenterVoiceSettings) -> str:
     if settings.language == "zh":
         return _render_chinese(text, settings)
-    if settings.language == "ja":
+    if settings.language in {"ja", "es"}:
         return _apply_tone_to_localized_text(text, settings)
     if settings.tone == "conversational":
         return f"Sure. {text}"
@@ -217,6 +224,10 @@ def validate_profile_voice(profile: AppProfile, settings: PresenterVoiceSettings
     if settings.language == "ja" and speech != "openai":
         raise ValueError(
             f"{context} Japanese voice output requires speech provider openai."
+        )
+    if settings.language == "es" and speech != "openai":
+        raise ValueError(
+            f"{context} Spanish voice output requires speech provider openai."
         )
     if settings.language == "en" and speech == "windows-sapi-zh":
         raise ValueError(

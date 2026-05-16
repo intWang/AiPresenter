@@ -46,9 +46,9 @@ Check package localization coverage without running automation:
 
 Use `doctor --require-localization --localization-language ...` when checking package
 localization keys that are separate from runtime presenter voice support.
-Spanish RingCentral Video package localization is complete, but `--language es`
-is still rejected by runtime demo and controller commands until a separate voice-promotion
-cycle lands.
+Spanish RingCentral Video package localization is complete, and `--language es`
+is runtime-selectable only with OpenAI-backed speech profiles. Local SAPI and
+Piper routes do not support Spanish yet.
 The language lifecycle and promotion gates are documented in
 `docs/knowledge/language-lifecycle.md`.
 
@@ -57,6 +57,7 @@ Discover presenter voice aliases and check a profile's voice routes:
 ```powershell
 .venv\Scripts\ai-presenter voices
 .venv\Scripts\ai-presenter voices --profile ringcentral-video-bind-speaker
+.venv\Scripts\ai-presenter voices --profile profiles\ringcentral-video-openai.example.yaml --language es
 .venv\Scripts\ai-presenter doctor --profile ringcentral-video-bind-speaker --language zh-CN --tone friendly
 ```
 
@@ -88,6 +89,7 @@ families. Tone aliases such as `warm`, `mentor`, and `executive` normalize to ca
 labels in the `Loaded voice` output.
 Voice compatibility is checked before demo launch. The fake speech profile is suitable for
 default English smoke tests; Chinese output requires OpenAI or the Windows SAPI Chinese route.
+Spanish output requires OpenAI-backed speech.
 
 The controller starts in Target > Material package mode and shows the selected package and flow.
 In Target > Running desktop app mode, Refresh lists visible windows, Scan reads the selected

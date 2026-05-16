@@ -41,6 +41,16 @@ def test_voice_instruction_renders_japanese_style() -> None:
     assert "warm" in instruction
 
 
+def test_voice_instruction_renders_spanish_style() -> None:
+    settings = PresenterVoiceSettings(language="es-MX", tone="professional")
+
+    instruction = render_voice_instruction(settings)
+
+    assert settings.language == "es"
+    assert "Spanish" in instruction
+    assert "professional" in instruction
+
+
 def test_voice_settings_normalize_language_aliases() -> None:
     assert PresenterVoiceSettings(language="zh-CN").language == "zh"
     assert PresenterVoiceSettings(language="zh-Hans").language == "zh"
@@ -50,6 +60,10 @@ def test_voice_settings_normalize_language_aliases() -> None:
     assert PresenterVoiceSettings(language="en-US").language == "en"
     assert PresenterVoiceSettings(language="Japanese").language == "ja"
     assert PresenterVoiceSettings(language="\u65e5\u672c\u8a9e").language == "ja"
+    assert PresenterVoiceSettings(language="Spanish").language == "es"
+    assert PresenterVoiceSettings(language="es-ES").language == "es"
+    assert PresenterVoiceSettings(language="es-MX").language == "es"
+    assert PresenterVoiceSettings(language="espanol").language == "es"
 
 
 def test_presenter_language_aliases_are_public_and_canonical() -> None:
@@ -70,6 +84,17 @@ def test_presenter_japanese_language_aliases_are_public_and_canonical() -> None:
         "ja-jp",
         "japanese",
         "\u65e5\u672c\u8a9e",
+    )
+
+
+def test_presenter_spanish_language_aliases_are_public_and_canonical() -> None:
+    assert voice.language_label("es") == "Spanish"
+    assert voice.presenter_language_aliases("es-MX") == (
+        "es",
+        "es-es",
+        "es-mx",
+        "spanish",
+        "espanol",
     )
 
 
@@ -128,7 +153,7 @@ def test_presenter_tone_aliases_and_description_are_public() -> None:
 
 def test_voice_settings_reject_unknown_language_and_tone() -> None:
     with pytest.raises(ValueError, match="Unsupported presenter language"):
-        PresenterVoiceSettings(language="es")
+        PresenterVoiceSettings(language="fr")
     with pytest.raises(ValueError, match="Unsupported presenter tone"):
         PresenterVoiceSettings(tone="shouty")
 
@@ -184,6 +209,16 @@ def test_render_presenter_text_keeps_japanese_text_without_english_prefix() -> N
     assert "Happy to help" not in rendered
 
 
+def test_render_presenter_text_keeps_spanish_text_without_english_prefix() -> None:
+    rendered = render_presenter_text(
+        "Abra el panel de chat. Revise los controles.",
+        PresenterVoiceSettings(language="es", tone="friendly"),
+    )
+
+    assert rendered.startswith("Abra el panel")
+    assert "Happy to help" not in rendered
+
+
 def test_render_presenter_text_keeps_existing_chinese_concise_behavior() -> None:
     rendered = render_presenter_text(
         "Chat opens the panel. Settings stays available.",
@@ -228,6 +263,14 @@ def test_voice_validation_allows_japanese_openai_profile() -> None:
     validate_profile_voice(profile, PresenterVoiceSettings(language="ja-JP"))
 
 
+def test_voice_validation_allows_spanish_openai_profile() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-openai.example.yaml"))
+
+    validate_profile_voice(profile, PresenterVoiceSettings(language="es"))
+
+    assert resolve_speech_provider_name(profile, PresenterVoiceSettings(language="es")) == "openai"
+
+
 def test_voice_validation_rejects_japanese_local_sapi_profile() -> None:
     profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
 
@@ -237,6 +280,32 @@ def test_voice_validation_rejects_japanese_local_sapi_profile() -> None:
     message = str(exc_info.value)
     assert "Japanese / Professional" in message
     assert "speech provider windows-sapi-en" in message
+    assert "openai" in message
+
+
+@pytest.mark.parametrize(
+    ("profile_path", "speech_provider"),
+    [
+        ("profiles/ringcentral-video.yaml", "fake"),
+        ("profiles/ringcentral-video-piper-speaker.yaml", "piper"),
+        ("profiles/ringcentral-video-bind-speaker.yaml", "windows-sapi-en"),
+        ("profiles/ringcentral-video.yaml", "windows-sapi"),
+        ("profiles/ringcentral-video.yaml", "windows-sapi-zh"),
+    ],
+)
+def test_voice_validation_rejects_spanish_non_openai_profiles(
+    profile_path: str,
+    speech_provider: str,
+) -> None:
+    profile = load_profile(Path(profile_path))
+    profile.providers.speech = speech_provider
+
+    with pytest.raises(ValueError) as exc_info:
+        validate_profile_voice(profile, PresenterVoiceSettings(language="es"))
+
+    message = str(exc_info.value)
+    assert "Spanish / Professional" in message
+    assert f"speech provider {speech_provider}" in message
     assert "openai" in message
 
 
@@ -314,6 +383,39 @@ def test_render_narration_text_concise_chinese_uses_first_sentence() -> None:
     )
 
     assert rendered == "接下来，看共享屏幕。"
+
+
+def test_render_narration_text_prefers_localized_spanish_script_without_prefix() -> None:
+    narration = DemoStepNarration(
+        text="Share opens the picker for your screen.",
+        localizedText={
+            "es": "A continuacion, abra Compartir pantalla. Elija la ventana correcta.",
+        },
+    )
+
+    rendered = render_narration_text(
+        narration,
+        PresenterVoiceSettings(language="es", tone="friendly"),
+    )
+
+    assert rendered == "A continuacion, abra Compartir pantalla. Elija la ventana correcta."
+    assert "Happy to help" not in rendered
+
+
+def test_render_narration_text_concise_spanish_uses_first_sentence() -> None:
+    narration = DemoStepNarration(
+        text="Share opens the picker for your screen.",
+        localizedText={
+            "es": "A continuacion, abra Compartir pantalla. Elija la ventana correcta.",
+        },
+    )
+
+    rendered = render_narration_text(
+        narration,
+        PresenterVoiceSettings(language="es", tone="concise"),
+    )
+
+    assert rendered == "A continuacion, abra Compartir pantalla."
 
 
 def test_sapi_rate_for_voice_maps_chinese_tones_to_practical_rates() -> None:

@@ -115,8 +115,9 @@ Current expected package signals, verified on 2026-05-17 with `localization-repo
 - Japanese aliases: 13/27 entrypoints, 34 aliases.
 - Spanish aliases: 26/27 entrypoints, 69 aliases.
 - Chinese, Japanese, and Spanish required package localization coverage: 51/51 demo steps, 12/12 Q&A questions, 12/12 Q&A answers.
-- Spanish is package-local only. Its localization can be complete while
-  `demo --language es` remains unsupported.
+- Spanish is runtime-selectable only with OpenAI-backed speech. Its localization
+  is complete, but local SAPI/Piper routes and live RingCentral acceptance are
+  still out of scope.
 - `doctor` may report one INFO-level Q&A alias substring risk summary covering
   11 prompts; this is expected until the package design changes.
 
@@ -135,16 +136,16 @@ Use these commands after changing question routing, voice tone behavior, package
 git diff --check
 ```
 
-For package-only languages, also keep the negative runtime boundary explicit:
+For Spanish runtime checks, keep the provider boundary explicit:
 
 ```powershell
-.\.venv\Scripts\ai-presenter doctor --profile ringcentral-video-bind-speaker --package ringcentral-video --flow meeting-control-map-demo --require-localization --localization-language es
+.\.venv\Scripts\ai-presenter doctor --profile profiles/ringcentral-video-openai.example.yaml --package ringcentral-video --flow meeting-control-map-demo --language es --require-localization
 .\.venv\Scripts\ai-presenter demo --profile ringcentral-video-bind-speaker --package ringcentral-video --flow meeting-control-map-demo --language es --dry-run
 ```
 
-Expected result: Spanish package localization is OK, while runtime language
-support and `demo --language es` still fail until a promotion cycle changes
-runtime voice support.
+Expected result: Spanish package localization and runtime language support are
+OK on the OpenAI route, while local profiles still reject Spanish before runtime
+with a profile voice compatibility error.
 
 Focused sentinels:
 

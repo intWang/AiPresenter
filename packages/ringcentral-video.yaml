@@ -889,6 +889,7 @@ demoFlows:
       text: Leave exits the meeting. It is a destructive control, so the presenter explains it but does not click
         it without explicit confirmation.
       localizedText:
+        ja: Leave は現在の会議から退出するための破壊的なコントロールです。ホストの場合は、全員に影響する終了系の選択肢が表示されることもあります。ツアーでは場所と役割を説明するだけで、ユーザーが明確に確認するまで Leave を実行しません。
         zh: Leave 会离开会议，是破坏性控制；Presenter 只说明它的作用，不会在没有明确确认时点击。
       placement: before
 - id: meeting-control-map-demo

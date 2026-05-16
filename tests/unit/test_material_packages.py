@@ -123,7 +123,7 @@ def test_ringcentral_localization_status_reports_japanese_demo_and_qa_coverage()
 
     assert report.package_id == "ringcentral-video"
     assert report.language == "ja"
-    assert report.demo_localized_steps == 33
+    assert report.demo_localized_steps == 34
     assert report.demo_total_steps == 51
     assert report.qa_localized_questions == 12
     assert report.qa_localized_answers == 12
@@ -138,10 +138,10 @@ def test_ringcentral_localization_status_reports_japanese_demo_and_qa_coverage()
     assert report.flow_by_id["meeting-basics-demo"].total_steps == 3
     assert report.flow_by_id["meeting-controls-tour"].localized_steps == 22
     assert report.flow_by_id["meeting-controls-tour"].total_steps == 22
-    assert report.flow_by_id["meeting-control-map-demo"].localized_steps == 4
+    assert report.flow_by_id["meeting-control-map-demo"].localized_steps == 5
     assert report.flow_by_id["meeting-control-map-demo"].total_steps == 22
     assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids[0] == (
-        "control-map-report"
+        "control-map-add-coworkers"
     )
 
 
@@ -1542,6 +1542,74 @@ def test_meeting_control_map_has_japanese_views_narration() -> None:
     assert "共有を開始" not in ja_text
     assert "共有を変更" not in ja_text
     assert "参加者を変更" not in ja_text
+
+
+def test_meeting_control_map_has_japanese_report_narration() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    flow = package.demo_flow_by_id("meeting-control-map-demo")
+    step = next(step for step in flow.steps if step.id == "control-map-report")
+
+    assert step.action.entrypoint_id == "ringcentral.video.top.report-issue"
+    assert step.action.operation == "open"
+    assert step.narration.placement == "during"
+    assert step.narration.action_offset_ms == 400
+    report_entrypoint = package.entrypoint_by_id(
+        "ringcentral.video.top.report-issue"
+    )
+    assert len(report_entrypoint.open_steps) == 1
+    open_step = report_entrypoint.open_steps[0]
+    assert open_step.action == "clickWindowRelative"
+    assert open_step.target == "Report"
+    assert open_step.match["xFromRight"] == "168"
+    assert open_step.match["y"] == "21"
+    assert open_step.match["cleanup"] == "modal"
+    assert report_entrypoint.presenter_notes[0].startswith(
+        "This opens a foreground dialog"
+    )
+    assert (
+        "Do not pick an issue category during a feature tour"
+        in report_entrypoint.presenter_notes[1]
+    )
+    assert "dialog X" in report_entrypoint.presenter_notes[2]
+    ja_text = step.narration.localized_text["ja"]
+    assert ja_text.strip()
+    assert has_cjk(ja_text)
+    assert "Report issue" in ja_text
+    assert "Report" in ja_text
+    assert "Audio" in ja_text
+    assert "Video" in ja_text
+    assert "Screen sharing" in ja_text
+    assert "Meeting join" in ja_text
+    assert "Notes" in ja_text
+    assert "Transcript" in ja_text
+    assert "Other" in ja_text
+    assert "音声" in ja_text
+    assert "ビデオ" in ja_text
+    assert "画面共有" in ja_text
+    assert "参加" in ja_text
+    assert "その他" in ja_text
+    assert "問題" in ja_text
+    assert "トラブルシューティング" in ja_text
+    assert "ダイアログ" in ja_text
+    assert "会議コントロール" in ja_text
+    assert "遮る" in ja_text
+    assert "閉じます" in ja_text
+    assert "原因は断定しません" in ja_text
+    assert "送信" not in ja_text
+    assert "提出" not in ja_text
+    assert "報告します" not in ja_text
+    assert "カテゴリ" not in ja_text
+    assert "選択します" not in ja_text
+    assert "ログを" not in ja_text
+    assert "ログや" not in ja_text
+    assert "アップロード" not in ja_text
+    assert "診断データ" not in ja_text
+    assert "サポート" not in ja_text
+    assert "解決します" not in ja_text
+    assert "修復" not in ja_text
+    assert "改善します" not in ja_text
+    assert "保証します" not in ja_text
+    assert "必ず" not in ja_text
 
 
 def test_rejects_duplicate_operation_entrypoint_ids(tmp_path: Path) -> None:

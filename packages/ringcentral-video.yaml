@@ -958,6 +958,7 @@ demoFlows:
       text: Report issue is the escalation path when something is wrong with audio, video, sharing, joining,
         notes, or transcript. Because it opens a blocking dialog, I close it before continuing.
       localizedText:
+        ja: Report issue は、Audio、Video、Screen sharing、Meeting join、Notes、Transcript、Other（音声、ビデオ、画面共有、参加、ノート、文字起こし、その他）の問題を確認するトラブルシューティング用の Report ダイアログへの入口です。このダイアログは会議コントロールの前面に出て操作を遮るため、ツアーでは場所と役割だけを説明し、続行前に閉じます。原因は断定しません。
         zh: 如果音频、视频、共享、入会、笔记或转录出问题，可以从这里上报。它会弹出前置窗口，所以讲完我会先把它关闭。
       placement: during
       actionOffsetMs: 400

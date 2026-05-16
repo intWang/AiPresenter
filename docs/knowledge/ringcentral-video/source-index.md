@@ -53,5 +53,5 @@ Current package coverage is strongest for in-meeting attendee controls. The offi
 - In meeting: closed captions, whiteboard, presentation mode, computer audio sharing, background noise, CPU/network detail.
 - Host/moderator: recording, security, waiting room, participant management, mute others, turn off video, moderator assignment.
 - After meeting: recordings, advanced insights, transcripts or summaries where available; current package has answer-only Q&A coverage but no executable post-meeting route.
-- Localization: Japanese coverage is complete for the existing Q&A safety set and the four-step virtual background blur demo; other demo-flow narration and entrypoint `questionAliases.ja` remain future work.
+- Localization: Japanese coverage is complete for the existing Q&A safety set, the four-step virtual background blur demo, and the three-step meeting basics demo; other demo-flow narration and entrypoint `questionAliases.ja` remain future work.
 - Meeting signals: Reactions and Raise hand now have answer-only safety Q&A; plain location questions should still route to their toolbar entrypoints.

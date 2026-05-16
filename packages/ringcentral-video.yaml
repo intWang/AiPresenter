@@ -566,6 +566,7 @@ demoFlows:
       text: The microphone control shows whether local audio is muted and lets the presenter quickly recover before
         speaking.
       localizedText:
+        ja: マイクコントロールは、ローカル音声がミュートされているかを示し、話し始める前にすばやく復旧できるようにします。
         zh: 麦克风按钮显示当前是否静音。发言前先看这里，可以快速确认自己是否会被听到。
       placement: before
   - id: show-participants
@@ -577,6 +578,7 @@ demoFlows:
       text: The Participants panel is the fastest way to confirm who is in the room and whether the meeting is still
         empty.
       localizedText:
+        ja: Participants パネルでは、会議室に誰がいるか、まだ空の会議かをすばやく確認できます。
         zh: Participants 面板用来确认谁在会议里，也能判断会议是否还处于空房间状态。
       placement: during
       actionOffsetMs: 300
@@ -588,6 +590,7 @@ demoFlows:
     narration:
       text: Chat supports side-channel collaboration while the spoken demo continues.
       localizedText:
+        ja: Chat は、音声でのデモを続けながらリンクや補足情報を共有できる文字の協力チャネルです。チャット内容は、ユーザーが明示的に求めるまで既定で非公開として扱います。
         zh: Chat 是文字协作通道，适合发送链接和补充信息；聊天内容默认保持隐私，除非用户明确要求读取。
       placement: during
       actionOffsetMs: 300

@@ -116,14 +116,14 @@ def test_ringcentral_localization_status_reports_chinese_coverage() -> None:
     assert report.flow_by_id["meeting-controls-tour"].total_steps == 22
 
 
-def test_ringcentral_localization_status_reports_japanese_qa_coverage() -> None:
+def test_ringcentral_localization_status_reports_japanese_demo_and_qa_coverage() -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
 
     report = build_localization_status(package, language="ja")
 
     assert report.package_id == "ringcentral-video"
     assert report.language == "ja"
-    assert report.demo_localized_steps == 4
+    assert report.demo_localized_steps == 7
     assert report.demo_total_steps == 51
     assert report.qa_localized_questions == 12
     assert report.qa_localized_answers == 12
@@ -134,6 +134,8 @@ def test_ringcentral_localization_status_reports_japanese_qa_coverage() -> None:
     assert report.required_localization_complete is False
     assert report.flow_by_id["vbg-blur-demo"].localized_steps == 4
     assert report.flow_by_id["vbg-blur-demo"].total_steps == 4
+    assert report.flow_by_id["meeting-basics-demo"].localized_steps == 3
+    assert report.flow_by_id["meeting-basics-demo"].total_steps == 3
     assert report.flow_by_id["meeting-controls-tour"].localized_steps == 0
 
 
@@ -813,6 +815,21 @@ def test_short_ringcentral_demo_flow_renders_chinese_narration_text() -> None:
     assert rendered == step.narration.localized_text["zh"].strip()
     assert "Blur" in rendered
     assert has_cjk(rendered)
+
+
+def test_meeting_basics_demo_has_japanese_localized_narration() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    flow = package.demo_flow_by_id("meeting-basics-demo")
+
+    for step in flow.steps:
+        ja_text = step.narration.localized_text["ja"]
+        assert ja_text.strip(), step.id
+        assert has_cjk(ja_text), step.id
+
+    chat_step = next(step for step in flow.steps if step.id == "show-chat")
+    chat_text = chat_step.narration.localized_text["ja"]
+    assert "Chat" in chat_text
+    assert "非公開" in chat_text
 
 
 def test_rejects_duplicate_operation_entrypoint_ids(tmp_path: Path) -> None:

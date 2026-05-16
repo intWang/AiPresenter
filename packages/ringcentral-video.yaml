@@ -1415,6 +1415,8 @@ qa:
   - ringcentral.video.settings.background.blur
 - question: Can the presenter describe shared-screen content?
   localizedQuestions:
+    es:
+    - ¿Puede el presenter describir el contenido compartido en pantalla?
     ja:
     - 共有画面の内容を説明できますか
     zh:
@@ -1424,12 +1426,16 @@ qa:
   answer: Only after the content is captured by an approved observation source and the user allows it. The default
     policy is to avoid inferring or reading private shared content.
   localizedAnswers:
+    es: Solo después de que el contenido sea capturado por una fuente de observación aprobada y el usuario lo permita.
+      La política predeterminada es no inferir ni leer contenido compartido privado; es seguro explicar la entrada Share.
     ja: 承認済みの観察ソースで内容が取得され、ユーザーが明示的に許可し、内容が確認された場合に限ります。既定では、共有された個人情報や非公開の内容を推測したり読み上げたりしません。
     zh: 只有在共享内容来自已批准的观察来源，并且用户明确允许时，Presenter 才会说明它。默认策略是避免推断或朗读私人共享内容；可以安全解释 Share 入口本身。
   relatedEntrypointIds:
   - ringcentral.video.toolbar.share
 - question: How can I bring people into the meeting?
   localizedQuestions:
+    es:
+    - ¿Cómo puedo invitar a otras personas a la reunión?
     ja:
     - 会議に人を招待するにはどうすればいいですか
     zh:
@@ -1439,12 +1445,17 @@ qa:
   answer: Use Invite to add coworkers or copy meeting details. The presenter should avoid reading private invite
     links aloud unless explicitly requested.
   localizedAnswers:
+    es: Usa Invite para agregar compañeros o copiar los detalles de la reunión. El presenter no debe leer enlaces
+      privados, correos, nombres ni sugerencias de invitación salvo que el usuario lo pida explícitamente y el contenido
+      esté verificado.
     ja: Invite を使って同僚を追加するか、会議情報をコピーします。ユーザーが明示的に求め、内容が確認されている場合を除き、非公開の招待リンクは読み上げません。
     zh: 如果会议里只有你，可以用 Add coworkers；在工具栏里也可以用 Invite 添加同事或复制会议邀请。Presenter 不要朗读私人邀请链接、邮箱、姓名或建议列表，除非用户明确要求并且内容已验证。
   relatedEntrypointIds:
   - ringcentral.video.toolbar.invite
 - question: Can the presenter read meeting messages or participant names?
   localizedQuestions:
+    es:
+    - ¿Puede leer los mensajes del chat o los nombres de participantes?
     ja:
     - チャット内容や参加者名を読み上げられますか
     zh:
@@ -1455,10 +1466,15 @@ qa:
     should not read chat messages, participant names, roles, or private tabs unless the user explicitly asks and the
     content is verified.
   localizedAnswers:
+    es: AiPresenter puede explicar dónde están Chat y Participants y resumir conteos visibles cuando estén verificados.
+      De forma predeterminada no debe leer mensajes, nombres, roles ni pestañas privadas salvo que el usuario lo pida
+      explícitamente y el contenido esté verificado.
     ja: AiPresenter は Chat と Participants の場所や、確認済みの表示人数を説明できます。ただし、ユーザーが明示的に求め、内容が確認されている場合を除き、チャットメッセージ、参加者名、役割、非公開タブを読み上げません。
     zh: Presenter 可以说明 Chat 和 Participants 在哪里，也可以在已验证时概括可见人数。默认不要朗读聊天消息、参会人姓名、角色或私人标签页，除非用户明确要求并且内容已经验证。
 - question: Where are host controls for participants?
   localizedQuestions:
+    es:
+    - ¿Dónde están los controles de host para participantes?
     ja:
     - 主催者は参加者を管理するにはどうすればいいですか
     zh:
@@ -1469,6 +1485,9 @@ qa:
     Do not mute others, remove people, lock the meeting, change security settings, or read names and roles unless
     the user explicitly asks and the visible context is verified.
   localizedAnswers:
+    es: Usa el panel Participants para explicar el conteo, la búsqueda, las invitaciones y las áreas de control para
+      host o moderador. No silencies a otras personas, elimines participantes, bloquees la reunión, cambies seguridad
+      ni leas nombres o roles salvo que el usuario lo pida explícitamente y el contexto visible esté verificado.
     ja: Participants パネルで参加者数、検索、招待、主催者またはモデレーター向けの操作領域を説明できます。ユーザーが明示的に求め、表示内容が確認されている場合を除き、他の人をミュートしたり、削除したり、会議をロックしたり、セキュリティ設定を変更したり、名前や役割を読み上げたりしません。
     zh: 可以说明 Participants 面板在哪里，以及它用于查看人数、搜索、邀请和主持人或协管员相关控制。不要自动静音他人、移除参会者、锁定会议、修改安全设置，或朗读姓名和角色；只有在用户明确要求并且可见内容已验证时才继续。
 - question: Can AiPresenter send a reaction or raise my hand safely?
@@ -1478,6 +1497,8 @@ qa:
     - Can you raise my hand for me?
     - How do I use reactions safely?
     - How should AiPresenter handle raise hand?
+    es:
+    - ¿Puede AiPresenter enviar una reacción o levantar la mano de forma segura?
     ja:
     - リアクションを送ったり手を上げたりできますか
     zh:
@@ -1487,10 +1508,15 @@ qa:
     not send a reaction, raise a hand, or leave a hand raised unless the user explicitly asks. Close the reaction
     strip without sending anything when the user is only exploring, and lower the hand after any confirmed demonstration.
   localizedAnswers:
+    es: Reactions y Raise hand son señales visibles en la reunión. AiPresenter puede explicar dónde están, pero no debe
+      enviar una reacción, levantar la mano ni dejarla levantada salvo que el usuario lo pida explícitamente. Si solo se
+      está explorando, cierra la tira de reacciones sin enviar nada y baja la mano después de cualquier demostración confirmada.
     ja: リアクションと手を上げる操作は、会議中に表示されるシグナルです。AiPresenter は場所を説明できますが、ユーザーが明示的に求めた場合を除き、リアクションを送ったり、手を上げたり、手を上げたままにしたりしません。確認だけの場合は送信せずにリアクション欄を閉じ、実演後は手を下げます。
     zh: Reactions 和 Raise hand 都是会在会议中可见的信号。AiPresenter 可以说明它们在哪里，但除非用户明确要求，不要发送反应、举手，或让手一直保持举起状态。用户只是了解入口时，应关闭反应面板且不发送任何内容；如果经过确认做了演示，结束后要放下手。
 - question: How do I make sure my audio and video are ready?
   localizedQuestions:
+    es:
+    - ¿Cómo confirmo que mi audio y video están listos?
     ja:
     - 音声とビデオの準備を確認するにはどうすればいいですか
     zh:
@@ -1500,6 +1526,8 @@ qa:
   answer: Check the microphone and camera state first, then use the audio or video menu for device recovery. Do not
     toggle real meeting media unless the user intends to change the state.
   localizedAnswers:
+    es: Revisa primero el estado del micrófono y la cámara; luego usa el menú de audio o video para recuperar dispositivos.
+      No cambies medios reales de la reunión salvo que el usuario quiera modificar ese estado.
     ja: まずマイクとカメラの現在状態を確認し、必要に応じて音声またはビデオメニューでデバイスを復旧します。ユーザーが状態変更を意図している場合を除き、実際の会議メディアを切り替えません。
     zh: 先确认麦克风和摄像头当前状态，再用音频或视频菜单处理设备选择和恢复。不要在真实会议里随意切换麦克风或摄像头，除非用户明确要改变状态。
   relatedEntrypointIds:
@@ -1509,6 +1537,8 @@ qa:
   - ringcentral.video.toolbar.video-menu
 - question: How do I troubleshoot choppy audio or video?
   localizedQuestions:
+    es:
+    - ¿Cómo reviso audio o video entrecortado?
     ja:
     - 音声や映像が途切れるときはどうすればいいですか
     zh:
@@ -1518,6 +1548,8 @@ qa:
   answer: Open Network quality to inspect packet loss, jitter, latency, or related meeting diagnostics. Use Report
     issue only as an escalation path, and avoid guessing exact causes without observed values.
   localizedAnswers:
+    es: Abre Network quality para revisar pérdida de paquetes, jitter, latencia u otros diagnósticos de la reunión.
+      Usa Report issue solo como vía de escalación y evita adivinar causas exactas sin valores observados.
     ja: Network quality を開いて、パケットロス、ジッター、遅延などの会議診断を確認します。Report issue はエスカレーション用で、観察された値がないまま正確な原因を推測しません。
     zh: 打开 Network quality 查看丢包、抖动、延迟或相关会议诊断。Report issue 适合升级反馈；在没有观察到具体数值前，不要猜测准确原因。
   relatedEntrypointIds:
@@ -1525,6 +1557,8 @@ qa:
   - ringcentral.video.top.report-issue
 - question: Where are notes and transcript controls?
   localizedQuestions:
+    es:
+    - ¿Dónde están los controles de notas y transcripción?
     ja:
     - ノートと文字起こしはどこにありますか
     zh:
@@ -1534,6 +1568,8 @@ qa:
   answer: Notes opens the notes and transcript panel. Starting notes can change the meeting state, so use it only
     when the user asks and the meeting context allows it.
   localizedAnswers:
+    es: Notes abre el panel de notas y transcripción. Iniciar notas puede cambiar el estado de la reunión, así que úsalo
+      solo cuando el usuario lo pida y el contexto de la reunión lo permita.
     ja: Notes はノートと文字起こしパネルを開きます。ノート開始は会議状態を変える可能性があるため、ユーザーが明示的に求め、会議状況が許可する場合だけ使用します。
     zh: Notes 会打开笔记和转录面板。启动笔记可能改变会议状态，所以只在用户明确要求并且会议上下文允许时使用。
   relatedEntrypointIds:
@@ -1545,6 +1581,8 @@ qa:
     - Can I use live transcription?
     - How do I translate captions?
     - Where are translated captions?
+    es:
+    - ¿Dónde están los subtítulos, la transcripción en vivo y la traducción?
     ja:
     - 字幕はどこにありますか
     zh:
@@ -1556,6 +1594,10 @@ qa:
     read caption or transcript text, or promise post-meeting summaries unless the user explicitly asks and the visible
     context is verified.
   localizedAnswers:
+    es: Usa Notes and Transcript como la superficie conocida para controles relacionados con transcripción, y Settings
+      para preferencias de Translation cuando estén disponibles. No inicies notas, transcripción, subtítulos ni traducción,
+      no leas texto de subtítulos o transcripciones, ni prometas resúmenes posteriores salvo que el usuario lo pida
+      explícitamente y el contexto visible esté verificado.
     ja: Notes and Transcript を文字起こし関連コントロールの既知の入口として使い、利用可能な場合は Settings で翻訳関連の会議設定を確認します。ユーザーが明示的に求め、表示状況が確認されている場合を除き、ノート、文字起こし、字幕、翻訳を開始したり、字幕や文字起こし内容を読み上げたり、会議後の要約を約束したりしません。
     zh: 可以把 Notes and Transcript 作为转录相关控制的已知查找入口，也可以在功能可用时从 Settings 查看 Translation 相关会议偏好。不要自动开启笔记、转录、字幕或翻译，不要朗读字幕或转录内容，也不要承诺会后摘要；只有在用户明确要求并且可见上下文已验证时才继续。
 - question: Where can I find post-meeting recordings, transcripts, summaries, or insights?
@@ -1565,6 +1607,8 @@ qa:
     - Can AiPresenter read post-meeting transcripts?
     - Can you summarize the meeting after it ends?
     - Where are post-meeting summaries or insights?
+    es:
+    - ¿Dónde están los controles de grabación después de la reunión?
     ja:
     - 会議後の録画や文字起こしはどこにありますか
     zh:
@@ -1576,10 +1620,16 @@ qa:
     check after the meeting, but should not claim an artifact exists, open or read artifact content, or summarize it
     unless the user explicitly asks and the visible context is verified.
   localizedAnswers:
+    es: Los materiales posteriores de RingCentral, como grabaciones, transcripciones, resúmenes e insights, pueden estar
+      disponibles solo después de generarse, estar habilitados y ser visibles para un usuario con permiso. AiPresenter
+      puede explicar dónde revisar después de la reunión, pero no debe afirmar que existe un material, abrirlo, leerlo
+      ni resumirlo salvo que el usuario lo pida explícitamente y el contexto visible esté verificado.
     ja: RingCentral の会議後資料（録画、文字起こし、要約、洞察など）は、生成され、機能が有効で、権限のあるユーザーに表示される場合にのみ利用可能です。AiPresenter は会議後に確認する場所を説明できますが、ユーザーが明示的に求め、表示状況が確認されている場合を除き、資料の存在を断言したり、開いたり読み上げたり、内容を要約したりしません。
     zh: RingCentral 的会后资料（例如录制、转录、摘要和洞察）通常只有在会议后生成、功能已启用，并且当前用户有权限时才可能可用。AiPresenter 可以说明会后去哪里查看，但不要承诺资料一定存在，不要打开或朗读资料内容，也不要总结内容；只有在用户明确要求并且可见上下文已验证时才继续。
 - question: How do I handle meeting recording safely?
   localizedQuestions:
+    es:
+    - ¿Cómo manejo la grabación de la reunión de forma segura?
     ja:
     - 会議を録画するにはどうすればいいですか
     zh:
@@ -1590,6 +1640,9 @@ qa:
   answer: Recording changes the meeting state and can affect everyone in the room. Treat it as explain-only until
     the user explicitly confirms, the role is allowed, and participant consent is clear.
   localizedAnswers:
+    es: La grabación cambia el estado de la reunión y puede afectar a todas las personas en la sala. Trátala como solo
+      explicación hasta que el usuario confirme explícitamente, el rol lo permita y el consentimiento de participantes
+      esté claro.
     ja: 録画は会議状態を変更し、会議中の全員に影響します。ユーザーが明示的に確認し、現在の役割で許可され、参加者の同意が明確な場合を除き、入口を説明するだけで自動的に録画を開始しません。
     zh: 录制会改变会议状态，也会影响房间里的所有人。除非用户明确确认、当前角色允许，并且参会者同意已经清楚，否则只解释入口，不自动开始录制。
   relatedEntrypointIds:

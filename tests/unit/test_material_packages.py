@@ -325,7 +325,7 @@ def test_ringcentral_spanish_seed_qa_and_aliases_are_present() -> None:
     }
 
 
-def test_ringcentral_localization_status_reports_spanish_seed_coverage() -> None:
+def test_ringcentral_localization_status_reports_spanish_report_only_qa_coverage() -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
 
     report = build_localization_status(package, language="es")
@@ -334,8 +334,8 @@ def test_ringcentral_localization_status_reports_spanish_seed_coverage() -> None
     assert report.language == "es"
     assert report.demo_localized_steps == 0
     assert report.demo_total_steps == 51
-    assert report.qa_localized_questions == 1
-    assert report.qa_localized_answers == 1
+    assert report.qa_localized_questions == 12
+    assert report.qa_localized_answers == 12
     assert report.qa_total == 12
     assert report.entrypoints_with_aliases == 1
     assert report.entrypoint_total == 27
@@ -942,6 +942,29 @@ def test_all_ringcentral_demo_flow_steps_have_chinese_localized_narration() -> N
             zh_text = step.narration.localized_text["zh"]
             assert zh_text.strip(), f"{flow.id}:{step.id}"
             assert has_cjk(zh_text), f"{flow.id}:{step.id}"
+
+
+def test_ringcentral_spanish_qas_are_report_only_complete() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    missing_questions = [
+        item.question for item in package.qa if not item.localized_questions.get("es")
+    ]
+    missing_answers = [
+        item.question
+        for item in package.qa
+        if not item.localized_answers.get("es", "").strip()
+    ]
+    spanish_demo_steps = [
+        f"{flow.id}:{step.id}"
+        for flow in package.demo_flows
+        for step in flow.steps
+        if step.narration.localized_text.get("es")
+    ]
+
+    assert missing_questions == []
+    assert missing_answers == []
+    assert spanish_demo_steps == []
 
 
 def test_meeting_controls_tour_renders_chinese_narration_text() -> None:

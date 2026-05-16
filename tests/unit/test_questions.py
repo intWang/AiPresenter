@@ -506,6 +506,29 @@ def test_ringcentral_captions_and_translation_questions_are_answer_only(
 @pytest.mark.parametrize(
     "question",
     [
+        "\u00bfPuede el presenter describir el contenido compartido en pantalla?",
+        "\u00bfPuede leer los mensajes del chat o los nombres de participantes?",
+        "\u00bfD\u00f3nde est\u00e1n los controles de grabaci\u00f3n despu\u00e9s de la reuni\u00f3n?",
+    ],
+)
+def test_ringcentral_spanish_safety_questions_match_qas_without_runtime_spanish(
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(language="en", tone="professional"),
+    )
+
+    assert response.can_operate is False
+    assert create_question_interrupt_step(package, response) is None
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
         "\u5b57\u5e55\u5728\u54ea\u91cc",
         "\u5b9e\u65f6\u8f6c\u5f55\u5728\u54ea\u91cc",
         "\u600e\u4e48\u7ffb\u8bd1\u5b57\u5e55",

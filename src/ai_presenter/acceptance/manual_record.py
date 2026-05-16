@@ -69,6 +69,7 @@ def build_acceptance_target_summary(
     flow = _resolve_flow(package, request.flow_id)
     entrypoint = _resolve_entrypoint(package, request.entrypoint_id)
     checklist_target = _normalize_optional_text(request.checklist_target)
+    _reject_direct_no_step_entrypoint(entrypoint)
 
     if flow is not None and entrypoint is not None:
         flow_entrypoints = {step.action.entrypoint_id for step in flow.steps}
@@ -79,6 +80,16 @@ def build_acceptance_target_summary(
         flow=flow,
         entrypoint=entrypoint,
         checklist_target=checklist_target,
+    )
+
+
+def _reject_direct_no_step_entrypoint(entrypoint: OperationEntrypoint | None) -> None:
+    if entrypoint is None or entrypoint.open_steps:
+        return
+    raise ValueError(
+        f"Entrypoint {entrypoint.id} has no executable open steps; "
+        "direct acceptance drafts require a separate confirmation workflow "
+        "before live execution."
     )
 
 

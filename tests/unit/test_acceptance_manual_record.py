@@ -103,12 +103,15 @@ def test_manual_acceptance_draft_rejects_entrypoint_outside_selected_flow() -> N
         )
 
 
-def test_manual_acceptance_draft_warns_for_blocked_routes() -> None:
-    draft = render_manual_acceptance_draft(
-        load_ringcentral_package(),
-        AcceptanceDraftRequest(entrypoint_id="ringcentral.video.toolbar.leave"),
-    )
-
-    assert "Explain-only or blocked route warning" in draft
-    assert "do not execute the live action" in draft
-    assert "ringcentral.video.toolbar.leave" in draft
+def test_manual_acceptance_draft_rejects_no_open_step_entrypoint() -> None:
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Entrypoint ringcentral.video.toolbar.leave has no executable open steps; "
+            "direct acceptance drafts require a separate confirmation workflow"
+        ),
+    ):
+        render_manual_acceptance_draft(
+            load_ringcentral_package(),
+            AcceptanceDraftRequest(entrypoint_id="ringcentral.video.toolbar.leave"),
+        )

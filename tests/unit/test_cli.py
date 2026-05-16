@@ -549,6 +549,57 @@ def test_acceptance_draft_outputs_flow_template() -> None:
     assert "ringcentral.video.main.add-coworkers" in result.stdout
 
 
+def test_acceptance_draft_rejects_no_open_step_entrypoint() -> None:
+    result = CliRunner().invoke(
+        app,
+        [
+            "acceptance-draft",
+            "--package",
+            "ringcentral-video",
+            "--entrypoint",
+            "ringcentral.video.more.recording",
+        ],
+    )
+
+    assert result.exit_code != 0
+    output = " ".join(result.output.split())
+    assert "ringcentral.video.more.recording" in output
+    assert "has no" in output
+    assert "executable" in output
+    assert "open steps" in output
+    assert "confirmation" in output
+    assert "workflow" in output
+    assert "Manual RingCentral Acceptance Draft" not in output
+    assert "### Manual Acceptance Fields" not in output
+
+
+def test_acceptance_draft_refusal_does_not_write_output_file(tmp_path: Path) -> None:
+    output_path = tmp_path / "blocked-draft.md"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "acceptance-draft",
+            "--package",
+            "ringcentral-video",
+            "--entrypoint",
+            "ringcentral.video.toolbar.leave",
+            "--output",
+            str(output_path),
+        ],
+    )
+
+    assert result.exit_code != 0
+    output = " ".join(result.output.split())
+    assert "ringcentral.video.toolbar.leave" in output
+    assert "has no" in output
+    assert "executable" in output
+    assert "open steps" in output
+    assert "confirmation" in output
+    assert "workflow" in output
+    assert not output_path.exists()
+
+
 def test_acceptance_draft_requires_target() -> None:
     result = CliRunner().invoke(app, ["acceptance-draft", "--package", "ringcentral-video"])
 

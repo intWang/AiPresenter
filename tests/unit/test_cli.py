@@ -451,12 +451,12 @@ def test_localization_report_outputs_japanese_demo_and_qa_coverage() -> None:
 
     assert result.exit_code == 0
     assert "Language: ja" in result.stdout
-    assert "Localization report: 50/51 demo steps" in result.stdout
+    assert "Localization report: 51/51 demo steps" in result.stdout
     assert "- vbg-blur-demo: 4/4 narration localized" in result.stdout
     assert "- meeting-basics-demo: 3/3 narration localized" in result.stdout
     assert "- meeting-controls-tour: 22/22 narration localized" in result.stdout
-    assert "- meeting-control-map-demo: 21/22 narration localized" in result.stdout
-    assert "missing: control-map-summary" in result.stdout
+    assert "- meeting-control-map-demo: 22/22 narration localized" in result.stdout
+    assert "missing:" not in result.stdout
     assert "missing: explain-leave" not in result.stdout
     assert "- localized questions: 12/12" in result.stdout
     assert "- localized answers: 12/12" in result.stdout
@@ -481,7 +481,7 @@ def test_localization_report_require_complete_passes_for_chinese() -> None:
     assert "Localization coverage incomplete" not in result.stdout
 
 
-def test_localization_report_require_complete_fails_for_japanese_demo_gap() -> None:
+def test_localization_report_require_complete_passes_for_japanese() -> None:
     result = CliRunner().invoke(
         app,
         [
@@ -494,18 +494,18 @@ def test_localization_report_require_complete_fails_for_japanese_demo_gap() -> N
         ],
     )
 
-    assert result.exit_code == 1
+    assert result.exit_code == 0
     assert "Language: ja" in result.stdout
-    assert "Localization report: 50/51 demo steps" in result.stdout
+    assert "Localization report: 51/51 demo steps" in result.stdout
     assert "- vbg-blur-demo: 4/4 narration localized" in result.stdout
     assert "- meeting-basics-demo: 3/3 narration localized" in result.stdout
     assert "- meeting-controls-tour: 22/22 narration localized" in result.stdout
-    assert "- meeting-control-map-demo: 21/22 narration localized" in result.stdout
-    assert "missing: control-map-summary" in result.stdout
+    assert "- meeting-control-map-demo: 22/22 narration localized" in result.stdout
+    assert "missing:" not in result.stdout
     assert "missing: explain-leave" not in result.stdout
     assert "- localized questions: 12/12" in result.stdout
     assert "- localized answers: 12/12" in result.stdout
-    assert "Localization coverage incomplete for ja." in result.stdout
+    assert "Localization coverage incomplete for ja." not in result.stdout
 
 
 def test_entrypoints_lists_material_package_entrypoints_by_area() -> None:

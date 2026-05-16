@@ -1177,6 +1177,7 @@ demoFlows:
         media controls for readiness, interaction controls for feedback, and More for deeper settings and riskier
         actions.
       localizedText:
+        ja: これが RingCentral Video のコントロールマップです。上部バーは状態確認とトラブルシューティング、参加者まわりは共同作業、音声とビデオは参加準備、共有やリアクションは発信やフィードバック、More はより深い設定や慎重に扱う操作、Leave は退出の境界です。このまとめでは場所と役割を整理するだけで、ユーザーが明確に依頼し、画面上の選択肢と影響を確認できるまで、共有、録画、ノート、退出、設定変更などのリスクがある操作は実行しません。
         zh: 这就是会议控制地图：上方看状态和排障，成员区负责协作，音视频区负责准备，共享和互动区负责表达，More 里放更深层或更谨慎的操作。
       placement: before
 explainers:

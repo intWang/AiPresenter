@@ -316,7 +316,7 @@ def test_diagnostics_require_localization_passes_for_ringcentral_chinese() -> No
     assert "12/12 Q&A answers" in localization_check.detail
 
 
-def test_diagnostics_require_localization_reports_japanese_qa_complete_but_demo_missing() -> None:
+def test_diagnostics_require_localization_passes_for_ringcentral_japanese() -> None:
     profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
 
@@ -330,9 +330,9 @@ def test_diagnostics_require_localization_reports_japanese_qa_complete_but_demo_
     localization_check = next(
         check for check in report.checks if check.name == "localization"
     )
-    assert localization_check.status == "FAIL"
-    assert "required ja localization incomplete" in localization_check.detail
-    assert "50/51 demo steps" in localization_check.detail
+    assert localization_check.status == "OK"
+    assert "required ja localization complete" in localization_check.detail
+    assert "51/51 demo steps" in localization_check.detail
     assert "12/12 Q&A questions" in localization_check.detail
     assert "12/12 Q&A answers" in localization_check.detail
 

@@ -1693,6 +1693,46 @@ def test_ringcentral_spanish_location_questions_match_package_aliases_without_le
     assert create_question_interrupt_step(package, notes_response) is None
 
 
+def test_spanish_entrypoint_answer_uses_package_alias_label() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question="panel de participantes",
+        voice=PresenterVoiceSettings(language="es"),
+    )
+
+    assert response.entrypoint_id == "ringcentral.video.toolbar.participants"
+    assert response.can_operate is True
+    assert response.answer_text.startswith("panel de participantes:")
+    assert not response.answer_text.startswith("Participants panel:")
+
+
+@pytest.mark.parametrize(
+    ("question", "language"),
+    [
+        ("panel de participantes", "en"),
+        ("\u8c01\u5728\u4f1a\u8bae\u91cc", "zh"),
+        ("\u53c2\u52a0\u8005\u4e00\u89a7\u306f\u3069\u3053\u3067\u3059\u304b", "ja"),
+    ],
+)
+def test_non_spanish_entrypoint_answers_keep_canonical_title_label(
+    question: str,
+    language: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(language=language),
+    )
+
+    assert response.entrypoint_id == "ringcentral.video.toolbar.participants"
+    assert response.answer_text.startswith("Participants panel:")
+    assert not response.answer_text.startswith("panel de participantes:")
+
+
 @pytest.mark.parametrize(
     ("question", "entrypoint_id"),
     [

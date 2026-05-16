@@ -562,7 +562,8 @@ def test_presenter_controller_starts_spanish_openai_question_demo_when_idle() ->
     assert result.demonstration_status == "started"
     assert result.entrypoint_id == "ringcentral.video.toolbar.participants"
     assert result.can_operate is True
-    assert "Participants" in result.answer_text
+    assert result.answer_text.startswith("panel de participantes:")
+    assert "Participants panel:" not in result.answer_text
     assert calls == [
         (
             "ringcentral-video-openai",

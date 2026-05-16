@@ -525,8 +525,21 @@ def _field_tokens(text: str) -> set[str]:
 
 
 def _render_entrypoint_answer(entrypoint: OperationEntrypoint, voice: PresenterVoiceSettings) -> str:
-    base = f"{entrypoint.title}: {entrypoint.purpose}"
+    base = f"{_entrypoint_answer_label(entrypoint, voice)}: {entrypoint.purpose}"
     return _render_text(base, voice)
+
+
+def _entrypoint_answer_label(
+    entrypoint: OperationEntrypoint,
+    voice: PresenterVoiceSettings,
+) -> str:
+    if voice.language == "es":
+        aliases = entrypoint.question_aliases.get(voice.language, ())
+        for alias in aliases:
+            label = alias.strip()
+            if label:
+                return label
+    return entrypoint.title
 
 
 def _render_text(text: str, voice: PresenterVoiceSettings) -> str:

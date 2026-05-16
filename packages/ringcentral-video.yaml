@@ -971,6 +971,7 @@ demoFlows:
       text: Moving from status into people, Add coworkers opens the invite dialog from the empty room. This is the
         fastest way to bring someone in when you are the first person here.
       localizedText:
+        ja: ステータス領域からメンバー関連の領域に移ります。空の会議に表示される Add coworkers は Invite ダイアログを開き、最初に入室しているときに同僚を招待するための入口です。名前やメールアドレスの検索、候補、会議リンク、Invite などを確認できる場所ですが、ユーザーが明示的に求め、表示内容が確認されるまで、名前、メールアドレス、候補、非公開の会議リンクは読み上げません。説明後はダイアログを閉じます。
         zh: 从状态区切到成员区。空会议里的 Add coworkers 会打开邀请窗口；当你一个人在会里时，这是最快的拉人入口。
       placement: during
       actionOffsetMs: 350

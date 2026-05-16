@@ -123,7 +123,7 @@ def test_ringcentral_localization_status_reports_japanese_demo_and_qa_coverage()
 
     assert report.package_id == "ringcentral-video"
     assert report.language == "ja"
-    assert report.demo_localized_steps == 38
+    assert report.demo_localized_steps == 39
     assert report.demo_total_steps == 51
     assert report.qa_localized_questions == 12
     assert report.qa_localized_answers == 12
@@ -138,10 +138,10 @@ def test_ringcentral_localization_status_reports_japanese_demo_and_qa_coverage()
     assert report.flow_by_id["meeting-basics-demo"].total_steps == 3
     assert report.flow_by_id["meeting-controls-tour"].localized_steps == 22
     assert report.flow_by_id["meeting-controls-tour"].total_steps == 22
-    assert report.flow_by_id["meeting-control-map-demo"].localized_steps == 9
+    assert report.flow_by_id["meeting-control-map-demo"].localized_steps == 10
     assert report.flow_by_id["meeting-control-map-demo"].total_steps == 22
     assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids[0] == (
-        "control-map-audio-menu"
+        "control-map-camera"
     )
 
 
@@ -1846,6 +1846,63 @@ def test_meeting_control_map_has_japanese_microphone_narration() -> None:
     assert "オフにします" not in ja_text
     assert "変更します" not in ja_text
     assert "操作します" not in ja_text
+    assert "自動" not in ja_text
+    assert "必ず" not in ja_text
+
+
+def test_meeting_control_map_has_japanese_audio_menu_narration() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    flow = package.demo_flow_by_id("meeting-control-map-demo")
+    step = next(step for step in flow.steps if step.id == "control-map-audio-menu")
+
+    assert step.action.entrypoint_id == "ringcentral.video.toolbar.audio-menu"
+    assert step.action.operation == "open"
+    assert step.narration.placement == "during"
+    assert step.narration.action_offset_ms == 350
+    report = build_localization_status(package, language="ja")
+    audio_menu_entrypoint = package.entrypoint_by_id(
+        "ringcentral.video.toolbar.audio-menu"
+    )
+    assert "ja" not in audio_menu_entrypoint.question_aliases
+    assert report.entrypoints_with_aliases == 3
+    assert report.alias_total == 9
+    assert len(audio_menu_entrypoint.open_steps) == 1
+    open_step = audio_menu_entrypoint.open_steps[0]
+    assert open_step.action == "clickWindowControl"
+    assert open_step.target == "More"
+    assert open_step.match["occurrence"] == "1"
+    assert open_step.match["controlType"] == "button"
+    assert open_step.match["cleanup"] == "escape"
+    assert "Microphone" in audio_menu_entrypoint.presenter_notes[0]
+    assert "Speaker" in audio_menu_entrypoint.presenter_notes[0]
+    assert "Leave computer audio" in audio_menu_entrypoint.presenter_notes[0]
+    assert "Use phone audio" in audio_menu_entrypoint.presenter_notes[0]
+    assert "More audio settings" in audio_menu_entrypoint.presenter_notes[0]
+    assert "wrong microphone or speaker" in audio_menu_entrypoint.presenter_notes[1]
+    assert "system-default-audio-devices toast" in audio_menu_entrypoint.presenter_notes[2]
+    assert "only when visible" in audio_menu_entrypoint.presenter_notes[2]
+    assert "overlaps Add" in audio_menu_entrypoint.presenter_notes[2]
+    ja_text = step.narration.localized_text["ja"]
+    assert ja_text.strip()
+    assert has_cjk(ja_text)
+    assert "マイク" in ja_text
+    assert "スピーカー" in ja_text
+    assert "音声" in ja_text
+    assert "メニュー" in ja_text
+    assert "コンピューター音声" in ja_text
+    assert "電話音声" in ja_text
+    assert "音声設定" in ja_text
+    assert "復旧" in ja_text
+    assert "ユーザー" in ja_text
+    assert "明示的" in ja_text
+    assert "選択します" not in ja_text
+    assert "切り替えます" not in ja_text
+    assert "退出します" not in ja_text
+    assert "変更します" not in ja_text
+    assert "開きます" not in ja_text
+    assert "テストします" not in ja_text
+    assert "接続します" not in ja_text
+    assert "読み上げます" not in ja_text
     assert "自動" not in ja_text
     assert "必ず" not in ja_text
 

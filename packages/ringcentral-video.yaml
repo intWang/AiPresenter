@@ -1022,6 +1022,7 @@ demoFlows:
       text: The audio menu is the recovery tool when sound is wrong. It lets you switch microphone and speaker,
         leave computer audio, use phone audio, or open deeper audio settings.
       localizedText:
+        ja: 音声に問題があるときは、マイク横の音声メニューが復旧の入口になります。ここではマイク、スピーカー、コンピューター音声、電話音声、音声設定の場所を確認できます。デバイス名や音量レベルはプライベートな情報として扱い、ユーザーが明示的に求めるまでは、デバイスや音声接続には触れません。
         zh: 麦克风旁边的菜单是排查声音问题的入口。可以换麦克风和扬声器，也可以离开电脑音频、改用电话音频，或进入更完整的音频设置。
       placement: during
       actionOffsetMs: 350

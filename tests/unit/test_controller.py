@@ -652,6 +652,7 @@ def test_render_voice_label_uses_controller_labels() -> None:
         == "Chinese / Friendly"
     )
     assert render_voice_label(PresenterVoiceSettings(tone="calm")) == "English / Support"
+    assert render_voice_label(PresenterVoiceSettings(tone="safety")) == "English / Careful"
 
 
 def test_format_chat_turns_keeps_history_in_order() -> None:

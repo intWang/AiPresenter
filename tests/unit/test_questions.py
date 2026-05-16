@@ -379,6 +379,29 @@ def test_ringcentral_host_controls_question_returns_participants_guidance() -> N
     assert "verified" in response.answer_text
 
 
+def test_ringcentral_careful_tone_preserves_privacy_question_route() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    professional = answer_question(
+        package=package,
+        question="where are host controls for participants",
+        voice=PresenterVoiceSettings(),
+    )
+    careful = answer_question(
+        package=package,
+        question="where are host controls for participants",
+        voice=PresenterVoiceSettings(tone="privacy"),
+    )
+
+    assert professional.entrypoint_id is None
+    assert careful.entrypoint_id == professional.entrypoint_id
+    assert careful.can_operate is professional.can_operate is False
+    assert create_question_interrupt_step(package, careful) is None
+    assert careful.answer_text.startswith("Safety note.")
+    assert "explicitly asks" in careful.answer_text
+    assert "verified" in careful.answer_text
+
+
 def test_ringcentral_localized_host_controls_question_returns_chinese_guidance() -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
 
@@ -449,6 +472,24 @@ def test_ringcentral_localized_caption_translation_questions_are_answer_only(
     assert "Settings" in response.answer_text
     assert "\u660e\u786e\u8981\u6c42" in response.answer_text
     assert "\u5df2\u9a8c\u8bc1" in response.answer_text
+    assert not response.answer_text.startswith("\u6211\u4f1a\u8c28\u614e\u8bf4\u660e")
+
+
+def test_ringcentral_chinese_safety_qas_keep_authored_text_under_careful_tone() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question="\u5b9e\u65f6\u8f6c\u5f55\u5728\u54ea\u91cc",
+        voice=PresenterVoiceSettings(language="zh", tone="privacy"),
+    )
+
+    assert response.entrypoint_id is None
+    assert response.can_operate is False
+    assert create_question_interrupt_step(package, response) is None
+    assert "Notes and Transcript" in response.answer_text
+    assert "\u660e\u786e\u8981\u6c42" in response.answer_text
+    assert not response.answer_text.startswith("\u6211\u4f1a\u8c28\u614e\u8bf4\u660e")
 
 
 @pytest.mark.parametrize(

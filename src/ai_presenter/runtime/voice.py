@@ -13,6 +13,7 @@ PresenterTone = Literal[
     "coach",
     "formal",
     "support",
+    "careful",
 ]
 PRESENTER_LANGUAGE_CHOICES: tuple[tuple[str, PresenterLanguage], ...] = (
     ("English", "en"),
@@ -27,6 +28,7 @@ PRESENTER_TONE_CHOICES: tuple[tuple[str, PresenterTone], ...] = (
     ("Coach", "coach"),
     ("Formal", "formal"),
     ("Support", "support"),
+    ("Careful", "careful"),
 )
 
 _TONE_DESCRIPTIONS: dict[PresenterTone, str] = {
@@ -37,6 +39,7 @@ _TONE_DESCRIPTIONS: dict[PresenterTone, str] = {
     "coach": "coach-like, step-by-step, and encouraging",
     "formal": "formal, polished, and restrained",
     "support": "calm, diagnostic, recovery-focused, and reassuring",
+    "careful": "careful, privacy-aware, concise, and boundary-focused",
 }
 _LANGUAGE_LABELS: dict[PresenterLanguage, str] = {
     "en": "English",
@@ -51,6 +54,7 @@ _TONE_LABELS: dict[PresenterTone, str] = {
     "coach": "Coach",
     "formal": "Formal",
     "support": "Support",
+    "careful": "Careful",
 }
 _LANGUAGE_ALIASES: dict[str, PresenterLanguage] = {
     "en": "en",
@@ -92,6 +96,12 @@ _TONE_ALIASES: dict[str, PresenterTone] = {
     "calm": "support",
     "steady": "support",
     "reassuring": "support",
+    "careful": "careful",
+    "safety": "careful",
+    "safe": "careful",
+    "privacy": "careful",
+    "guarded": "careful",
+    "compliance": "careful",
 }
 _CHINESE_REPLACEMENTS = {
     "Chat": "聊天",
@@ -182,6 +192,8 @@ def render_presenter_text(text: str, settings: PresenterVoiceSettings) -> str:
         return f"Certainly. {text}"
     if settings.tone == "support":
         return f"Let's troubleshoot this. {text}"
+    if settings.tone == "careful":
+        return f"Safety note. {text}"
     return text
 
 
@@ -242,6 +254,7 @@ def _render_chinese(text: str, settings: PresenterVoiceSettings) -> str:
         "friendly": "可以的，我来说明一下。",
         "coach": "我们一步步来看。",
         "formal": "请允许我说明。",
+        "careful": "我会谨慎说明。",
     }
     prefix = prefixes.get(settings.tone, "")
     return f"{prefix}{rendered}"

@@ -82,6 +82,12 @@ def test_voice_settings_normalize_expanded_tones() -> None:
     assert PresenterVoiceSettings(tone="calm").tone == "support"
     assert PresenterVoiceSettings(tone="steady").tone == "support"
     assert PresenterVoiceSettings(tone="reassuring").tone == "support"
+    assert PresenterVoiceSettings(tone="careful").tone == "careful"
+    assert PresenterVoiceSettings(tone="safety").tone == "careful"
+    assert PresenterVoiceSettings(tone="safe").tone == "careful"
+    assert PresenterVoiceSettings(tone="privacy").tone == "careful"
+    assert PresenterVoiceSettings(tone="guarded").tone == "careful"
+    assert PresenterVoiceSettings(tone="compliance").tone == "careful"
 
 
 def test_presenter_tone_aliases_and_description_are_public() -> None:
@@ -98,6 +104,15 @@ def test_presenter_tone_aliases_and_description_are_public() -> None:
         "reassuring",
     )
     assert "recovery-focused" in voice.presenter_tone_description("support")
+    assert voice.presenter_tone_aliases("privacy") == (
+        "careful",
+        "safety",
+        "safe",
+        "privacy",
+        "guarded",
+        "compliance",
+    )
+    assert "privacy-aware" in voice.presenter_tone_description("careful")
 
 
 def test_voice_settings_reject_unknown_language_and_tone() -> None:
@@ -112,6 +127,7 @@ def test_voice_instruction_describes_expanded_tones() -> None:
     assert "step-by-step" in render_voice_instruction(PresenterVoiceSettings(tone="coach"))
     assert "formal" in render_voice_instruction(PresenterVoiceSettings(tone="formal"))
     assert "recovery-focused" in render_voice_instruction(PresenterVoiceSettings(tone="support"))
+    assert "boundary-focused" in render_voice_instruction(PresenterVoiceSettings(tone="privacy"))
 
 
 def test_render_presenter_text_applies_expanded_english_tones() -> None:
@@ -131,6 +147,20 @@ def test_render_presenter_text_applies_expanded_english_tones() -> None:
         "Open audio settings.",
         PresenterVoiceSettings(tone="support"),
     ).startswith("Let's troubleshoot this.")
+    assert render_presenter_text(
+        "Recording requires consent.",
+        PresenterVoiceSettings(tone="privacy"),
+    ).startswith("Safety note.")
+
+
+def test_render_presenter_text_applies_chinese_careful_tone_without_english_prefix() -> None:
+    rendered = render_presenter_text(
+        "Recording requires consent.",
+        PresenterVoiceSettings(language="zh", tone="safety"),
+    )
+
+    assert rendered.startswith("\u6211\u4f1a\u8c28\u614e\u8bf4\u660e\u3002")
+    assert "Safety note" not in rendered
 
 
 def test_render_presenter_text_keeps_japanese_text_without_english_prefix() -> None:
@@ -283,3 +313,4 @@ def test_sapi_rate_for_voice_maps_chinese_tones_to_practical_rates() -> None:
     assert sapi_rate_for_voice(PresenterVoiceSettings(language="zh", tone="coach")) == 0
     assert sapi_rate_for_voice(PresenterVoiceSettings(language="zh", tone="formal")) == 0
     assert sapi_rate_for_voice(PresenterVoiceSettings(language="zh", tone="support")) == -1
+    assert sapi_rate_for_voice(PresenterVoiceSettings(language="zh", tone="careful")) == 0

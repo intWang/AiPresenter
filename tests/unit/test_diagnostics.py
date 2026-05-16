@@ -349,6 +349,85 @@ def test_diagnostics_require_localization_flags_package_only_runtime_language() 
     assert "does not support --language es" in runtime_language_check.detail
 
 
+def test_diagnostics_runtime_language_support_stays_separate_after_package_localization_complete() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
+    package = MaterialPackage.model_validate(
+        {
+            "appId": "demo",
+            "appName": "Demo",
+            "version": 1,
+            "profileIds": ["ringcentral-video-bind-speaker"],
+            "operationEntrypoints": [
+                {
+                    "id": "demo.panel",
+                    "title": "Panel",
+                    "area": "Main",
+                    "purpose": "Explain panel.",
+                    "openSteps": [],
+                }
+            ],
+            "demoFlows": [
+                {
+                    "id": "demo-tour",
+                    "title": "Demo tour",
+                    "goal": "Show one localized package-only step.",
+                    "steps": [
+                        {
+                            "id": "show-panel",
+                            "title": "Show panel",
+                            "action": {
+                                "entrypointId": "demo.panel",
+                                "operation": "explain",
+                            },
+                            "narration": {
+                                "text": "This explains the panel.",
+                                "localizedText": {
+                                    "es": "Esto explica el panel.",
+                                },
+                            },
+                        }
+                    ],
+                }
+            ],
+            "qa": [
+                {
+                    "question": "Where is the panel?",
+                    "answer": "The panel is on screen.",
+                    "localizedQuestions": {
+                        "es": ["¿Dónde está el panel?"],
+                    },
+                    "localizedAnswers": {
+                        "es": "El panel está en pantalla.",
+                    },
+                }
+            ],
+            "manualControls": [],
+        }
+    )
+
+    report = diagnostics.diagnose_configuration(
+        profile=profile,
+        material_package=package,
+        require_localization=True,
+        localization_language="es",
+    )
+
+    localization_check = next(
+        check for check in report.checks if check.name == "localization"
+    )
+    assert localization_check.status == "OK"
+    assert "required es localization complete" in localization_check.detail
+    assert "1/1 demo steps" in localization_check.detail
+    assert "1/1 Q&A questions" in localization_check.detail
+    assert "1/1 Q&A answers" in localization_check.detail
+    runtime_language_check = next(
+        check for check in report.checks if check.name == "runtime language support"
+    )
+    assert runtime_language_check.status == "FAIL"
+    assert "localization language es is package-only" in runtime_language_check.detail
+    assert "does not support --language es" in runtime_language_check.detail
+
+
 def test_diagnostics_require_localization_passes_for_ringcentral_japanese() -> None:
     profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
     package = load_material_package(Path("packages/ringcentral-video.yaml"))

@@ -45,6 +45,8 @@ Check package localization coverage without running automation:
 
 Use `doctor --require-localization --localization-language ...` when checking package
 localization keys that are separate from runtime presenter voice support.
+The language lifecycle and promotion gates are documented in
+`docs/knowledge/language-lifecycle.md`.
 
 Discover presenter voice aliases and check a profile's voice routes:
 

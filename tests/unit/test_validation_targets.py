@@ -6,6 +6,7 @@ from ai_presenter.acceptance.validation_targets import acceptance_draft_command
 from ai_presenter.acceptance.validation_targets import discover_validation_targets
 from ai_presenter.acceptance.validation_targets import render_validation_target_lines
 from ai_presenter.acceptance.validation_targets import target_by_id
+from ai_presenter.acceptance.validation_targets import validate_entrypoint_evidence_index
 from ai_presenter.acceptance.validation_targets import ValidationTargetCatalog
 from ai_presenter.packages.loader import load_material_package
 from ai_presenter.packages.models import MaterialPackage
@@ -28,13 +29,14 @@ def load_evidence_text() -> str:
 def discover_catalog(
     *,
     checklist_text: str | None = None,
+    evidence_text: str | None = None,
     include_blocked: bool = False,
 ) -> ValidationTargetCatalog:
     return discover_validation_targets(
         load_ringcentral_package(),
         checklist_text=checklist_text or load_checklist_text(),
         checklist_path=Path("docs/knowledge/ringcentral-video/validation-checklist-index.md"),
-        evidence_text=load_evidence_text(),
+        evidence_text=evidence_text if evidence_text is not None else load_evidence_text(),
         evidence_path=Path("docs/knowledge/ringcentral-video/evidence-index.md"),
         include_blocked=include_blocked,
     )
@@ -76,6 +78,29 @@ def priority_checklist_without_target_id_rows(*rows: str) -> str:
             "| --- | --- | --- |",
         ]
     )
+
+
+def evidence_without_entrypoint(entrypoint_id: str) -> str:
+    return "\n".join(
+        line
+        for line in load_evidence_text().splitlines()
+        if not line.startswith(f"| `{entrypoint_id}` |")
+    )
+
+
+def evidence_with_extra_row(row: str) -> str:
+    return load_evidence_text().replace("\n## Flow Coverage", f"\n{row}\n\n## Flow Coverage")
+
+
+def evidence_with_level(entrypoint_id: str, level: str) -> str:
+    lines = []
+    for line in load_evidence_text().splitlines():
+        if line.startswith(f"| `{entrypoint_id}` |"):
+            cells = line.split("|")
+            cells[3] = f" `{level}` "
+            line = "|".join(cells)
+        lines.append(line)
+    return "\n".join(lines)
 
 
 def test_discover_validation_targets_uses_explicit_target_ids() -> None:
@@ -134,6 +159,85 @@ def test_discover_validation_targets_reads_priority_checklist_rows() -> None:
     assert "Modal close" in target.cleanup
     assert "invite links" in target.privacy_boundary
     assert target.evidence_levels["ringcentral.video.main.add-coworkers"] == "Observed"
+
+
+def test_evidence_index_integrity_covers_every_ringcentral_entrypoint_once() -> None:
+    package = load_ringcentral_package()
+
+    report = validate_entrypoint_evidence_index(package, load_evidence_text())
+
+    assert report.entrypoint_count == 27
+    assert report.evidence_entrypoint_count == 27
+    assert set(report.evidence_levels) == set(package.entrypoints_by_id)
+
+
+def test_discover_validation_targets_has_no_unknown_evidence_for_real_catalog() -> None:
+    catalog = discover_catalog(include_blocked=True)
+
+    unknown_refs = [
+        entrypoint_id
+        for target in catalog.targets
+        for entrypoint_id, level in target.evidence_levels.items()
+        if level == "unknown"
+    ]
+
+    assert unknown_refs == []
+
+
+def test_evidence_index_integrity_rejects_missing_package_entrypoint() -> None:
+    evidence_text = evidence_without_entrypoint("ringcentral.video.toolbar.chat")
+
+    with pytest.raises(
+        ValueError,
+        match="evidence index missing package entrypoint: ringcentral.video.toolbar.chat",
+    ):
+        validate_entrypoint_evidence_index(load_ringcentral_package(), evidence_text)
+
+
+def test_evidence_index_integrity_rejects_unknown_entrypoint() -> None:
+    evidence_text = evidence_with_extra_row(
+        "| `ringcentral.video.toolbar.missing` | Executable UIA route | `Observed` | Test | Gap |"
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="evidence index references unknown entrypoint: ringcentral.video.toolbar.missing",
+    ):
+        validate_entrypoint_evidence_index(load_ringcentral_package(), evidence_text)
+
+
+def test_evidence_index_integrity_rejects_unbackticked_entrypoint_cell() -> None:
+    evidence_text = evidence_with_extra_row(
+        "| ringcentral.video.toolbar.missing | Executable UIA route | `Observed` | Test | Gap |"
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="evidence row missing backticked entrypoint id: ringcentral.video.toolbar.missing",
+    ):
+        validate_entrypoint_evidence_index(load_ringcentral_package(), evidence_text)
+
+
+def test_evidence_index_integrity_rejects_duplicate_entrypoint() -> None:
+    evidence_text = evidence_with_extra_row(
+        "| `ringcentral.video.toolbar.chat` | Executable UIA route | `Observed` | Test | Gap |"
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="duplicate evidence entrypoint id: ringcentral.video.toolbar.chat",
+    ):
+        validate_entrypoint_evidence_index(load_ringcentral_package(), evidence_text)
+
+
+def test_evidence_index_integrity_rejects_invalid_evidence_level() -> None:
+    evidence_text = evidence_with_level("ringcentral.video.toolbar.chat", "Rumored")
+
+    with pytest.raises(
+        ValueError,
+        match="invalid evidence level for ringcentral.video.toolbar.chat: Rumored",
+    ):
+        validate_entrypoint_evidence_index(load_ringcentral_package(), evidence_text)
 
 
 def test_discover_validation_targets_separates_flow_ids_from_entrypoints() -> None:

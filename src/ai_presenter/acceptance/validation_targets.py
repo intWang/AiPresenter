@@ -25,6 +25,7 @@ _REQUIRED_BLOCKED_HEADERS = ("Route", "Entrypoint", "Reason")
 _TARGET_ID_HEADER = "Target ID"
 _OPTIONAL_TARGET_ID_HEADERS = (_TARGET_ID_HEADER,)
 _NON_EVIDENCE_NOTE = "repo-derived planning list only; not live acceptance evidence."
+_ALLOWED_EVIDENCE_LEVELS = ("Accepted", "Observed", "Repo-tested", "Backlog", "Blocked")
 
 
 @dataclass(frozen=True)
@@ -52,6 +53,15 @@ class ValidationTargetCatalog:
     targets: tuple[ValidationTarget, ...]
 
 
+@dataclass(frozen=True)
+class EvidenceIndexIntegrityReport:
+    package_id: str
+    entrypoint_count: int
+    evidence_entrypoint_count: int
+    evidence_levels: Mapping[str, str]
+    evidence_gaps: Mapping[str, str]
+
+
 def discover_validation_targets(
     package: MaterialPackage,
     *,
@@ -61,7 +71,12 @@ def discover_validation_targets(
     evidence_path: Path | None = None,
     include_blocked: bool = False,
 ) -> ValidationTargetCatalog:
-    evidence_levels, evidence_gaps = _parse_entrypoint_evidence(evidence_text or "")
+    if evidence_text and evidence_text.strip():
+        evidence_report = validate_entrypoint_evidence_index(package, evidence_text)
+        evidence_levels = evidence_report.evidence_levels
+        evidence_gaps = evidence_report.evidence_gaps
+    else:
+        evidence_levels, evidence_gaps = {}, {}
     targets = _parse_priority_checklist(
         package=package,
         checklist_text=checklist_text,
@@ -83,6 +98,21 @@ def discover_validation_targets(
         checklist_path=checklist_path,
         evidence_path=evidence_path,
         targets=tuple(targets),
+    )
+
+
+def validate_entrypoint_evidence_index(
+    package: MaterialPackage,
+    evidence_text: str,
+) -> EvidenceIndexIntegrityReport:
+    evidence_levels, evidence_gaps = _parse_entrypoint_evidence(evidence_text)
+    _validate_entrypoint_evidence_integrity(package, evidence_levels)
+    return EvidenceIndexIntegrityReport(
+        package_id=package.app_id,
+        entrypoint_count=len(package.entrypoints_by_id),
+        evidence_entrypoint_count=len(evidence_levels),
+        evidence_levels=evidence_levels,
+        evidence_gaps=evidence_gaps,
     )
 
 
@@ -284,9 +314,25 @@ def _parse_entrypoint_evidence(evidence_text: str) -> tuple[dict[str, str], dict
     for row in rows:
         ids = _extract_ids(row["entrypoint"])
         if not ids:
-            continue
+            display_entrypoint = row["entrypoint"].strip() or "<blank>"
+            raise ValueError(
+                f"evidence row missing backticked entrypoint id: {display_entrypoint}"
+            )
+        if len(ids) > 1:
+            joined_ids = ", ".join(ids)
+            raise ValueError(f"evidence row references multiple entrypoint ids: {joined_ids}")
         entrypoint_id = ids[0]
-        evidence_levels[entrypoint_id] = _strip_backticks(row["evidence level"]) or "unknown"
+        if entrypoint_id in evidence_levels:
+            raise ValueError(f"duplicate evidence entrypoint id: {entrypoint_id}")
+        evidence_level = _strip_backticks(row["evidence level"])
+        if evidence_level not in _ALLOWED_EVIDENCE_LEVELS:
+            allowed = ", ".join(_ALLOWED_EVIDENCE_LEVELS)
+            display_level = evidence_level or "<blank>"
+            raise ValueError(
+                f"invalid evidence level for {entrypoint_id}: {display_level}. "
+                f"Expected one of: {allowed}"
+            )
+        evidence_levels[entrypoint_id] = evidence_level
         evidence_gaps[entrypoint_id] = row["main gap"]
     return evidence_levels, evidence_gaps
 
@@ -418,12 +464,38 @@ def _evidence_for(
     )
 
 
+def _validate_entrypoint_evidence_integrity(
+    package: MaterialPackage,
+    evidence_levels: Mapping[str, str],
+) -> None:
+    package_entrypoint_ids = set(package.entrypoints_by_id)
+    evidence_entrypoint_ids = set(evidence_levels)
+    unknown_ids = sorted(evidence_entrypoint_ids - package_entrypoint_ids)
+    if unknown_ids:
+        raise ValueError(
+            "evidence index references unknown entrypoint: "
+            + _format_id_list_with_count(unknown_ids)
+        )
+    missing_ids = sorted(package_entrypoint_ids - evidence_entrypoint_ids)
+    if missing_ids:
+        raise ValueError(
+            "evidence index missing package entrypoint: "
+            + _format_id_list_with_count(missing_ids)
+        )
+
+
 def _validate_unique_target_ids(targets: list[ValidationTarget]) -> None:
     seen: set[str] = set()
     for target in targets:
         if target.id in seen:
             raise ValueError(f"duplicate validation target id: {target.id}")
         seen.add(target.id)
+
+
+def _format_id_list_with_count(ids: list[str]) -> str:
+    if len(ids) == 1:
+        return ids[0]
+    return f"{', '.join(ids[:5])}; and {len(ids) - 5} more" if len(ids) > 5 else ", ".join(ids)
 
 
 def _strip_backticks(value: str) -> str:

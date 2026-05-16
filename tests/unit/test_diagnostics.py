@@ -12,6 +12,38 @@ from ai_presenter.runtime.voice import PresenterVoiceSettings
 from ai_presenter.runtime.voice_assets import VoiceAssetAvailability
 
 
+def _alias_package(*entries: tuple[str, dict[str, list[str]]]) -> MaterialPackage:
+    entrypoints = [
+        {
+            "id": entrypoint_id,
+            "title": entrypoint_id.rsplit(".", maxsplit=1)[-1].title(),
+            "area": "Main",
+            "purpose": f"Open {entrypoint_id}.",
+            "questionAliases": aliases,
+            "openSteps": [],
+        }
+        for entrypoint_id, aliases in entries
+    ]
+    return MaterialPackage.model_validate(
+        {
+            "appId": "demo",
+            "appName": "Demo",
+            "version": 1,
+            "profileIds": ["ringcentral-video-bind-speaker"],
+            "operationEntrypoints": entrypoints,
+            "demoFlows": [],
+            "explainers": {
+                entrypoint["id"]: {
+                    "shortScript": f"{entrypoint['id']}.",
+                    "relatedEntrypointIds": [entrypoint["id"]],
+                }
+                for entrypoint in entrypoints
+            },
+            "manualControls": [],
+        }
+    )
+
+
 def test_ringcentral_config_is_auto_discovered_from_running_process(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -307,6 +339,80 @@ def test_diagnostics_require_localization_fails_for_incomplete_package() -> None
     assert "1/2 demo steps" in localization_check.detail
     assert "1/1 Q&A questions" in localization_check.detail
     assert "0/1 Q&A answers" in localization_check.detail
+
+
+def test_diagnostics_reports_question_aliases_ok_for_ringcentral_package() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    report = diagnostics.diagnose_configuration(
+        profile=profile,
+        material_package=package,
+    )
+
+    alias_check = next(check for check in report.checks if check.name == "question aliases")
+    assert alias_check.status == "OK"
+    assert alias_check.detail == (
+        "49 package-owned aliases have no cross-entrypoint duplicates"
+    )
+
+
+def test_diagnostics_warns_for_duplicate_question_aliases() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
+    package = _alias_package(
+        ("demo.alpha", {"en": [" Chat "]}),
+        ("demo.bravo", {"en": ["chat"]}),
+    )
+
+    report = diagnostics.diagnose_configuration(
+        profile=profile,
+        material_package=package,
+    )
+
+    alias_check = next(check for check in report.checks if check.name == "question aliases")
+    assert alias_check.status == "WARN"
+    assert alias_check.detail == (
+        "1 duplicate normalized package-owned question alias: "
+        "'chat' (languages: en) maps to demo.alpha, demo.bravo; "
+        "first match is demo.alpha"
+    )
+
+
+def test_diagnostics_warns_for_cross_language_question_alias_duplicates() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
+    package = _alias_package(
+        ("demo.alpha", {"en": ["chat"]}),
+        ("demo.bravo", {"zh": ["chat"]}),
+    )
+
+    report = diagnostics.diagnose_configuration(
+        profile=profile,
+        material_package=package,
+    )
+
+    alias_check = next(check for check in report.checks if check.name == "question aliases")
+    assert alias_check.status == "WARN"
+    assert alias_check.detail == (
+        "1 duplicate normalized package-owned question alias: "
+        "'chat' (languages: en, zh) maps to demo.alpha, demo.bravo; "
+        "first match is demo.alpha"
+    )
+
+
+def test_diagnostics_ignores_same_entrypoint_question_alias_duplicates() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
+    package = _alias_package(("demo.alpha", {"en": ["Chat", " chat "]}))
+
+    report = diagnostics.diagnose_configuration(
+        profile=profile,
+        material_package=package,
+    )
+
+    alias_check = next(check for check in report.checks if check.name == "question aliases")
+    assert alias_check.status == "OK"
+    assert alias_check.detail == (
+        "2 package-owned aliases have no cross-entrypoint duplicates"
+    )
 
 
 def test_doctor_uses_unified_missing_flow_message(monkeypatch: pytest.MonkeyPatch) -> None:

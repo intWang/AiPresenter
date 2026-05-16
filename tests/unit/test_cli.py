@@ -851,12 +851,74 @@ def test_doctor_loads_profile_package_and_flow(monkeypatch: pytest.MonkeyPatch) 
     assert "[OK] profile: loaded ringcentral-video-bind-speaker" in result.stdout
     assert "[OK] package: loaded ringcentral-video" in result.stdout
     assert "[OK] package profile support" in result.stdout
+    assert "[OK] question aliases:" in result.stdout
+    assert "49 package-owned aliases have no cross-entrypoint duplicates" in result.stdout
     assert "[OK] explainer coverage" in result.stdout
     assert "[OK] demo flow: meeting-control-map-demo" in result.stdout
     assert "[OK] presenter context" in result.stdout
     assert "[WARN] RingCentral config" in result.stdout
     assert "localization:" not in result.stdout
     assert "Doctor completed:" in result.stdout
+
+
+def test_doctor_warns_for_duplicate_question_aliases(tmp_path: Path) -> None:
+    config_path = tmp_path / "config.ini"
+    config_path.write_text("[General]\nDisableAffinityMask=true\n", encoding="utf-8")
+    package_path = tmp_path / "duplicate-alias-package.yaml"
+    package_path.write_text(
+        """
+appId: demo
+appName: Demo
+version: 1
+profileIds: [ringcentral-video-bind-speaker]
+operationEntrypoints:
+  - id: demo.alpha
+    title: Alpha
+    area: Main
+    purpose: Open alpha.
+    questionAliases:
+      en:
+        - " Chat "
+    openSteps: []
+  - id: demo.bravo
+    title: Bravo
+    area: Main
+    purpose: Open bravo.
+    questionAliases:
+      en:
+        - chat
+    openSteps: []
+demoFlows: []
+explainers:
+  alpha:
+    shortScript: Alpha.
+    relatedEntrypointIds: [demo.alpha]
+  bravo:
+    shortScript: Bravo.
+    relatedEntrypointIds: [demo.bravo]
+manualControls: []
+""",
+        encoding="utf-8",
+    )
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "doctor",
+            "--profile",
+            "ringcentral-video-bind-speaker",
+            "--package",
+            str(package_path),
+            "--ringcentral-config",
+            str(config_path),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "[WARN] question aliases:" in result.stdout
+    assert "'chat' (languages: en) maps to demo.alpha, demo.bravo" in result.stdout
+    assert "first match is demo.alpha" in result.stdout
+    assert "1 warning, 0 failed" in result.stdout
 
 
 def test_doctor_accepts_language_and_tone_voice_preflight(

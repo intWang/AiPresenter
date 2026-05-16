@@ -12,6 +12,7 @@ from ai_presenter.config.models import AppProfile
 from ai_presenter.config.models import DesktopAppProfile
 from ai_presenter.packages.localization_status import LocalizationStatusReport
 from ai_presenter.packages.localization_status import build_localization_status
+from ai_presenter.packages.models import EntrypointQuestionAlias
 from ai_presenter.packages.models import MaterialPackage
 from ai_presenter.runtime.package_demo import demo_flow_by_id
 from ai_presenter.runtime.voice import PresenterVoiceSettings
@@ -236,6 +237,7 @@ def _diagnose_material_package(
                 f"package {material_package.app_id} does not list profile {profile.id}",
             )
         )
+    checks.append(_diagnose_question_aliases(material_package))
     checks.append(_diagnose_explainer_coverage(material_package))
 
     if flow_id is not None:
@@ -311,6 +313,62 @@ def _diagnose_explainer_coverage(material_package: MaterialPackage) -> Diagnosti
         "explainer coverage",
         f"{len(entrypoint_ids)}/{len(entrypoint_ids)} entrypoints covered",
     )
+
+
+def _diagnose_question_aliases(material_package: MaterialPackage) -> DiagnosticCheck:
+    aliases_by_normalized: dict[str, list[EntrypointQuestionAlias]] = {}
+    for alias in material_package.entrypoint_question_aliases:
+        aliases_by_normalized.setdefault(alias.normalized_alias, []).append(alias)
+
+    conflicts = [
+        (normalized_alias, aliases)
+        for normalized_alias, aliases in aliases_by_normalized.items()
+        if len(_unique_alias_entrypoint_ids(aliases)) > 1
+    ]
+    if not conflicts:
+        return DiagnosticCheck(
+            "OK",
+            "question aliases",
+            f"{len(material_package.entrypoint_question_aliases)} package-owned aliases "
+            "have no cross-entrypoint duplicates",
+        )
+
+    normalized_alias, aliases = conflicts[0]
+    alias_word = "alias" if len(conflicts) == 1 else "aliases"
+    suffix = "" if len(conflicts) == 1 else f"; and {len(conflicts) - 1} more"
+    return DiagnosticCheck(
+        "WARN",
+        "question aliases",
+        f"{len(conflicts)} duplicate normalized package-owned question {alias_word}: "
+        f"{_format_question_alias_conflict(normalized_alias, aliases)}{suffix}",
+    )
+
+
+def _format_question_alias_conflict(
+    normalized_alias: str,
+    aliases: list[EntrypointQuestionAlias],
+) -> str:
+    entrypoint_ids = _unique_alias_entrypoint_ids(aliases)
+    languages = _ordered_unique(alias.language for alias in aliases)
+    return (
+        f"{normalized_alias!r} (languages: {', '.join(languages)}) maps to "
+        f"{', '.join(entrypoint_ids)}; first match is {entrypoint_ids[0]}"
+    )
+
+
+def _unique_alias_entrypoint_ids(aliases: list[EntrypointQuestionAlias]) -> list[str]:
+    return _ordered_unique(alias.entrypoint_id for alias in aliases)
+
+
+def _ordered_unique(values: Iterable[str]) -> list[str]:
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for value in values:
+        if value in seen:
+            continue
+        seen.add(value)
+        ordered.append(value)
+    return ordered
 
 
 def _is_ringcentral_video_profile(profile: AppProfile) -> bool:

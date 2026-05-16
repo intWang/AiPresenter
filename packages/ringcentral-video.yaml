@@ -907,6 +907,7 @@ demoFlows:
       text: Think of this meeting window as a control map. The top tells you status and health, the center is the
         live meeting canvas, and the bottom is where you manage people, media, sharing, reactions, and exit.
       localizedText:
+        ja: この会議ウィンドウを、まずコントロールマップとして捉えます。上部では会議の状態やネットワークなどの健全性を確認し、中央はライブ会議キャンバス、下部は参加者、メディア、共有、リアクション、退出に関するコントロールの領域です。
         zh: 先把会议窗口看成一张控制地图。上方看状态和网络，中间是会议画面，下方负责成员、音视频、共享、互动和离开。
       placement: before
   - id: control-map-meeting-info

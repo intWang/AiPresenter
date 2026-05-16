@@ -685,6 +685,7 @@ demoFlows:
       text: Moving into people controls, Add coworkers opens the invite dialog from the empty meeting view. You can
         search for a coworker, copy the meeting link, or send an invite.
       localizedText:
+        ja: メンバー関連の操作に移ります。空の会議画面にある Add coworkers は Invite ダイアログを開き、同僚の検索や会議リンクの確認、招待の準備に使います。名前、メールアドレス、候補、非公開の招待リンクは、ユーザーが明示的に求め、表示内容が確認されるまで読み上げません。このダイアログは会議コントロールを遮るため、説明したら閉じます。
         zh: 进入成员相关控制。空会议里的 Add coworkers 会打开邀请窗口，可以搜索同事、复制会议链接或发送邀请。
       placement: during
       actionOffsetMs: 400

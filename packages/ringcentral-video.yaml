@@ -749,6 +749,7 @@ demoFlows:
       text: The microphone arrow opens audio devices. You can switch microphone and speaker, leave computer audio,
         use phone audio, or go to more audio settings.
       localizedText:
+        ja: マイクの矢印を開くと、音声デバイスのメニューが表示されます。ここでマイクとスピーカーの選択、コンピューター音声からの退出、電話音声の利用、その他の音声設定に進めます。ユーザーの明確な指示なしにデバイスや音声接続は切り替えません。説明したらメニューを閉じます。
         zh: 麦克风箭头会打开音频设备菜单，可以切换麦克风和扬声器、离开电脑音频、使用电话音频，或进入更多音频设置。
       placement: during
       actionOffsetMs: 350

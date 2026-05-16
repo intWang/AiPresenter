@@ -463,7 +463,7 @@ def test_localization_report_outputs_japanese_demo_and_qa_coverage() -> None:
     assert "questionAliases.ja present on 13/27 entrypoints (34 aliases)" in result.stdout
 
 
-def test_localization_report_outputs_spanish_report_only_qa_coverage() -> None:
+def test_localization_report_outputs_spanish_vbg_demo_wedge() -> None:
     result = CliRunner().invoke(
         app,
         ["localization-report", "--package", "ringcentral-video", "--language", "es"],
@@ -471,14 +471,18 @@ def test_localization_report_outputs_spanish_report_only_qa_coverage() -> None:
 
     assert result.exit_code == 0
     assert "Language: es" in result.stdout
-    assert "Localization report: 0/51 demo steps" in result.stdout
+    assert "- vbg-blur-demo: 4/4 narration localized" in result.stdout
+    assert "- meeting-basics-demo: 0/3 narration localized" in result.stdout
+    assert "- meeting-controls-tour: 0/22 narration localized" in result.stdout
+    assert "- meeting-control-map-demo: 0/22 narration localized" in result.stdout
+    assert "Localization report: 4/51 demo steps" in result.stdout
     assert "- localized questions: 12/12" in result.stdout
     assert "- localized answers: 12/12" in result.stdout
     assert "questionAliases.es present on 1/27 entrypoints (3 aliases)" in result.stdout
     assert "Localization coverage incomplete" not in result.stdout
 
 
-def test_localization_report_require_complete_fails_for_spanish_report_only_qa() -> None:
+def test_localization_report_require_complete_fails_for_spanish_vbg_demo_wedge() -> None:
     result = CliRunner().invoke(
         app,
         [
@@ -493,7 +497,11 @@ def test_localization_report_require_complete_fails_for_spanish_report_only_qa()
 
     assert result.exit_code == 1
     assert "Language: es" in result.stdout
-    assert "Localization report: 0/51 demo steps" in result.stdout
+    assert "- vbg-blur-demo: 4/4 narration localized" in result.stdout
+    assert "- meeting-basics-demo: 0/3 narration localized" in result.stdout
+    assert "- meeting-controls-tour: 0/22 narration localized" in result.stdout
+    assert "- meeting-control-map-demo: 0/22 narration localized" in result.stdout
+    assert "Localization report: 4/51 demo steps" in result.stdout
     assert "- localized questions: 12/12" in result.stdout
     assert "- localized answers: 12/12" in result.stdout
     assert "Localization coverage incomplete for es." in result.stdout

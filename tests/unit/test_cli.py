@@ -887,6 +887,7 @@ def test_voices_lists_language_tone_choices() -> None:
     assert "Support aliases:" in result.stdout
     assert "Careful aliases:" in result.stdout
     assert "calm" in result.stdout
+    assert "executive" in result.stdout
     assert "recovery-focused" in result.stdout
     assert "privacy-aware" in result.stdout
 

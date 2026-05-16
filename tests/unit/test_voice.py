@@ -78,6 +78,9 @@ def test_voice_settings_normalize_expanded_tones() -> None:
     assert PresenterVoiceSettings(tone="warm").tone == "friendly"
     assert PresenterVoiceSettings(tone="mentor").tone == "coach"
     assert PresenterVoiceSettings(tone="structured").tone == "formal"
+    assert PresenterVoiceSettings(tone="executive").tone == "formal"
+    assert PresenterVoiceSettings(tone="briefing").tone == "formal"
+    assert PresenterVoiceSettings(tone="boardroom").tone == "formal"
     assert PresenterVoiceSettings(tone="support").tone == "support"
     assert PresenterVoiceSettings(tone="calm").tone == "support"
     assert PresenterVoiceSettings(tone="steady").tone == "support"
@@ -93,6 +96,14 @@ def test_voice_settings_normalize_expanded_tones() -> None:
 def test_presenter_tone_aliases_and_description_are_public() -> None:
     assert voice.presenter_tone_aliases("mentor") == ("coach", "coaching", "mentor")
     assert "step-by-step" in voice.presenter_tone_description("coach")
+    assert voice.presenter_tone_aliases("executive") == (
+        "formal",
+        "structured",
+        "executive",
+        "briefing",
+        "boardroom",
+    )
+    assert "polished" in voice.presenter_tone_description("executive")
     assert voice.presenter_tone_aliases("calm") == (
         "support",
         "supportive",

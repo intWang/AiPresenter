@@ -75,8 +75,8 @@ For a small local control surface with Start, Pause, and End:
 ```
 
 Regional aliases such as `zh-CN` and `en-US` normalize to the Chinese and English output
-families. Tone aliases such as `warm` and `mentor` normalize to canonical labels in the
-`Loaded voice` output.
+families. Tone aliases such as `warm`, `mentor`, and `executive` normalize to canonical
+labels in the `Loaded voice` output.
 Voice compatibility is checked before demo launch. The fake speech profile is suitable for
 default English smoke tests; Chinese output requires OpenAI or the Windows SAPI Chinese route.
 

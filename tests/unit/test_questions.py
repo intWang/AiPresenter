@@ -5,6 +5,8 @@ import pytest
 
 from ai_presenter.packages.loader import load_material_package
 from ai_presenter.packages.models import MaterialPackage
+from ai_presenter.packages.models import match_field_tokens
+from ai_presenter.packages.models import normalize_question_prompt
 from ai_presenter.runtime import questions as questions_module
 from ai_presenter.runtime.questions import answer_question
 from ai_presenter.runtime.session import create_question_interrupt_step
@@ -348,6 +350,128 @@ def test_localized_entrypoint_title_alone_does_not_create_a_match() -> None:
 
     assert response.entrypoint_id is None
     assert response.can_operate is False
+
+
+@pytest.mark.parametrize(
+    ("question", "expected_entrypoint_id"),
+    [
+        (
+            "selector de microfono y altavoz",
+            "ringcentral.video.toolbar.audio-menu",
+        ),
+        (
+            "menu de camara en la reunion",
+            "ringcentral.video.toolbar.video-menu",
+        ),
+        (
+            "ubicacion de background en more",
+            "ringcentral.video.more.background",
+        ),
+    ],
+)
+def test_ringcentral_spanish_alias_routes_render_optional_display_metadata(
+    question: str,
+    expected_entrypoint_id: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    expected_entrypoint = package.entrypoint_by_id(expected_entrypoint_id)
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(language="es"),
+    )
+
+    assert response.entrypoint_id == expected_entrypoint_id
+    assert response.answer_text == (
+        f"{expected_entrypoint.localized_titles['es']}: "
+        f"{expected_entrypoint.localized_purposes['es']}"
+    )
+
+
+def test_ringcentral_spanish_display_metadata_is_not_part_of_match_candidates() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    entrypoint_ids = (
+        "ringcentral.video.toolbar.audio-menu",
+        "ringcentral.video.toolbar.video-menu",
+        "ringcentral.video.more.background",
+    )
+    candidates_by_entrypoint_id = {
+        candidate.entrypoint.id: candidate for candidate in package.entrypoint_match_candidates
+    }
+
+    for entrypoint_id in entrypoint_ids:
+        entrypoint = package.entrypoint_by_id(entrypoint_id)
+        candidate = candidates_by_entrypoint_id[entrypoint_id]
+        canonical_tokens = (
+            match_field_tokens(entrypoint.id)
+            | match_field_tokens(entrypoint.title)
+            | match_field_tokens(entrypoint.area)
+            | match_field_tokens(entrypoint.purpose)
+        )
+        localized_tokens = match_field_tokens(
+            " ".join(
+                [
+                    entrypoint.localized_titles["es"],
+                    entrypoint.localized_purposes["es"],
+                ]
+            )
+        )
+        candidate_tokens = (
+            candidate.id_tokens
+            | candidate.title_tokens
+            | candidate.title_or_id_tokens
+            | candidate.area_tokens
+            | candidate.purpose_tokens
+        )
+
+        assert candidate.id_tokens == match_field_tokens(entrypoint.id)
+        assert candidate.title_tokens == match_field_tokens(entrypoint.title)
+        assert candidate.title_or_id_tokens == (
+            match_field_tokens(entrypoint.id) | match_field_tokens(entrypoint.title)
+        )
+        assert candidate.area_tokens == match_field_tokens(entrypoint.area)
+        assert candidate.purpose_tokens == match_field_tokens(entrypoint.purpose)
+        assert (localized_tokens - canonical_tokens).isdisjoint(candidate_tokens)
+
+
+def test_ringcentral_spanish_display_metadata_fragments_do_not_create_matches() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    entrypoint_ids = (
+        "ringcentral.video.toolbar.audio-menu",
+        "ringcentral.video.toolbar.video-menu",
+        "ringcentral.video.more.background",
+    )
+    all_candidate_tokens = set().union(
+        *(
+            candidate.id_tokens
+            | candidate.title_tokens
+            | candidate.title_or_id_tokens
+            | candidate.area_tokens
+            | candidate.purpose_tokens
+            for candidate in package.entrypoint_match_candidates
+        )
+    )
+
+    for entrypoint_id in entrypoint_ids:
+        entrypoint = package.entrypoint_by_id(entrypoint_id)
+        localized_tokens = match_field_tokens(
+            " ".join(
+                [
+                    entrypoint.localized_titles["es"],
+                    entrypoint.localized_purposes["es"],
+                ]
+            )
+        )
+        localized_only_query = " ".join(sorted(localized_tokens - all_candidate_tokens))
+        assert localized_only_query
+
+        entrypoint_match = questions_module._match_entrypoint(
+            package,
+            normalize_question_prompt(localized_only_query),
+        )
+
+        assert entrypoint_match is None
 
 
 def test_package_owned_alias_takes_precedence_over_legacy_alias_table() -> None:

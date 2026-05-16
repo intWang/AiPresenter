@@ -123,7 +123,7 @@ def test_ringcentral_localization_status_reports_japanese_demo_and_qa_coverage()
 
     assert report.package_id == "ringcentral-video"
     assert report.language == "ja"
-    assert report.demo_localized_steps == 30
+    assert report.demo_localized_steps == 31
     assert report.demo_total_steps == 51
     assert report.qa_localized_questions == 12
     assert report.qa_localized_answers == 12
@@ -138,10 +138,10 @@ def test_ringcentral_localization_status_reports_japanese_demo_and_qa_coverage()
     assert report.flow_by_id["meeting-basics-demo"].total_steps == 3
     assert report.flow_by_id["meeting-controls-tour"].localized_steps == 22
     assert report.flow_by_id["meeting-controls-tour"].total_steps == 22
-    assert report.flow_by_id["meeting-control-map-demo"].localized_steps == 1
+    assert report.flow_by_id["meeting-control-map-demo"].localized_steps == 2
     assert report.flow_by_id["meeting-control-map-demo"].total_steps == 22
     assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids[0] == (
-        "control-map-meeting-info"
+        "control-map-network"
     )
 
 
@@ -1407,6 +1407,50 @@ def test_meeting_control_map_has_japanese_overview_narration() -> None:
     assert "送信します" not in ja_text
     assert "録画します" not in ja_text
     assert "退出します" not in ja_text
+
+
+def test_meeting_control_map_has_japanese_meeting_info_narration() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    flow = package.demo_flow_by_id("meeting-control-map-demo")
+    step = next(step for step in flow.steps if step.id == "control-map-meeting-info")
+
+    assert step.action.entrypoint_id == "ringcentral.video.top.meeting-info"
+    assert step.action.operation == "open"
+    assert step.narration.placement == "during"
+    assert step.narration.action_offset_ms == 350
+    meeting_info_entrypoint = package.entrypoint_by_id(
+        "ringcentral.video.top.meeting-info"
+    )
+    assert len(meeting_info_entrypoint.open_steps) == 1
+    open_step = meeting_info_entrypoint.open_steps[0]
+    assert open_step.action == "clickWindowRelative"
+    assert open_step.target == "Meeting information"
+    assert open_step.match["x"] == "31"
+    assert open_step.match["y"] == "21"
+    assert open_step.match["cleanup"] == "escape"
+    ja_text = step.narration.localized_text["ja"]
+    assert ja_text.strip()
+    assert has_cjk(ja_text)
+    assert "Meeting information" in ja_text
+    assert "会議情報" in ja_text
+    assert "Meeting ID" in ja_text
+    assert "リンク" in ja_text
+    assert "ダイヤルイン" in ja_text
+    assert "暗号化" in ja_text
+    assert "非公開" in ja_text
+    assert "読み上げません" in ja_text
+    assert "ユーザー" in ja_text
+    assert "明示的" in ja_text
+    assert "コピーします" not in ja_text
+    assert "リンクをコピー" not in ja_text
+    assert "ダイヤルします" not in ja_text
+    assert "共有します" not in ja_text
+    assert "送信します" not in ja_text
+    assert "切り替えます" not in ja_text
+    assert "変更します" not in ja_text
+    assert "招待します" not in ja_text
+    assert "開始します" not in ja_text
+    assert "読み上げます" not in ja_text
 
 
 def test_rejects_duplicate_operation_entrypoint_ids(tmp_path: Path) -> None:

@@ -919,6 +919,7 @@ demoFlows:
       text: Starting at the top, meeting information answers the identity question. It shows the meeting details,
         link, dial-in options, and encryption information, so I summarize it without reading private values aloud.
       localizedText:
+        ja: 上部の Meeting information は、会議情報の入口です。Meeting ID、リンク、ダイヤルイン情報、暗号化状態などが表示される領域ですが、非公開の値を含むため、ここでは場所と役割だけを説明し、ユーザーが明示的に求めるまで具体的な値は読み上げません。
         zh: 先看顶部的会议信息。这里能确认会议身份、链接、拨入方式和加密状态；涉及隐私的数值，我只说明位置，不直接读出来。
       placement: during
       actionOffsetMs: 350

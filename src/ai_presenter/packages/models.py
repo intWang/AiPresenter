@@ -142,6 +142,9 @@ class MaterialPackage(CamelModel):
     _entrypoint_question_aliases: tuple[EntrypointQuestionAlias, ...] = PrivateAttr(
         default_factory=tuple
     )
+    _entrypoint_question_aliases_by_match_order: tuple[EntrypointQuestionAlias, ...] = (
+        PrivateAttr(default_factory=tuple)
+    )
     _qa_question_candidates: tuple[QuestionAnswerMatchCandidate, ...] = PrivateAttr(
         default_factory=tuple
     )
@@ -216,6 +219,11 @@ class MaterialPackage(CamelModel):
         self._entrypoints_by_id = entrypoints_by_id
         self._demo_flows_by_id = demo_flows_by_id
         self._entrypoint_question_aliases = tuple(entrypoint_question_aliases)
+        self._entrypoint_question_aliases_by_match_order = (
+            _sort_entrypoint_question_aliases_by_match_order(
+                entrypoint_question_aliases
+            )
+        )
         self._qa_question_candidates = _build_qa_question_candidates(self.qa)
         self._entrypoint_match_candidates = _build_entrypoint_match_candidates(
             self.operation_entrypoints
@@ -233,6 +241,12 @@ class MaterialPackage(CamelModel):
     @property
     def entrypoint_question_aliases(self) -> tuple[EntrypointQuestionAlias, ...]:
         return self._entrypoint_question_aliases
+
+    @property
+    def entrypoint_question_aliases_by_match_order(
+        self,
+    ) -> tuple[EntrypointQuestionAlias, ...]:
+        return self._entrypoint_question_aliases_by_match_order
 
     @property
     def qa_question_candidates(self) -> tuple[QuestionAnswerMatchCandidate, ...]:
@@ -270,6 +284,18 @@ def match_field_tokens(text: str) -> frozenset[str]:
 def match_meaningful_tokens(text: str) -> frozenset[str]:
     return frozenset(
         token for token in match_field_tokens(text) if token not in _STOPWORDS and len(token) >= 3
+    )
+
+
+def _sort_entrypoint_question_aliases_by_match_order(
+    aliases: list[EntrypointQuestionAlias],
+) -> tuple[EntrypointQuestionAlias, ...]:
+    return tuple(
+        alias
+        for _index, alias in sorted(
+            enumerate(aliases),
+            key=lambda item: (-len(item[1].normalized_alias), item[0]),
+        )
     )
 
 

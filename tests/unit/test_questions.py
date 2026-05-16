@@ -249,6 +249,43 @@ def test_longest_package_owned_alias_wins() -> None:
     assert response.entrypoint_id == "demo.long"
 
 
+def test_package_owned_equal_length_aliases_keep_source_order() -> None:
+    package = MaterialPackage.model_validate(
+        {
+            "appId": "demo",
+            "appName": "Demo",
+            "version": 1,
+            "profileIds": ["demo-profile"],
+            "operationEntrypoints": [
+                {
+                    "id": "demo.alpha",
+                    "title": "Alpha",
+                    "area": "Main",
+                    "purpose": "Open alpha.",
+                    "questionAliases": {"en": ["alpha"]},
+                },
+                {
+                    "id": "demo.bravo",
+                    "title": "Bravo",
+                    "area": "Main",
+                    "purpose": "Open bravo.",
+                    "questionAliases": {"en": ["bravo"]},
+                },
+            ],
+            "demoFlows": [],
+            "manualControls": [],
+        }
+    )
+
+    response = answer_question(
+        package=package,
+        question="alpha bravo",
+        voice=PresenterVoiceSettings(),
+    )
+
+    assert response.entrypoint_id == "demo.alpha"
+
+
 def test_localized_qa_question_returns_localized_answer() -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
 
@@ -348,6 +385,25 @@ def test_ringcentral_chinese_questions_match_package_aliases_without_legacy_tabl
             voice=PresenterVoiceSettings(language="zh"),
         )
         assert response.entrypoint_id == entrypoint_id
+
+
+def test_legacy_alias_table_remains_dynamic_for_runtime_matching(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    monkeypatch.setattr(
+        questions_module,
+        "_ENTRYPOINT_ALIASES",
+        {"ringcentral.video.toolbar.chat": ("legacy dynamic route",)},
+    )
+
+    response = answer_question(
+        package=package,
+        question="legacy dynamic route",
+        voice=PresenterVoiceSettings(),
+    )
+
+    assert response.entrypoint_id == "ringcentral.video.toolbar.chat"
 
 
 def test_risky_entrypoint_answer_is_not_operable() -> None:

@@ -274,15 +274,10 @@ def _match_package_entrypoint_alias(
     package: MaterialPackage,
     normalized_question: str,
 ) -> OperationEntrypoint | None:
-    best_entrypoint_id: str | None = None
-    best_alias_length = 0
-    for alias in package.entrypoint_question_aliases:
-        if alias.normalized_alias in normalized_question and len(alias.normalized_alias) > best_alias_length:
-            best_entrypoint_id = alias.entrypoint_id
-            best_alias_length = len(alias.normalized_alias)
-    if best_entrypoint_id is None:
-        return None
-    return package.entrypoint_by_id(best_entrypoint_id)
+    for alias in package.entrypoint_question_aliases_by_match_order:
+        if alias.normalized_alias in normalized_question:
+            return package.entrypoint_by_id(alias.entrypoint_id)
+    return None
 
 
 def _score_entrypoint_match(candidate: EntrypointMatchCandidate, query_tokens: set[str]) -> int:

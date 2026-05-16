@@ -430,8 +430,53 @@ def test_with_demo_flow_rebuilds_runtime_indexes_for_appended_flow() -> None:
     assert "copy-flow" not in package.demo_flows_by_id
     assert copied.qa_question_candidates[0].item is copied.qa[0]
     assert copied.entrypoint_match_candidates[0].entrypoint is copied.operation_entrypoints[0]
+    assert copied.entrypoint_question_aliases_by_match_order
+    assert (
+        copied.entrypoint_question_aliases_by_match_order
+        is not package.entrypoint_question_aliases_by_match_order
+    )
     assert copied.qa_question_candidates[0].item is not package.qa[0]
     assert copied.entrypoint_match_candidates[0].entrypoint is not package.operation_entrypoints[0]
+
+
+def test_material_package_exposes_entrypoint_question_aliases_by_match_order() -> None:
+    package = MaterialPackage.model_validate(
+        {
+            "appId": "demo",
+            "appName": "Demo",
+            "version": 1,
+            "profileIds": ["demo-profile"],
+            "operationEntrypoints": [
+                {
+                    "id": "demo.one",
+                    "title": "One",
+                    "area": "Main",
+                    "purpose": "Open one.",
+                    "questionAliases": {"en": ["aa", "bbbb"]},
+                },
+                {
+                    "id": "demo.two",
+                    "title": "Two",
+                    "area": "Main",
+                    "purpose": "Open two.",
+                    "questionAliases": {"en": ["cccc", "d"]},
+                },
+            ],
+            "demoFlows": [],
+            "manualControls": [],
+        }
+    )
+
+    assert [alias.normalized_alias for alias in package.entrypoint_question_aliases] == [
+        "aa",
+        "bbbb",
+        "cccc",
+        "d",
+    ]
+    assert [
+        alias.normalized_alias
+        for alias in package.entrypoint_question_aliases_by_match_order
+    ] == ["bbbb", "cccc", "aa", "d"]
 
 
 def test_material_package_exposes_normalized_question_alias_index() -> None:
@@ -458,10 +503,12 @@ def test_runtime_indexes_do_not_leak_into_model_dump() -> None:
 
     assert "entrypointsById" not in dumped
     assert "entrypointQuestionAliases" not in dumped
+    assert "entrypointQuestionAliasesByMatchOrder" not in dumped
     assert "qaQuestionCandidates" not in dumped
     assert "entrypointMatchCandidates" not in dumped
     assert "_entrypoints_by_id" not in dumped
     assert "_entrypoint_question_aliases" not in dumped
+    assert "_entrypoint_question_aliases_by_match_order" not in dumped
     assert "_qa_question_candidates" not in dumped
     assert "_entrypoint_match_candidates" not in dumped
     assert "operationEntrypoints" in dumped

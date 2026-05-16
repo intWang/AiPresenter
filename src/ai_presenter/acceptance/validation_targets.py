@@ -4,6 +4,7 @@ import re
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
+from types import MappingProxyType
 
 from ai_presenter.packages.models import MaterialPackage
 
@@ -51,6 +52,7 @@ class ValidationTargetCatalog:
     checklist_path: Path
     evidence_path: Path | None
     targets: tuple[ValidationTarget, ...]
+    targets_by_id: Mapping[str, ValidationTarget]
 
 
 @dataclass(frozen=True)
@@ -93,11 +95,13 @@ def discover_validation_targets(
             )
         )
     _validate_unique_target_ids(targets)
+    target_tuple = tuple(targets)
     return ValidationTargetCatalog(
         package_id=package.app_id,
         checklist_path=checklist_path,
         evidence_path=evidence_path,
-        targets=tuple(targets),
+        targets=target_tuple,
+        targets_by_id=MappingProxyType({target.id: target for target in target_tuple}),
     )
 
 
@@ -117,11 +121,13 @@ def validate_entrypoint_evidence_index(
 
 
 def target_by_id(catalog: ValidationTargetCatalog, target_id: str) -> ValidationTarget:
-    for target in catalog.targets:
-        if target.id == target_id:
-            return target
-    available = ", ".join(target.id for target in catalog.targets) or "none"
-    raise ValueError(f"Unknown validation target: {target_id}. Available targets: {available}")
+    try:
+        return catalog.targets_by_id[target_id]
+    except KeyError:
+        available = ", ".join(catalog.targets_by_id) or "none"
+        raise ValueError(
+            f"Unknown validation target: {target_id}. Available targets: {available}"
+        ) from None
 
 
 def acceptance_draft_command(package_id: str, target: ValidationTarget) -> str:

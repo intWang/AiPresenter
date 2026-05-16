@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Any, cast
 
 import pytest
 
@@ -265,7 +266,19 @@ def test_target_by_id_reports_available_ids_for_missing_target() -> None:
     with pytest.raises(ValueError, match="Unknown validation target: missing-target") as exc_info:
         target_by_id(catalog, "missing-target")
 
-    assert "rcv-add-coworkers-modal" in str(exc_info.value)
+    message = str(exc_info.value)
+    assert "rcv-add-coworkers-modal" in message
+    assert f"Available targets: {', '.join(catalog.targets_by_id)}" in message
+
+
+def test_validation_target_catalog_exposes_read_only_target_index() -> None:
+    catalog = discover_catalog()
+    target = target_by_id(catalog, "rcv-add-coworkers-modal")
+
+    assert catalog.targets_by_id["rcv-add-coworkers-modal"] is target
+    assert tuple(catalog.targets_by_id) == tuple(target.id for target in catalog.targets)
+    with pytest.raises(TypeError):
+        cast(Any, catalog.targets_by_id)["new-target"] = target
 
 
 def test_discover_validation_targets_rejects_unknown_checklist_entrypoint() -> None:

@@ -694,6 +694,36 @@ def test_ringcentral_localization_status_reports_complete_spanish_package() -> N
     assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids == ()
 
 
+def test_ringcentral_spanish_display_metadata_counts_match_durable_docs() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    report = build_localization_status(package, language="es")
+    assert report.required_localization_complete is True
+
+    durable_doc_paths = (
+        Path("docs/knowledge/language-lifecycle.md"),
+        Path("docs/knowledge/ringcentral-video/source-index.md"),
+    )
+    expected_counts = {
+        "localizedTitles.es": report.entrypoint_titles_present,
+        "localizedPurposes.es": report.entrypoint_purposes_present,
+    }
+
+    for doc_path in durable_doc_paths:
+        doc_text = doc_path.read_text(encoding="utf-8")
+        for metadata_key, present_count in expected_counts.items():
+            count_pattern = re.compile(
+                rf"`?{re.escape(metadata_key)}`?.{{0,80}}"
+                rf"`?{present_count}/{report.entrypoint_total}`?.{{0,20}}"
+                r"entrypoints",
+                re.DOTALL,
+            )
+            assert count_pattern.search(doc_text), (
+                f"{doc_path} must mention {metadata_key} on "
+                f"{present_count}/{report.entrypoint_total} entrypoints"
+            )
+
+
 def test_localization_status_completion_ignores_alias_coverage_gaps() -> None:
     package = MaterialPackage.model_validate(
         {

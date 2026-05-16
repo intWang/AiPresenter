@@ -932,6 +932,7 @@ demoFlows:
       text: Next is meeting health. Network quality is where you check whether audio, video, or sharing problems
         are coming from packet loss, jitter, or latency.
       localizedText:
+        ja: 次は会議の健全性です。Network quality では、音声、ビデオ、共有の不安定さがパケットロス、ジッター、遅延と関係しているかを確認できます。観測値がないまま原因を決めつけたり、修復を約束したりしません。
         zh: 接着看会议健康状态。网络质量用来判断声音、视频或共享卡顿，是不是来自丢包、抖动或者延迟。
       placement: during
       actionOffsetMs: 350

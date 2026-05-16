@@ -232,6 +232,10 @@ operationEntrypoints:
   area: Meeting toolbar
   purpose: Open microphone and speaker device controls, audio level indicators, leave-computer-audio, phone-audio,
     and more audio settings.
+  localizedTitles:
+    es: Menú de micrófono y altavoz
+  localizedPurposes:
+    es: Abre el menú de audio para revisar Microphone, Speaker, Leave computer audio, Use phone audio y More audio settings sin cambiar dispositivos ni leer datos privados.
   questionAliases:
     es:
     - menú de audio de la reunión
@@ -283,6 +287,10 @@ operationEntrypoints:
   title: Camera menu
   area: Meeting toolbar
   purpose: Open camera device selection and the More video settings shortcut.
+  localizedTitles:
+    es: Menú de cámara
+  localizedPurposes:
+    es: Abre el menú de video para revisar controles de cámara y More video settings sin cambiar la cámara ni ajustes de video.
   questionAliases:
     es:
     - menú de cámara en la reunión
@@ -613,6 +621,10 @@ operationEntrypoints:
   title: Background
   area: More menu
   purpose: Open the Settings dialog directly on the Background tab.
+  localizedTitles:
+    es: Fondo desde More
+  localizedPurposes:
+    es: Abre More > Background para revisar Blur y opciones de fondo virtual en Settings sin seleccionar fondos ni cargar imágenes.
   questionAliases:
     es:
     - ubicación de background en more

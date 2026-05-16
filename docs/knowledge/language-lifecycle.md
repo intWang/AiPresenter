@@ -122,8 +122,8 @@ OpenAI-backed speech only:
 - `questionAliases.es` is present on `26/27` RingCentral Video entrypoints with
   `69` aliases.
 - Optional entrypoint display metadata is partial:
-  `localizedTitles.es` is present on `5/27` entrypoints and
-  `localizedPurposes.es` is present on `5/27` entrypoints.
+  `localizedTitles.es` is present on `8/27` entrypoints and
+  `localizedPurposes.es` is present on `8/27` entrypoints.
 - Spanish package Q&A and package-owned aliases use Latin-diacritic-insensitive
   match keys, so unaccented prompts such as `Donde esta el menu de camara?`
   can still route to curated package knowledge.

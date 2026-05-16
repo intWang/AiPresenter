@@ -518,6 +518,21 @@ def test_ringcentral_spanish_entrypoint_copy_pilot_is_present() -> None:
                 "sin cambiar audio, video ni participantes."
             ),
         ),
+        "ringcentral.video.toolbar.audio-menu": (
+            "Menú de micrófono y altavoz",
+            (
+                "Abre el menú de audio para revisar Microphone, Speaker, Leave computer "
+                "audio, Use phone audio y More audio settings sin cambiar dispositivos "
+                "ni leer datos privados."
+            ),
+        ),
+        "ringcentral.video.toolbar.video-menu": (
+            "Menú de cámara",
+            (
+                "Abre el menú de video para revisar controles de cámara y More video "
+                "settings sin cambiar la cámara ni ajustes de video."
+            ),
+        ),
         "ringcentral.video.toolbar.more": (
             "Más acciones",
             (
@@ -531,6 +546,13 @@ def test_ringcentral_spanish_entrypoint_copy_pilot_is_present() -> None:
                 "Abre Settings para revisar opciones de audio, video, Background, "
                 "Translation, Join preferences y General sin cambiar configuraciones "
                 "ni leer datos privados."
+            ),
+        ),
+        "ringcentral.video.more.background": (
+            "Fondo desde More",
+            (
+                "Abre More > Background para revisar Blur y opciones de fondo virtual "
+                "en Settings sin seleccionar fondos ni cargar imágenes."
             ),
         ),
     }
@@ -700,8 +722,8 @@ def test_ringcentral_localization_status_reports_complete_spanish_package() -> N
     assert report.entrypoints_with_aliases == 26
     assert report.entrypoint_total == 27
     assert report.alias_total == 69
-    assert report.entrypoint_titles_present == 5
-    assert report.entrypoint_purposes_present == 5
+    assert report.entrypoint_titles_present == 8
+    assert report.entrypoint_purposes_present == 8
     assert report.required_localization_complete is True
     assert report.flow_by_id["vbg-blur-demo"].localized_steps == 4
     assert report.flow_by_id["vbg-blur-demo"].total_steps == 4
@@ -715,6 +737,30 @@ def test_ringcentral_localization_status_reports_complete_spanish_package() -> N
     assert report.flow_by_id["meeting-control-map-demo"].localized_steps == 22
     assert report.flow_by_id["meeting-control-map-demo"].total_steps == 22
     assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids == ()
+
+
+def test_ringcentral_spanish_display_metadata_covers_optional_menu_surfaces() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    expected_metadata = {
+        "ringcentral.video.toolbar.audio-menu": (
+            "Menú de micrófono y altavoz",
+            "Abre el menú de audio para revisar Microphone, Speaker, Leave computer audio, Use phone audio y More audio settings sin cambiar dispositivos ni leer datos privados.",
+        ),
+        "ringcentral.video.toolbar.video-menu": (
+            "Menú de cámara",
+            "Abre el menú de video para revisar controles de cámara y More video settings sin cambiar la cámara ni ajustes de video.",
+        ),
+        "ringcentral.video.more.background": (
+            "Fondo desde More",
+            "Abre More > Background para revisar Blur y opciones de fondo virtual en Settings sin seleccionar fondos ni cargar imágenes.",
+        ),
+    }
+
+    for entrypoint_id, (title, purpose) in expected_metadata.items():
+        entrypoint = package.entrypoint_by_id(entrypoint_id)
+        assert entrypoint.localized_titles["es"] == title
+        assert entrypoint.localized_purposes["es"] == purpose
 
 
 def test_ringcentral_spanish_display_metadata_counts_match_durable_docs() -> None:

@@ -563,8 +563,8 @@ def test_localization_report_outputs_complete_spanish_package() -> None:
     assert "- localized questions: 12/12" in result.stdout
     assert "- localized answers: 12/12" in result.stdout
     assert "questionAliases.es present on 26/27 entrypoints (69 aliases)" in result.stdout
-    assert "localizedTitles.es present on 5/27 entrypoints" in result.stdout
-    assert "localizedPurposes.es present on 5/27 entrypoints" in result.stdout
+    assert "localizedTitles.es present on 8/27 entrypoints" in result.stdout
+    assert "localizedPurposes.es present on 8/27 entrypoints" in result.stdout
     assert "Localization coverage incomplete" not in result.stdout
 
 
@@ -584,8 +584,8 @@ def test_localization_report_normalizes_spanish_language_aliases() -> None:
     assert "- localized questions: 12/12" in result.stdout
     assert "- localized answers: 12/12" in result.stdout
     assert "questionAliases.es present on 26/27 entrypoints (69 aliases)" in result.stdout
-    assert "localizedTitles.es present on 5/27 entrypoints" in result.stdout
-    assert "localizedPurposes.es present on 5/27 entrypoints" in result.stdout
+    assert "localizedTitles.es present on 8/27 entrypoints" in result.stdout
+    assert "localizedPurposes.es present on 8/27 entrypoints" in result.stdout
     assert "Localization coverage incomplete" not in result.stdout
 
 

@@ -43,6 +43,10 @@ operationEntrypoints:
   title: Meeting overview
   area: Meeting window
   purpose: Introduce the RingCentral Video meeting surface before opening individual controls.
+  localizedTitles:
+    es: Resumen de la reunión
+  localizedPurposes:
+    es: Presenta la superficie de RingCentral Video antes de abrir controles individuales.
   questionAliases:
     es:
     - resumen de la ventana de reunión
@@ -97,6 +101,10 @@ operationEntrypoints:
   title: Network quality
   area: Meeting top bar
   purpose: Show diagnostic network quality for sharing, video, and audio, including packet loss, jitter, and latency.
+  localizedTitles:
+    es: Calidad de red
+  localizedPurposes:
+    es: Abre Network quality para revisar packet loss, jitter y latency de Share, video y audio cuando la reunión se siente inestable.
   questionAliases:
     es:
     - ubicación de network quality

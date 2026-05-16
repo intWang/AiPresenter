@@ -493,6 +493,38 @@ def test_ringcentral_spanish_seed_qa_and_aliases_are_present() -> None:
     }
 
 
+def test_ringcentral_spanish_entrypoint_copy_pilot_is_present() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    overview = package.entrypoint_by_id("ringcentral.video.overview")
+    network_quality = package.entrypoint_by_id("ringcentral.video.top.network-quality")
+
+    assert overview.localized_titles == {"es": "Resumen de la reunión"}
+    assert overview.localized_purposes == {
+        "es": (
+            "Presenta la superficie de RingCentral Video antes de abrir controles "
+            "individuales."
+        )
+    }
+    assert network_quality.localized_titles == {"es": "Calidad de red"}
+    assert network_quality.localized_purposes == {
+        "es": (
+            "Abre Network quality para revisar packet loss, jitter y latency de Share, "
+            "video y audio cuando la reunión se siente inestable."
+        )
+    }
+
+    localized_entrypoint_ids = {
+        entrypoint.id
+        for entrypoint in package.operation_entrypoints
+        if entrypoint.localized_titles or entrypoint.localized_purposes
+    }
+    assert localized_entrypoint_ids == {
+        "ringcentral.video.overview",
+        "ringcentral.video.top.network-quality",
+    }
+
+
 def test_ringcentral_package_owns_spanish_aliases_for_location_routes() -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
     aliases_by_entrypoint: dict[str, set[str]] = {}
@@ -645,6 +677,8 @@ def test_ringcentral_localization_status_reports_complete_spanish_package() -> N
     assert report.entrypoints_with_aliases == 26
     assert report.entrypoint_total == 27
     assert report.alias_total == 69
+    assert report.entrypoint_titles_present == 2
+    assert report.entrypoint_purposes_present == 2
     assert report.required_localization_complete is True
     assert report.flow_by_id["vbg-blur-demo"].localized_steps == 4
     assert report.flow_by_id["vbg-blur-demo"].total_steps == 4

@@ -1869,6 +1869,73 @@ def test_spanish_entrypoint_answer_uses_package_alias_label() -> None:
 
 
 @pytest.mark.parametrize(
+    ("question", "entrypoint_id", "title", "purpose", "english_purpose"),
+    [
+        (
+            "resumen de la ventana de reunión",
+            "ringcentral.video.overview",
+            "Resumen de la reunión",
+            (
+                "Presenta la superficie de RingCentral Video antes de abrir controles "
+                "individuales."
+            ),
+            (
+                "Introduce the RingCentral Video meeting surface before opening "
+                "individual controls."
+            ),
+        ),
+        (
+            "panel de calidad de red",
+            "ringcentral.video.top.network-quality",
+            "Calidad de red",
+            (
+                "Abre Network quality para revisar packet loss, jitter y latency de Share, "
+                "video y audio cuando la reunión se siente inestable."
+            ),
+            (
+                "Show diagnostic network quality for sharing, video, and audio, "
+                "including packet loss, jitter, and latency."
+            ),
+        ),
+    ],
+)
+def test_ringcentral_spanish_entrypoint_answer_uses_localized_pilot_copy(
+    question: str,
+    entrypoint_id: str,
+    title: str,
+    purpose: str,
+    english_purpose: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(language="es"),
+    )
+
+    assert response.entrypoint_id == entrypoint_id
+    assert response.answer_text == f"{title}: {purpose}"
+    assert english_purpose not in response.answer_text
+
+
+def test_ringcentral_spanish_unseeded_entrypoint_keeps_alias_label_fallback() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question="panel de participantes",
+        voice=PresenterVoiceSettings(language="es"),
+    )
+
+    assert response.entrypoint_id == "ringcentral.video.toolbar.participants"
+    assert response.answer_text == (
+        "panel de participantes: Open participant list and meeting people controls."
+    )
+    assert not response.answer_text.startswith("Participants panel:")
+
+
+@pytest.mark.parametrize(
     ("question", "language"),
     [
         ("panel de participantes", "en"),

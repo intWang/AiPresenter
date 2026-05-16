@@ -199,7 +199,13 @@ def _answer_question(
 
 def _match_qa(package: MaterialPackage, normalized_question: str) -> QuestionAnswer | None:
     for candidate in package.qa_question_candidates:
-        if normalized_question and normalized_question in candidate.normalized_question:
+        if normalized_question == candidate.normalized_question:
+            return candidate.item
+        if (
+            normalized_question
+            and normalized_question in candidate.normalized_question
+            and _can_match_qa_fragment(package, candidate.item, normalized_question)
+        ):
             return candidate.item
         if candidate.normalized_question in normalized_question:
             return candidate.item
@@ -304,6 +310,28 @@ def _score_entrypoint_match(candidate: EntrypointMatchCandidate, query_tokens: s
 
 def _meaningful_tokens(text: str) -> set[str]:
     return set(match_meaningful_tokens(text))
+
+
+def _is_specific_question_fragment(text: str) -> bool:
+    if len(_meaningful_tokens(text)) >= 2:
+        return True
+    return _contains_cjk(text) and len(text) >= 6
+
+
+def _can_match_qa_fragment(
+    package: MaterialPackage,
+    item: QuestionAnswer,
+    normalized_question: str,
+) -> bool:
+    if item.related_entrypoint_ids:
+        return True
+    if _is_specific_question_fragment(normalized_question):
+        return True
+    return _match_entrypoint(package, normalized_question) is None
+
+
+def _contains_cjk(text: str) -> bool:
+    return any("\u4e00" <= character <= "\u9fff" for character in text)
 
 
 def _field_tokens(text: str) -> set[str]:

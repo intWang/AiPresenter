@@ -1330,6 +1330,17 @@ qa:
   relatedEntrypointIds:
   - ringcentral.video.toolbar.chat
   - ringcentral.video.toolbar.participants
+- question: Where are host controls for participants?
+  localizedQuestions:
+    zh:
+    - 主持人怎么管理参会者
+    - 怎么管理参会人
+    - 主持人控制在哪里
+  answer: Use the Participants panel to explain attendee count, search, invite, and host or moderator control areas.
+    Do not mute others, remove people, lock the meeting, change security settings, or read names and roles unless
+    the user explicitly asks and the visible context is verified.
+  localizedAnswers:
+    zh: 可以说明 Participants 面板在哪里，以及它用于查看人数、搜索、邀请和主持人或协管员相关控制。不要自动静音他人、移除参会者、锁定会议、修改安全设置，或朗读姓名和角色；只有在用户明确要求并且可见内容已验证时才继续。
 - question: How do I make sure my audio and video are ready?
   localizedQuestions:
     zh:

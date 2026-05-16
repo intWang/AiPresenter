@@ -260,8 +260,8 @@ def test_diagnostics_require_localization_passes_for_ringcentral_chinese() -> No
     assert localization_check.status == "OK"
     assert "required zh localization complete" in localization_check.detail
     assert "51/51 demo steps" in localization_check.detail
-    assert "8/8 Q&A questions" in localization_check.detail
-    assert "8/8 Q&A answers" in localization_check.detail
+    assert "9/9 Q&A questions" in localization_check.detail
+    assert "9/9 Q&A answers" in localization_check.detail
 
 
 def test_diagnostics_require_localization_fails_for_incomplete_package() -> None:

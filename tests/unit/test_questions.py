@@ -361,6 +361,40 @@ def test_ringcentral_localized_recording_question_returns_chinese_safety_answer(
     assert "Start recording:" not in response.answer_text
 
 
+def test_ringcentral_host_controls_question_returns_participants_guidance() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question="where are host controls for participants",
+        voice=PresenterVoiceSettings(),
+    )
+
+    assert response.entrypoint_id is None
+    assert response.can_operate is False
+    assert "Participants" in response.answer_text
+    assert "host" in response.answer_text
+    assert "explicitly asks" in response.answer_text
+    assert "verified" in response.answer_text
+
+
+def test_ringcentral_localized_host_controls_question_returns_chinese_guidance() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question="\u4e3b\u6301\u4eba\u600e\u4e48\u7ba1\u7406\u53c2\u4f1a\u8005",
+        voice=PresenterVoiceSettings(language="zh", tone="professional"),
+    )
+
+    assert response.entrypoint_id is None
+    assert response.can_operate is False
+    assert "Participants" in response.answer_text
+    assert "\u660e\u786e\u8981\u6c42" in response.answer_text
+    assert "\u5df2\u9a8c\u8bc1" in response.answer_text
+    assert "\u59d3\u540d" in response.answer_text
+
+
 def test_ringcentral_chinese_questions_match_package_aliases_without_legacy_table(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -453,6 +487,8 @@ def test_participants_matches_participants_entrypoint() -> None:
     )
 
     assert response.entrypoint_id == "ringcentral.video.toolbar.participants"
+    assert response.answer_text.startswith("Participants panel:")
+    assert "host or moderator" not in response.answer_text
 
 
 def test_invite_people_prefers_invite_entrypoint() -> None:
@@ -510,6 +546,9 @@ def test_recording_answer_is_not_operable() -> None:
 
     assert response.entrypoint_id == "ringcentral.video.more.recording"
     assert response.can_operate is False
+    assert "Recording changes the meeting state" in response.answer_text
+    assert "participant consent" in response.answer_text
+    assert "Start recording:" not in response.answer_text
 
 
 def test_camera_toggle_answer_is_not_operable() -> None:

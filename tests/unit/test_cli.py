@@ -1298,6 +1298,64 @@ def test_doctor_require_localization_passes_for_chinese_package(
 
     assert result.exit_code == 0
     assert "[OK] localization: required zh localization complete" in result.stdout
+    assert "[OK] runtime language support: localization language zh" in result.stdout
+
+
+def test_doctor_require_localization_accepts_package_only_spanish_language(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(diagnostics, "_iter_process_executable_paths", lambda process_name: [])
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "doctor",
+            "--profile",
+            "ringcentral-video-bind-speaker",
+            "--package",
+            "ringcentral-video",
+            "--require-localization",
+            "--localization-language",
+            "es",
+        ],
+    )
+
+    assert result.exit_code == 1
+    assert "[FAIL] localization: required es localization incomplete" in result.stdout
+    assert "7/51 demo steps" in result.stdout
+    assert "12/12 Q&A questions" in result.stdout
+    assert "12/12 Q&A answers" in result.stdout
+    assert "[FAIL] runtime language support:" in result.stdout
+    assert "localization language es is package-only" in result.stdout
+    assert "does not support --language es" in result.stdout
+    assert "Invalid value" not in result.output
+
+
+def test_doctor_require_localization_language_overrides_runtime_voice(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(diagnostics, "_iter_process_executable_paths", lambda process_name: [])
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "doctor",
+            "--profile",
+            "ringcentral-video-bind-speaker",
+            "--package",
+            "ringcentral-video",
+            "--language",
+            "zh-CN",
+            "--require-localization",
+            "--localization-language",
+            "es",
+        ],
+    )
+
+    assert result.exit_code == 1
+    assert "[FAIL] localization: required es localization incomplete" in result.stdout
+    assert "[FAIL] runtime language support:" in result.stdout
+    assert "[OK] voice: Chinese / Professional supported" in result.stdout
 
 
 def test_doctor_require_localization_defaults_to_chinese_when_no_voice_selected(

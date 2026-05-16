@@ -314,6 +314,39 @@ def test_diagnostics_require_localization_passes_for_ringcentral_chinese() -> No
     assert "51/51 demo steps" in localization_check.detail
     assert "12/12 Q&A questions" in localization_check.detail
     assert "12/12 Q&A answers" in localization_check.detail
+    runtime_language_check = next(
+        check for check in report.checks if check.name == "runtime language support"
+    )
+    assert runtime_language_check.status == "OK"
+    assert "localization language zh" in runtime_language_check.detail
+    assert "Chinese" in runtime_language_check.detail
+
+
+def test_diagnostics_require_localization_flags_package_only_runtime_language() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    report = diagnostics.diagnose_configuration(
+        profile=profile,
+        material_package=package,
+        require_localization=True,
+        localization_language="es",
+    )
+
+    localization_check = next(
+        check for check in report.checks if check.name == "localization"
+    )
+    assert localization_check.status == "FAIL"
+    assert "required es localization incomplete" in localization_check.detail
+    assert "7/51 demo steps" in localization_check.detail
+    assert "12/12 Q&A questions" in localization_check.detail
+    assert "12/12 Q&A answers" in localization_check.detail
+    runtime_language_check = next(
+        check for check in report.checks if check.name == "runtime language support"
+    )
+    assert runtime_language_check.status == "FAIL"
+    assert "localization language es is package-only" in runtime_language_check.detail
+    assert "does not support --language es" in runtime_language_check.detail
 
 
 def test_diagnostics_require_localization_passes_for_ringcentral_japanese() -> None:

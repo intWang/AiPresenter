@@ -18,6 +18,7 @@ from ai_presenter.packages.models import QuestionAnswer
 from ai_presenter.packages.models import QuestionAnswerMatchCandidate
 from ai_presenter.runtime.voice import PresenterVoiceSettings
 from ai_presenter.runtime.voice import language_label
+from ai_presenter.runtime.voice import normalize_presenter_language
 from ai_presenter.runtime.voice import resolve_speech_provider_name
 from ai_presenter.runtime.voice import tone_label
 from ai_presenter.runtime.voice import validate_profile_voice
@@ -102,6 +103,7 @@ def diagnose_configuration(
                 language=language,
             )
         )
+        checks.append(_diagnose_runtime_language_support(language))
 
     if _is_ringcentral_video_profile(profile):
         checks.append(_diagnose_ringcentral_config(ringcentral_config))
@@ -291,6 +293,24 @@ def _diagnose_required_localization(
         "localization",
         f"required {report.language} localization {state}: "
         f"{_format_localization_counts(report)}",
+    )
+
+
+def _diagnose_runtime_language_support(language: str) -> DiagnosticCheck:
+    try:
+        runtime_language = normalize_presenter_language(language)
+    except ValueError:
+        return DiagnosticCheck(
+            "FAIL",
+            "runtime language support",
+            f"localization language {language} is package-only here; "
+            f"presenter runtime does not support --language {language}",
+        )
+    return DiagnosticCheck(
+        "OK",
+        "runtime language support",
+        f"localization language {language} is recognized by the presenter runtime "
+        f"as {language_label(runtime_language)}",
     )
 
 

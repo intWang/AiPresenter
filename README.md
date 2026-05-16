@@ -43,6 +43,9 @@ Check package localization coverage without running automation:
 .venv\Scripts\ai-presenter localization-report --package ringcentral-video --language zh --require-complete
 ```
 
+Use `doctor --require-localization --localization-language ...` when checking package
+localization keys that are separate from runtime presenter voice support.
+
 Discover presenter voice aliases and check a profile's voice routes:
 
 ```powershell

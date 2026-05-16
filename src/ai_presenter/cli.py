@@ -492,6 +492,14 @@ def doctor(
             "or Q&A localization."
         ),
     ),
+    localization_language: str | None = typer.Option(
+        None,
+        "--localization-language",
+        help=(
+            "Package localization language to check with --require-localization; "
+            "does not select a runtime presenter voice."
+        ),
+    ),
     debug: bool = typer.Option(False, "--debug", help="Enable debug logs."),
 ) -> None:
     """Check profile, package, flow, and local RingCentral prerequisites."""
@@ -511,7 +519,9 @@ def doctor(
         ringcentral_config=ringcentral_config,
         voice=voice,
         require_localization=require_localization,
-        localization_language=voice.language if voice is not None else None,
+        localization_language=(
+            localization_language or (voice.language if voice is not None else None)
+        ),
     )
     for line in format_diagnostic_report(report):
         typer.echo(line)

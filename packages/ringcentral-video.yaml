@@ -737,6 +737,7 @@ demoFlows:
       text: Now the media controls. Mute is the main privacy switch for your microphone. Before speaking, this is
         the first control to check.
       localizedText:
+        ja: 次はメディアコントロールです。Mute はマイクの主なプライバシースイッチです。話す前に、まずここで現在の状態を確認します。ユーザーの明確な指示なしに、ミュート解除せず、マイク状態も切り替えません。
         zh: 现在看媒体控制。Mute 是麦克风的主要隐私开关；发言前，最先应该确认这里的状态。
       placement: before
   - id: explain-audio-menu

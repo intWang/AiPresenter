@@ -850,6 +850,7 @@ demoFlows:
       text: Notes opens the Notes and Transcript panel. It can start meeting notes and can also record the meeting,
         so those actions stay under user control.
       localizedText:
+        ja: Notes は Notes and Transcript パネルを開きます。ここには Start notes と Also record this meeting があり、会議メモの開始や録画につながるため、ユーザーが明確に求めるまで操作しません。ツアーではパネルの場所と役割だけを説明し、メモや文字起こしの内容は明確な依頼と確認済みの表示状況なしに読み上げたり要約したりしません。説明後はパネルを閉じます。
         zh: Notes 会打开 Notes and Transcript 面板。这里可以启动会议笔记，也可能涉及录制相关操作，所以这些动作继续由用户控制。
       placement: during
       actionOffsetMs: 400

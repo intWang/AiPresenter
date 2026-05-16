@@ -443,7 +443,7 @@ def test_localization_report_outputs_ringcentral_chinese_coverage() -> None:
     assert "Loaded profile" not in result.stdout
 
 
-def test_localization_report_outputs_japanese_qa_without_demo_narration() -> None:
+def test_localization_report_outputs_japanese_vbg_and_qa_coverage() -> None:
     result = CliRunner().invoke(
         app,
         ["localization-report", "--package", "ringcentral-video", "--language", "ja"],
@@ -451,6 +451,7 @@ def test_localization_report_outputs_japanese_qa_without_demo_narration() -> Non
 
     assert result.exit_code == 0
     assert "Language: ja" in result.stdout
+    assert "- vbg-blur-demo: 4/4 narration localized" in result.stdout
     assert "- meeting-controls-tour: 0/22 narration localized" in result.stdout
     assert "missing: meeting-overview" in result.stdout
     assert "- localized questions: 12/12" in result.stdout
@@ -491,6 +492,7 @@ def test_localization_report_require_complete_fails_for_japanese_demo_gap() -> N
 
     assert result.exit_code == 1
     assert "Language: ja" in result.stdout
+    assert "- vbg-blur-demo: 4/4 narration localized" in result.stdout
     assert "missing: meeting-overview" in result.stdout
     assert "- localized questions: 12/12" in result.stdout
     assert "- localized answers: 12/12" in result.stdout

@@ -123,7 +123,7 @@ def test_ringcentral_localization_status_reports_japanese_qa_coverage() -> None:
 
     assert report.package_id == "ringcentral-video"
     assert report.language == "ja"
-    assert report.demo_localized_steps == 0
+    assert report.demo_localized_steps == 4
     assert report.demo_total_steps == 51
     assert report.qa_localized_questions == 12
     assert report.qa_localized_answers == 12
@@ -132,6 +132,9 @@ def test_ringcentral_localization_status_reports_japanese_qa_coverage() -> None:
     assert report.entrypoint_total == 27
     assert report.alias_total == 0
     assert report.required_localization_complete is False
+    assert report.flow_by_id["vbg-blur-demo"].localized_steps == 4
+    assert report.flow_by_id["vbg-blur-demo"].total_steps == 4
+    assert report.flow_by_id["meeting-controls-tour"].localized_steps == 0
 
 
 def test_localization_status_marks_required_chinese_coverage_complete() -> None:

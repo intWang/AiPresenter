@@ -513,6 +513,7 @@ demoFlows:
     narration:
       text: I am opening the video settings from the camera control so we can configure the visual presentation.
       localizedText:
+        ja: カメラコントロールからビデオ設定を開きます。会議中の他の参加者の状態を変えずに、表示の見え方を調整できます。
         zh: 我先从摄像头控制进入 Settings，这样可以调整视频呈现方式，而不需要改变会议里其他人的状态。
       placement: before
   - id: open-background-panel
@@ -523,6 +524,7 @@ demoFlows:
     narration:
       text: The Background panel contains blur, built-in virtual backgrounds, and custom background upload.
       localizedText:
+        ja: Background パネルでは、ぼかし、標準の仮想背景、カスタム背景のアップロードを管理できます。実際の環境を守りながら見栄えを整える入口です。
         zh: Background 面板集中管理模糊、内置虚拟背景和自定义背景上传，是保护真实环境和提升展示效果的入口。
       placement: during
       actionOffsetMs: 400
@@ -535,6 +537,7 @@ demoFlows:
     narration:
       text: Blur keeps the presenter visible while reducing detail from the real room.
       localizedText:
+        ja: Blur を選ぶと、発表者は見えるまま、実際の部屋の細部を目立たなくできます。環境を見せすぎずに会議を続けるときに役立ちます。
         zh: 选择 Blur 会保留演示者本人，同时弱化真实房间细节，适合在不暴露环境的情况下继续开会。
       placement: during
       actionOffsetMs: 300
@@ -547,6 +550,7 @@ demoFlows:
     narration:
       text: Back in the meeting, the live tile confirms video is on and the real background is blurred.
       localizedText:
+        ja: 会議画面に戻ったら、ライブタイルでビデオがオンのままで、実際の背景がぼかされていることを確認します。
         zh: 回到会议画面后，确认本地视频仍然开启，并且背景已经被模糊处理。
       placement: after
 - id: meeting-basics-demo

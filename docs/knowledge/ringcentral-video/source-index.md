@@ -41,12 +41,12 @@ This index separates product-scope sources from executable automation evidence f
 | `docs/agent-handoffs/cycle-000-ringcentral-knowledge.md` | Cycle 000 review | Identifies locator drift, state gaps, schema companion-doc need. |
 | `docs/agent-handoffs/cycle-001-retro.md` | Cycle 001 lessons | Notes encoding/alias risks and recommends knowledge package hardening. |
 | `tests/unit/test_material_packages.py` | Package validation | Validates package schema, references, explainers, QA, and localization coverage. |
-| `tests/unit/test_ringcentral_profile.py` and `tests/integration/test_ringcentral_profile.py` | Profile/runtime behavior | Protects RingCentral adapter/profile assumptions with fakes and dry-run style paths. |
+| `tests/unit/test_runtime_factory.py`, `tests/unit/test_profile_runner.py`, and `tests/integration/test_ringcentral_profile.py` | Profile/runtime behavior | Protect provider registry, profile runner, RingCentral adapter, and dry-run/material-demo runtime assumptions with fakes and repository-local adapter fixtures. |
 
 ## Source Discipline
 
 - A feature listed in official docs may be added to backlog or explain-only package knowledge.
-- A feature should not become executable until it has a local observation record and a locator entry.
+- A feature should not become executable until it has a local observation record and a locator entry; executable live confidence also needs privacy, side-effect, cleanup, and dated acceptance evidence.
 - Sensitive surfaces require privacy policy entries before they are exposed in demos or Q&A.
 - Layout variants should be recorded as observations before changing YAML routes.
 

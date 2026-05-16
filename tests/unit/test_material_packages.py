@@ -16,6 +16,9 @@ EXECUTABLE_DEMO_STEP_OPERATIONS = {"open", "toggle", "select"}
 RINGCENTRAL_KNOWLEDGE_DOC_REF_RE = re.compile(
     r"docs/knowledge/ringcentral-video/([A-Za-z0-9._-]+\.md)"
 )
+RINGCENTRAL_SOURCE_INDEX_TEST_REF_RE = re.compile(
+    r"`((?:tests/(?:unit|integration)/)[A-Za-z0-9._/-]+\.py)`"
+)
 RINGCENTRAL_KNOWLEDGE_DRAFT_PREFIXES = ("draft-", "scratch-")
 
 
@@ -1290,6 +1293,103 @@ def test_ringcentral_validation_checklist_covers_package_routes() -> None:
     assert "ringcentral.video.more.recording" in checklist_text
     assert "ringcentral.video.toolbar.leave" in checklist_text
     assert "runbook checkboxes are not acceptance evidence" in checklist_text
+
+
+def test_ringcentral_source_index_test_references_exist() -> None:
+    source_path = Path("docs/knowledge/ringcentral-video/source-index.md")
+    source_text = source_path.read_text(encoding="utf-8")
+
+    referenced_test_paths = sorted(
+        set(RINGCENTRAL_SOURCE_INDEX_TEST_REF_RE.findall(source_text))
+    )
+    missing_test_paths = [
+        test_path for test_path in referenced_test_paths if not Path(test_path).is_file()
+    ]
+
+    assert referenced_test_paths
+    assert missing_test_paths == []
+
+
+def test_ringcentral_knowledge_docs_preserve_evidence_boundaries() -> None:
+    knowledge_dir = Path("docs/knowledge/ringcentral-video")
+    checklist_text = (knowledge_dir / "validation-checklist-index.md").read_text(
+        encoding="utf-8"
+    )
+    evidence_text = (knowledge_dir / "evidence-index.md").read_text(encoding="utf-8")
+    acceptance_text = (knowledge_dir / "acceptance-runs.md").read_text(
+        encoding="utf-8"
+    )
+    source_text = (knowledge_dir / "source-index.md").read_text(encoding="utf-8")
+    runtime_text = (knowledge_dir / "runtime-safety-routing.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert (
+        "This checklist turns known RingCentral Video evidence gaps into safe manual "
+        "validation work. It is procedure, not proof."
+    ) in checklist_text
+    assert (
+        "Do not promote a route to `Accepted` from automated tests, dry runs, "
+        "`doctor`, or read-only UIA observation alone."
+    ) in checklist_text
+    assert "`Accepted` requires a dated manual/live record in `acceptance-runs.md`." in (
+        checklist_text
+    )
+    assert (
+        "`Observed` can come from sanitized UIA/window metadata, but does not "
+        "prove click or cleanup."
+    ) in checklist_text
+    assert (
+        "`Repo-tested` means package shape or runtime code was tested locally, "
+        "not that RingCentral accepted the route live."
+    ) in checklist_text
+
+    assert (
+        "| `Accepted` | Automated tests plus dated live/manual acceptance for the "
+        "current RingCentral build and route. |"
+    ) in evidence_text
+    assert (
+        "| `Observed` | Dated observation exists, but no click/cleanup acceptance "
+        "exists for the route. |"
+    ) in evidence_text
+    assert (
+        "| `Repo-tested` | Package schema/tests cover the route; no current live "
+        "acceptance exists. |"
+    ) in evidence_text
+    assert (
+        "no executable RingCentral Video route is fully `Accepted` for live "
+        "operation yet"
+    ) in evidence_text
+    assert "Repo baseline only; not live RingCentral evidence." in evidence_text
+    assert "Navigation evidence only; not live RingCentral evidence." in evidence_text
+
+    assert (
+        "A checklist in a runbook is not acceptance evidence until a run is "
+        "recorded here."
+    ) in acceptance_text
+    assert (
+        "Live manual observations are required before a locator or flow is treated "
+        "as current-build evidence."
+    ) in source_text
+    assert (
+        "executable live confidence also needs privacy, side-effect, cleanup, and "
+        "dated acceptance evidence."
+    ) in source_text
+    assert (
+        "does not replace the package YAML, privacy matrix, locator matrix, or "
+        "dated acceptance evidence."
+    ) in runtime_text
+    assert (
+        "Before promoting any live route evidence, record a dated acceptance run first."
+    ) in runtime_text
+
+    for doc_text in (checklist_text, evidence_text, source_text, runtime_text):
+        normalized = " ".join(doc_text.split()).casefold()
+        assert "repo-tested means accepted" not in normalized
+        assert "observed means accepted" not in normalized
+        assert "checklist is acceptance evidence" not in normalized
+        assert "doctor proves live acceptance" not in normalized
+        assert "dry run proves live acceptance" not in normalized
 
 
 def test_ringcentral_knowledge_docs_are_registered_in_navigation_indexes() -> None:

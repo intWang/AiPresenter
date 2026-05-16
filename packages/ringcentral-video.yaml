@@ -997,6 +997,7 @@ demoFlows:
       text: Chat is the written side channel. Use it for links, follow-ups, and private messages, while keeping
         chat content private unless you explicitly ask me to read it.
       localizedText:
+        ja: Chat は会議内の文字ベースのサイドチャネルです。リンク、フォローアップ、個別メッセージのやり取りに使う場所で、Within everyone と Privately のタブ、メッセージ入力欄を確認できます。ただし、チャット内容はプライベートな情報として扱い、ユーザーが明示的に求めるまで読み上げません。説明後は、続行前に Chat パネルを閉じます。
         zh: Chat 是会议里的文字侧边通道。适合发链接、补充信息或私聊；聊天内容默认保持隐私，除非你明确让我读。
       placement: during
       actionOffsetMs: 350

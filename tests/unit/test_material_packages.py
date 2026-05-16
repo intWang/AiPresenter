@@ -386,6 +386,39 @@ def test_demo_flow_by_id_preserves_unknown_id_error() -> None:
         package.demo_flow_by_id("missing-flow")
 
 
+def test_material_package_exposes_precomputed_qa_question_candidates() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    item = package.qa[0]
+
+    candidates = package.qa_question_candidates
+
+    assert isinstance(candidates, tuple)
+    assert any(candidate.item is item and candidate.question == item.question for candidate in candidates)
+    localized_question = item.localized_questions["zh"][0]
+    localized_candidate = next(
+        candidate for candidate in candidates if candidate.question == localized_question
+    )
+    assert localized_candidate.item is item
+    assert localized_candidate.normalized_question == localized_question.casefold()
+    assert isinstance(localized_candidate.meaningful_tokens, frozenset)
+
+
+def test_material_package_exposes_precomputed_entrypoint_match_candidates() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    candidates = package.entrypoint_match_candidates
+    chat = package.entrypoint_by_id("ringcentral.video.toolbar.chat")
+    chat_candidate = next(candidate for candidate in candidates if candidate.entrypoint is chat)
+
+    assert isinstance(candidates, tuple)
+    assert [candidate.entrypoint.id for candidate in candidates] == [
+        entrypoint.id for entrypoint in package.operation_entrypoints
+    ]
+    assert "chat" in chat_candidate.id_tokens
+    assert "chat" in chat_candidate.title_tokens
+    assert chat_candidate.title_or_id_tokens == chat_candidate.title_tokens | chat_candidate.id_tokens
+
+
 def test_with_demo_flow_rebuilds_runtime_indexes_for_appended_flow() -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
     flow = package.demo_flows[0].model_copy(update={"id": "copy-flow"})
@@ -395,6 +428,10 @@ def test_with_demo_flow_rebuilds_runtime_indexes_for_appended_flow() -> None:
     assert copied.demo_flow_by_id("copy-flow").id == "copy-flow"
     assert "copy-flow" in copied.demo_flows_by_id
     assert "copy-flow" not in package.demo_flows_by_id
+    assert copied.qa_question_candidates[0].item is copied.qa[0]
+    assert copied.entrypoint_match_candidates[0].entrypoint is copied.operation_entrypoints[0]
+    assert copied.qa_question_candidates[0].item is not package.qa[0]
+    assert copied.entrypoint_match_candidates[0].entrypoint is not package.operation_entrypoints[0]
 
 
 def test_material_package_exposes_normalized_question_alias_index() -> None:
@@ -421,8 +458,12 @@ def test_runtime_indexes_do_not_leak_into_model_dump() -> None:
 
     assert "entrypointsById" not in dumped
     assert "entrypointQuestionAliases" not in dumped
+    assert "qaQuestionCandidates" not in dumped
+    assert "entrypointMatchCandidates" not in dumped
     assert "_entrypoints_by_id" not in dumped
     assert "_entrypoint_question_aliases" not in dumped
+    assert "_qa_question_candidates" not in dumped
+    assert "_entrypoint_match_candidates" not in dumped
     assert "operationEntrypoints" in dumped
 
 

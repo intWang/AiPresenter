@@ -1,10 +1,29 @@
 from collections.abc import Mapping
 from dataclasses import dataclass
+import re
 from types import MappingProxyType
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, field_validator, model_validator
 
+_STOPWORDS = {
+    "a",
+    "can",
+    "control",
+    "could",
+    "do",
+    "how",
+    "i",
+    "in",
+    "meeting",
+    "open",
+    "please",
+    "show",
+    "the",
+    "to",
+    "where",
+}
+_TOKEN_PATTERN = re.compile(r"[a-z0-9]+")
 _PASSIVE_DEMO_OPERATIONS = frozenset({"explain", "point", "verify"})
 _EXECUTABLE_OPEN_STEP_ACTIONS = frozenset(
     {
@@ -84,6 +103,24 @@ class QuestionAnswer(CamelModel):
     related_entrypoint_ids: list[str] = Field(default_factory=list, alias="relatedEntrypointIds")
 
 
+@dataclass(frozen=True)
+class QuestionAnswerMatchCandidate:
+    item: QuestionAnswer
+    question: str
+    normalized_question: str
+    meaningful_tokens: frozenset[str]
+
+
+@dataclass(frozen=True)
+class EntrypointMatchCandidate:
+    entrypoint: OperationEntrypoint
+    id_tokens: frozenset[str]
+    title_tokens: frozenset[str]
+    area_tokens: frozenset[str]
+    purpose_tokens: frozenset[str]
+    title_or_id_tokens: frozenset[str]
+
+
 class ManualControl(CamelModel):
     name: str
     examples: list[str]
@@ -103,6 +140,12 @@ class MaterialPackage(CamelModel):
     _entrypoints_by_id: dict[str, OperationEntrypoint] = PrivateAttr(default_factory=dict)
     _demo_flows_by_id: dict[str, DemoFlow] = PrivateAttr(default_factory=dict)
     _entrypoint_question_aliases: tuple[EntrypointQuestionAlias, ...] = PrivateAttr(
+        default_factory=tuple
+    )
+    _qa_question_candidates: tuple[QuestionAnswerMatchCandidate, ...] = PrivateAttr(
+        default_factory=tuple
+    )
+    _entrypoint_match_candidates: tuple[EntrypointMatchCandidate, ...] = PrivateAttr(
         default_factory=tuple
     )
 
@@ -173,6 +216,10 @@ class MaterialPackage(CamelModel):
         self._entrypoints_by_id = entrypoints_by_id
         self._demo_flows_by_id = demo_flows_by_id
         self._entrypoint_question_aliases = tuple(entrypoint_question_aliases)
+        self._qa_question_candidates = _build_qa_question_candidates(self.qa)
+        self._entrypoint_match_candidates = _build_entrypoint_match_candidates(
+            self.operation_entrypoints
+        )
         return self
 
     @property
@@ -186,6 +233,14 @@ class MaterialPackage(CamelModel):
     @property
     def entrypoint_question_aliases(self) -> tuple[EntrypointQuestionAlias, ...]:
         return self._entrypoint_question_aliases
+
+    @property
+    def qa_question_candidates(self) -> tuple[QuestionAnswerMatchCandidate, ...]:
+        return self._qa_question_candidates
+
+    @property
+    def entrypoint_match_candidates(self) -> tuple[EntrypointMatchCandidate, ...]:
+        return self._entrypoint_match_candidates
 
     def entrypoint_by_id(self, entrypoint_id: str) -> OperationEntrypoint:
         try:
@@ -206,6 +261,60 @@ class MaterialPackage(CamelModel):
         data = self.model_dump(by_alias=True)
         data["demoFlows"] = [*data.get("demoFlows", []), flow.model_dump(by_alias=True)]
         return MaterialPackage.model_validate(data)
+
+
+def match_field_tokens(text: str) -> frozenset[str]:
+    return frozenset(_TOKEN_PATTERN.findall(text.casefold()))
+
+
+def match_meaningful_tokens(text: str) -> frozenset[str]:
+    return frozenset(
+        token for token in match_field_tokens(text) if token not in _STOPWORDS and len(token) >= 3
+    )
+
+
+def _build_qa_question_candidates(
+    items: list[QuestionAnswer],
+) -> tuple[QuestionAnswerMatchCandidate, ...]:
+    candidates: list[QuestionAnswerMatchCandidate] = []
+    for item in items:
+        for question in _qa_questions(item):
+            candidates.append(
+                QuestionAnswerMatchCandidate(
+                    item=item,
+                    question=question,
+                    normalized_question=question.casefold(),
+                    meaningful_tokens=match_meaningful_tokens(question),
+                )
+            )
+    return tuple(candidates)
+
+
+def _qa_questions(item: QuestionAnswer) -> list[str]:
+    questions = [item.question]
+    for localized in item.localized_questions.values():
+        questions.extend(localized)
+    return questions
+
+
+def _build_entrypoint_match_candidates(
+    entrypoints: list[OperationEntrypoint],
+) -> tuple[EntrypointMatchCandidate, ...]:
+    candidates: list[EntrypointMatchCandidate] = []
+    for entrypoint in entrypoints:
+        id_tokens = match_field_tokens(entrypoint.id)
+        title_tokens = match_field_tokens(entrypoint.title)
+        candidates.append(
+            EntrypointMatchCandidate(
+                entrypoint=entrypoint,
+                id_tokens=id_tokens,
+                title_tokens=title_tokens,
+                area_tokens=match_field_tokens(entrypoint.area),
+                purpose_tokens=match_field_tokens(entrypoint.purpose),
+                title_or_id_tokens=title_tokens | id_tokens,
+            )
+        )
+    return tuple(candidates)
 
 
 def _validate_demo_step_open_steps(

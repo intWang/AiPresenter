@@ -1,9 +1,13 @@
 from dataclasses import dataclass
 import logging
-import re
 from time import perf_counter
 
-from ai_presenter.packages.models import MaterialPackage, OperationEntrypoint, QuestionAnswer
+from ai_presenter.packages.models import EntrypointMatchCandidate
+from ai_presenter.packages.models import MaterialPackage
+from ai_presenter.packages.models import OperationEntrypoint
+from ai_presenter.packages.models import QuestionAnswer
+from ai_presenter.packages.models import match_field_tokens
+from ai_presenter.packages.models import match_meaningful_tokens
 from ai_presenter.runtime.logging import elapsed_ms, log_timed_event
 from ai_presenter.runtime.voice import PresenterVoiceSettings, render_presenter_text
 
@@ -33,25 +37,7 @@ _RISKY_ENTRYPOINT_WORDS = {
     "unlock",
     "unmute",
 }
-_STOPWORDS = {
-    "a",
-    "can",
-    "control",
-    "could",
-    "do",
-    "how",
-    "i",
-    "in",
-    "meeting",
-    "open",
-    "please",
-    "show",
-    "the",
-    "to",
-    "where",
-}
 _GENERIC_ENTRYPOINT_TOKENS = {"people"}
-_TOKEN_PATTERN = re.compile(r"[a-z0-9]+")
 _ENTRYPOINT_ALIASES: dict[str, tuple[str, ...]] = {
     "ringcentral.video.toolbar.chat": (
         "聊天",
@@ -208,39 +194,28 @@ def _answer_question(
 
 
 def _match_qa(package: MaterialPackage, normalized_question: str) -> QuestionAnswer | None:
-    for item in package.qa:
-        for question in _qa_questions(item):
-            normalized_item_question = question.casefold()
-            if normalized_question and normalized_question in normalized_item_question:
-                return item
-            if normalized_item_question in normalized_question:
-                return item
+    for candidate in package.qa_question_candidates:
+        if normalized_question and normalized_question in candidate.normalized_question:
+            return candidate.item
+        if candidate.normalized_question in normalized_question:
+            return candidate.item
     query_tokens = _meaningful_tokens(normalized_question)
     if not query_tokens:
         return None
 
     best_match: QuestionAnswer | None = None
     best_score = 0
-    for item in package.qa:
-        for question in _qa_questions(item):
-            question_tokens = _meaningful_tokens(question)
-            overlap = query_tokens & question_tokens
-            if not overlap:
-                continue
-            score = len(overlap)
-            if score > best_score:
-                best_match = item
-                best_score = score
+    for candidate in package.qa_question_candidates:
+        overlap = query_tokens & candidate.meaningful_tokens
+        if not overlap:
+            continue
+        score = len(overlap)
+        if score > best_score:
+            best_match = candidate.item
+            best_score = score
     if best_score >= 2:
         return best_match
     return None
-
-
-def _qa_questions(item: QuestionAnswer) -> list[str]:
-    questions = [item.question]
-    for localized in item.localized_questions.values():
-        questions.extend(localized)
-    return questions
 
 
 def _qa_answer_text(item: QuestionAnswer, voice: PresenterVoiceSettings) -> str:
@@ -261,10 +236,10 @@ def _match_entrypoint(package: MaterialPackage, normalized_question: str) -> Ope
 
     best_entrypoint: OperationEntrypoint | None = None
     best_score = 0
-    for entrypoint in package.operation_entrypoints:
-        score = _score_entrypoint_match(entrypoint, query_tokens)
+    for candidate in package.entrypoint_match_candidates:
+        score = _score_entrypoint_match(candidate, query_tokens)
         if score > best_score:
-            best_entrypoint = entrypoint
+            best_entrypoint = candidate.entrypoint
             best_score = score
     return best_entrypoint
 
@@ -310,35 +285,30 @@ def _match_package_entrypoint_alias(
     return package.entrypoint_by_id(best_entrypoint_id)
 
 
-def _score_entrypoint_match(entrypoint: OperationEntrypoint, query_tokens: set[str]) -> int:
-    title_tokens = _field_tokens(entrypoint.title)
-    id_tokens = _field_tokens(entrypoint.id)
-    area_tokens = _field_tokens(entrypoint.area)
-    purpose_tokens = _field_tokens(entrypoint.purpose)
-
-    title_or_id_matches = query_tokens & (title_tokens | id_tokens)
-    area_matches = query_tokens & area_tokens
-    purpose_matches = query_tokens & purpose_tokens
+def _score_entrypoint_match(candidate: EntrypointMatchCandidate, query_tokens: set[str]) -> int:
+    title_or_id_matches = query_tokens & candidate.title_or_id_tokens
+    area_matches = query_tokens & candidate.area_tokens
+    purpose_matches = query_tokens & candidate.purpose_tokens
     all_matches = title_or_id_matches | area_matches | purpose_matches
     if not all_matches or all_matches <= _GENERIC_ENTRYPOINT_TOKENS:
         return 0
 
     score = 0
-    score += len(query_tokens & id_tokens) * 6
-    score += len(query_tokens & title_tokens) * 5
+    score += len(query_tokens & candidate.id_tokens) * 6
+    score += len(query_tokens & candidate.title_tokens) * 5
     score += len(area_matches) * 2
     score += len(purpose_matches)
-    if query_tokens <= (title_tokens | id_tokens):
+    if query_tokens <= candidate.title_or_id_tokens:
         score += 3
     return score
 
 
 def _meaningful_tokens(text: str) -> set[str]:
-    return {token for token in _field_tokens(text) if token not in _STOPWORDS and len(token) >= 3}
+    return set(match_meaningful_tokens(text))
 
 
 def _field_tokens(text: str) -> set[str]:
-    return set(_TOKEN_PATTERN.findall(text.casefold()))
+    return set(match_field_tokens(text))
 
 
 def _render_entrypoint_answer(entrypoint: OperationEntrypoint, voice: PresenterVoiceSettings) -> str:

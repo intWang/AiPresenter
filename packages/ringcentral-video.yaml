@@ -838,6 +838,7 @@ demoFlows:
       text: Start recording changes the meeting state, so I only explain it in a tour. I would ask before starting
         or stopping recording.
       localizedText:
+        ja: Start recording は会議状態を変更し、参加者全員に影響する録画の入口です。ツアーではこの入口を説明するだけで、録画の開始や停止は自動で行いません。実際に開始または停止する前には、ユーザーへ明確に確認し、現在の役割と権限、参加者の同意や会議の合意が明確であることを前提にします。
         zh: Start recording 会改变会议状态，所以在导览里只解释入口；开始或停止录制前都需要先询问并确认。
       placement: before
   - id: explain-notes

@@ -123,7 +123,7 @@ def test_ringcentral_localization_status_reports_japanese_demo_and_qa_coverage()
 
     assert report.package_id == "ringcentral-video"
     assert report.language == "ja"
-    assert report.demo_localized_steps == 24
+    assert report.demo_localized_steps == 25
     assert report.demo_total_steps == 51
     assert report.qa_localized_questions == 12
     assert report.qa_localized_answers == 12
@@ -136,7 +136,7 @@ def test_ringcentral_localization_status_reports_japanese_demo_and_qa_coverage()
     assert report.flow_by_id["vbg-blur-demo"].total_steps == 4
     assert report.flow_by_id["meeting-basics-demo"].localized_steps == 3
     assert report.flow_by_id["meeting-basics-demo"].total_steps == 3
-    assert report.flow_by_id["meeting-controls-tour"].localized_steps == 17
+    assert report.flow_by_id["meeting-controls-tour"].localized_steps == 18
     assert report.flow_by_id["meeting-controls-tour"].total_steps == 22
 
 
@@ -1162,6 +1162,42 @@ def test_meeting_controls_tour_has_japanese_more_narration() -> None:
     assert "変更します" not in ja_text
     assert "選択します" not in ja_text
     assert "Leave" not in ja_text
+
+
+def test_meeting_controls_tour_has_japanese_recording_narration() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    flow = package.demo_flow_by_id("meeting-controls-tour")
+    step = next(step for step in flow.steps if step.id == "explain-recording")
+
+    assert step.action.entrypoint_id == "ringcentral.video.more.recording"
+    assert step.action.operation == "explain"
+    assert step.narration.placement == "before"
+    assert step.narration.action_offset_ms == 0
+    ja_text = step.narration.localized_text["ja"]
+    assert ja_text.strip()
+    assert has_cjk(ja_text)
+    assert "Start recording" in ja_text
+    assert "会議状態" in ja_text
+    assert "変更" in ja_text
+    assert "参加者" in ja_text
+    assert "ツアー" in ja_text
+    assert "入口" in ja_text
+    assert "説明するだけ" in ja_text
+    assert "録画" in ja_text
+    assert "開始" in ja_text
+    assert "停止" in ja_text
+    assert "ユーザー" in ja_text
+    assert "確認" in ja_text
+    assert "権限" in ja_text
+    assert "同意" in ja_text
+    assert "録画を開始します" not in ja_text
+    assert "録画を停止します" not in ja_text
+    assert "クリック" not in ja_text
+    assert "押します" not in ja_text
+    assert "選択します" not in ja_text
+    assert "許可されています" not in ja_text
+    assert "同意済み" not in ja_text
+    assert "録画中" not in ja_text
 
 
 def test_rejects_duplicate_operation_entrypoint_ids(tmp_path: Path) -> None:

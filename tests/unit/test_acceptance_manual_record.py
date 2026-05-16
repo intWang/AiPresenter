@@ -13,6 +13,14 @@ def load_ringcentral_package() -> MaterialPackage:
     return load_material_package(Path("packages/ringcentral-video.yaml"))
 
 
+def assert_manual_draft_boundary(draft: str) -> None:
+    assert "Draft only" in draft
+    assert "not acceptance evidence" in draft
+    assert "No live RingCentral action has been performed by this helper." in draft
+    assert "Accepted" not in draft
+    assert "live validated" not in draft.casefold()
+
+
 def test_manual_acceptance_draft_includes_all_required_template_fields() -> None:
     draft = render_manual_acceptance_draft(
         load_ringcentral_package(),
@@ -29,15 +37,12 @@ def test_manual_acceptance_draft_prefills_entrypoint_context_without_claiming_ac
         AcceptanceDraftRequest(entrypoint_id="ringcentral.video.main.add-coworkers"),
     )
 
-    assert "Draft only" in draft
-    assert "not acceptance evidence" in draft
+    assert_manual_draft_boundary(draft)
     assert "ringcentral.video.main.add-coworkers" in draft
     assert "Add coworkers" in draft
     assert "Meeting canvas" in draft
     assert "clickWindowControl target=Add coworkers cleanup=modal" in draft
-    assert "No live RingCentral action has been performed by this helper." in draft
     assert "- Pass/fail:" in draft
-    assert "Accepted" not in draft
 
 
 def test_manual_acceptance_draft_prefills_flow_steps() -> None:
@@ -46,6 +51,7 @@ def test_manual_acceptance_draft_prefills_flow_steps() -> None:
         AcceptanceDraftRequest(flow_id="meeting-control-map-demo"),
     )
 
+    assert_manual_draft_boundary(draft)
     assert "meeting-control-map-demo" in draft
     assert "Meeting Control Map" in draft
     assert "ringcentral.video.toolbar.chat" in draft
@@ -62,6 +68,7 @@ def test_manual_acceptance_draft_prefills_mixed_flow_and_entrypoint_steps() -> N
         ),
     )
 
+    assert_manual_draft_boundary(draft)
     assert "### Flow Context" in draft
     assert "### Entrypoint Context" in draft
     assert "### Checklist Context" in draft

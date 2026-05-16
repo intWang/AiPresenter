@@ -123,7 +123,7 @@ def test_ringcentral_localization_status_reports_japanese_demo_and_qa_coverage()
 
     assert report.package_id == "ringcentral-video"
     assert report.language == "ja"
-    assert report.demo_localized_steps == 37
+    assert report.demo_localized_steps == 38
     assert report.demo_total_steps == 51
     assert report.qa_localized_questions == 12
     assert report.qa_localized_answers == 12
@@ -138,10 +138,10 @@ def test_ringcentral_localization_status_reports_japanese_demo_and_qa_coverage()
     assert report.flow_by_id["meeting-basics-demo"].total_steps == 3
     assert report.flow_by_id["meeting-controls-tour"].localized_steps == 22
     assert report.flow_by_id["meeting-controls-tour"].total_steps == 22
-    assert report.flow_by_id["meeting-control-map-demo"].localized_steps == 8
+    assert report.flow_by_id["meeting-control-map-demo"].localized_steps == 9
     assert report.flow_by_id["meeting-control-map-demo"].total_steps == 22
     assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids[0] == (
-        "control-map-microphone"
+        "control-map-audio-menu"
     )
 
 
@@ -1795,6 +1795,59 @@ def test_meeting_control_map_has_japanese_chat_narration() -> None:
     assert "全員に送ります" not in ja_text
     assert "必ず" not in ja_text
     assert "自動" not in ja_text
+
+
+def test_meeting_control_map_has_japanese_microphone_narration() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    flow = package.demo_flow_by_id("meeting-control-map-demo")
+    step = next(step for step in flow.steps if step.id == "control-map-microphone")
+
+    assert step.action.entrypoint_id == "ringcentral.video.toolbar.audio"
+    assert step.action.operation == "point"
+    assert step.narration.placement == "before"
+    assert step.narration.action_offset_ms == 0
+    audio_entrypoint = package.entrypoint_by_id("ringcentral.video.toolbar.audio")
+    assert audio_entrypoint.question_aliases["ja"] == [
+        "マイク",
+        "ミュート",
+        "音声",
+    ]
+    assert len(audio_entrypoint.open_steps) == 1
+    open_step = audio_entrypoint.open_steps[0]
+    assert open_step.action == "clickWindowControl"
+    assert open_step.target == "Mute"
+    assert open_step.match["alternateTargets"] == "Unmute"
+    assert open_step.match["controlType"] == "button"
+    assert "cleanup" not in open_step.match
+    assert "Unmute and Mute" in audio_entrypoint.presenter_notes[0]
+    assert "current state" in audio_entrypoint.presenter_notes[0]
+    assert "audio privacy" in audio_entrypoint.presenter_notes[1]
+    assert "meeting readiness" in audio_entrypoint.presenter_notes[1]
+    ja_text = step.narration.localized_text["ja"]
+    assert ja_text.strip()
+    assert has_cjk(ja_text)
+    assert "Microphone" in ja_text
+    assert "メディア" in ja_text
+    assert "準備" in ja_text
+    assert "発言" in ja_text
+    assert "音声" in ja_text
+    assert "ミュート" in ja_text
+    assert "プライバシー" in ja_text
+    assert "スイッチ" in ja_text
+    assert "確認" in ja_text
+    assert "ユーザー" in ja_text
+    assert "明示的" in ja_text
+    assert "クリックします" not in ja_text
+    assert "押します" not in ja_text
+    assert "切り替えます" not in ja_text
+    assert "ミュートします" not in ja_text
+    assert "ミュート解除します" not in ja_text
+    assert "オンにします" not in ja_text
+    assert "オフにします" not in ja_text
+    assert "変更します" not in ja_text
+    assert "操作します" not in ja_text
+    assert "自動" not in ja_text
+    assert "必ず" not in ja_text
 
 
 def test_rejects_duplicate_operation_entrypoint_ids(tmp_path: Path) -> None:

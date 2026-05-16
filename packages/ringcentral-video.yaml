@@ -1010,6 +1010,7 @@ demoFlows:
       text: Now we move into media readiness. The microphone button is the main privacy switch for speaking, so it
         is the first control to check before you contribute.
       localizedText:
+        ja: ここからメディアの準備状況を確認します。Microphone ボタンは、発言する前に自分の音声がミュートかどうかを確認するための主要なプライバシースイッチです。ここでは場所と状態の見方を説明するだけで、ユーザーが明示的に求めるまでミュートやミュート解除は切り替えません。
         zh: 现在进入音视频准备区。麦克风是发言前最重要的隐私开关；开口前，先看这里是不是静音。
       placement: before
   - id: control-map-audio-menu

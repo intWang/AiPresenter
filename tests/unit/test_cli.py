@@ -629,6 +629,8 @@ def test_package_language_alias_normalization_is_documented() -> None:
 
     assert cli.resolve_package_language_key("Spanish") == "es"
     assert cli.resolve_package_language_key("es-MX") == "es"
+    assert cli.resolve_package_language_key("es-419") == "es"
+    assert cli.resolve_package_language_key("Espa\u00f1ol") == "es"
     assert cli.resolve_package_language_key("zh-CN") == "zh"
     assert cli.resolve_package_language_key("de") == "de"
     assert "raw language-key lookup" not in normalized_lifecycle_text
@@ -1385,6 +1387,10 @@ def test_voices_lists_language_tone_choices() -> None:
     assert "Chinese aliases:" in result.stdout
     assert "Japanese aliases:" in result.stdout
     assert "Spanish aliases:" in result.stdout
+    assert "es-419" in result.stdout
+    assert "latam-spanish" in result.stdout
+    assert "latin-american-spanish" in result.stdout
+    assert "espa\\xf1ol" in result.stdout
     assert "Tones:" in result.stdout
     assert "Coach aliases:" in result.stdout
     assert "Support aliases:" in result.stdout

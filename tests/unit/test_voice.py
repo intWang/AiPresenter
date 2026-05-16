@@ -63,6 +63,11 @@ def test_voice_settings_normalize_language_aliases() -> None:
     assert PresenterVoiceSettings(language="Spanish").language == "es"
     assert PresenterVoiceSettings(language="es-ES").language == "es"
     assert PresenterVoiceSettings(language="es-MX").language == "es"
+    assert PresenterVoiceSettings(language="es-419").language == "es"
+    assert PresenterVoiceSettings(language="es-LA").language == "es"
+    assert PresenterVoiceSettings(language="latam-spanish").language == "es"
+    assert PresenterVoiceSettings(language="latin-american-spanish").language == "es"
+    assert PresenterVoiceSettings(language="Espa\u00f1ol").language == "es"
     assert PresenterVoiceSettings(language="espanol").language == "es"
 
 
@@ -93,7 +98,12 @@ def test_presenter_spanish_language_aliases_are_public_and_canonical() -> None:
         "es",
         "es-es",
         "es-mx",
+        "es-419",
+        "es-la",
         "spanish",
+        "latam-spanish",
+        "latin-american-spanish",
+        "espa\u00f1ol",
         "espanol",
     )
 

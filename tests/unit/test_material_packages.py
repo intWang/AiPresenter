@@ -123,7 +123,7 @@ def test_ringcentral_localization_status_reports_japanese_demo_and_qa_coverage()
 
     assert report.package_id == "ringcentral-video"
     assert report.language == "ja"
-    assert report.demo_localized_steps == 21
+    assert report.demo_localized_steps == 22
     assert report.demo_total_steps == 51
     assert report.qa_localized_questions == 12
     assert report.qa_localized_answers == 12
@@ -136,7 +136,7 @@ def test_ringcentral_localization_status_reports_japanese_demo_and_qa_coverage()
     assert report.flow_by_id["vbg-blur-demo"].total_steps == 4
     assert report.flow_by_id["meeting-basics-demo"].localized_steps == 3
     assert report.flow_by_id["meeting-basics-demo"].total_steps == 3
-    assert report.flow_by_id["meeting-controls-tour"].localized_steps == 14
+    assert report.flow_by_id["meeting-controls-tour"].localized_steps == 15
     assert report.flow_by_id["meeting-controls-tour"].total_steps == 22
 
 
@@ -1064,6 +1064,34 @@ def test_meeting_controls_tour_has_japanese_share_narration() -> None:
     assert "読み上げません" in ja_text
     assert "閉じます" in ja_text
     assert "開始します" not in ja_text
+
+
+def test_meeting_controls_tour_has_japanese_reactions_narration() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    flow = package.demo_flow_by_id("meeting-controls-tour")
+    step = next(step for step in flow.steps if step.id == "explain-reactions")
+
+    assert step.action.entrypoint_id == "ringcentral.video.toolbar.react"
+    assert step.action.operation == "open"
+    ja_text = step.narration.localized_text["ja"]
+    assert ja_text.strip()
+    assert has_cjk(ja_text)
+    assert "React" in ja_text
+    assert "リアクション" in ja_text
+    assert "ハート" in ja_text
+    assert "いいね" in ja_text
+    assert "祝福" in ja_text
+    assert "拍手" in ja_text
+    assert "スマイル" in ja_text
+    assert "Be right back" in ja_text
+    assert "会議中に見える" in ja_text
+    assert "ユーザー" in ja_text
+    assert "明確な指示" in ja_text
+    assert "送信しません" in ja_text
+    assert "閉じます" in ja_text
+    assert "Raise hand" not in ja_text
+    assert "手を上げ" not in ja_text
+    assert "送信します" not in ja_text
 
 
 def test_rejects_duplicate_operation_entrypoint_ids(tmp_path: Path) -> None:

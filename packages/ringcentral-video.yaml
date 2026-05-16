@@ -799,6 +799,7 @@ demoFlows:
       text: For lightweight interaction, React opens quick feedback such as heart, thumbs up, celebration, clap,
         smile, and Be right back.
       localizedText:
+        ja: React は、発話を遮らずに気持ちや反応を示すためのリアクション欄を開きます。ハート、いいね、祝福、拍手、スマイル、Be right back などのクイックフィードバックがあります。リアクションは会議中に見えるシグナルなので、ユーザーの明確な指示なしに送信しません。説明だけの場合は送信せずに閉じます。
         zh: React 适合轻量反馈，比如爱心、点赞、庆祝、鼓掌、微笑和 Be right back，不需要打断正在说话的人。
       placement: during
       actionOffsetMs: 350

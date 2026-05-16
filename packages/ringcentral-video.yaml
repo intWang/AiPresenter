@@ -1150,6 +1150,7 @@ demoFlows:
       text: Settings is the full configuration center for audio, video, background, translation, join preferences,
         and general meeting behavior.
       localizedText:
+        ja: Settings は、Audio、Video、Background、Translation、Join preferences、General など、会議全体の設定をまとめて確認する設定センターです。このコントロールマップでは表示して説明するだけです。ユーザーが明確に求め、表示された項目と影響を確認できるまで、デバイスは切り替えません。音声、ビデオ、背景、入会設定、一般設定は変更しません。翻訳もオンにしません。デバイス名、アカウント情報、保存済みの参加設定はプライベートな情報を含む可能性があるため、明確な依頼なしに読み上げたり記録したりしません。説明後は Settings ダイアログを閉じます。
         zh: Settings 是完整配置中心。音频、视频、背景、翻译、入会偏好，以及通用会议行为，都可以在这里集中调整。
       placement: during
       actionOffsetMs: 400

@@ -466,7 +466,7 @@ def _legacy_entrypoint_alias_matches() -> tuple[tuple[str, str], ...]:
         (entrypoint_id, normalized_alias)
         for entrypoint_id, aliases in _ENTRYPOINT_ALIASES.items()
         for alias in aliases
-        if (normalized_alias := alias.casefold())
+        if (normalized_alias := normalize_question_prompt(alias))
     ]
     _LEGACY_ENTRYPOINT_ALIAS_MATCHES = tuple(
         sorted(matches, key=lambda match: len(match[1]), reverse=True)

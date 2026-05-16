@@ -702,6 +702,65 @@ def test_material_package_exposes_precomputed_qa_question_candidates() -> None:
     assert isinstance(localized_candidate.meaningful_tokens, frozenset)
 
 
+def test_material_package_normalizes_latin_diacritics_for_matching() -> None:
+    package = MaterialPackage.model_validate(
+        {
+            "appId": "demo",
+            "appName": "Demo",
+            "version": 1,
+            "profileIds": ["demo-profile"],
+            "operationEntrypoints": [
+                {
+                    "id": "demo.camera",
+                    "title": "Camera",
+                    "area": "Main",
+                    "purpose": "Open camera.",
+                    "questionAliases": {
+                        "es": [
+                            "configuración de cámara",
+                            "botón de micrófono",
+                            "panel de transcripción",
+                        ]
+                    },
+                }
+            ],
+            "demoFlows": [],
+            "qa": [
+                {
+                    "question": "¿Dónde está la reunión?",
+                    "localizedQuestions": {
+                        "es": ["¿Dónde está el botón de cámara?"],
+                        "ja": ["ボタンはどこですか"],
+                    },
+                    "answer": "Open camera.",
+                }
+            ],
+            "manualControls": [],
+        }
+    )
+
+    aliases = package.entrypoint_question_aliases
+    assert [alias.alias for alias in aliases] == [
+        "configuración de cámara",
+        "botón de micrófono",
+        "panel de transcripción",
+    ]
+    assert [alias.normalized_alias for alias in aliases] == [
+        "configuracion de camara",
+        "boton de microfono",
+        "panel de transcripcion",
+    ]
+    assert package.qa_question_candidates[0].normalized_question == "¿donde esta la reunion?"
+    assert package.qa_question_candidates[1].normalized_question == "¿donde esta el boton de camara?"
+    assert package.qa_question_candidates[2].normalized_question == "ボタンはどこですか"
+    assert package.qa_question_candidates[1].meaningful_tokens >= {
+        "donde",
+        "esta",
+        "boton",
+        "camara",
+    }
+
+
 def test_material_package_exposes_read_only_qa_question_index() -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
     item = package.qa[0]

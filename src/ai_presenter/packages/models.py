@@ -3,6 +3,7 @@ from dataclasses import dataclass
 import re
 from types import MappingProxyType
 from typing import Literal
+import unicodedata
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, field_validator, model_validator
 
@@ -181,7 +182,7 @@ class MaterialPackage(CamelModel):
             entrypoints_by_id[entrypoint.id] = entrypoint
             for language, aliases in entrypoint.question_aliases.items():
                 for alias in aliases:
-                    normalized_alias = alias.strip().casefold()
+                    normalized_alias = normalize_question_prompt(alias)
                     if not normalized_alias:
                         continue
                     entrypoint_question_aliases.append(
@@ -293,7 +294,7 @@ class MaterialPackage(CamelModel):
 
 
 def match_field_tokens(text: str) -> frozenset[str]:
-    return frozenset(_TOKEN_PATTERN.findall(text.casefold()))
+    return frozenset(_TOKEN_PATTERN.findall(normalize_question_prompt(text)))
 
 
 def match_meaningful_tokens(text: str) -> frozenset[str]:
@@ -303,7 +304,25 @@ def match_meaningful_tokens(text: str) -> frozenset[str]:
 
 
 def normalize_question_prompt(text: str) -> str:
-    return text.strip().casefold()
+    return _strip_latin_diacritics(text.strip().casefold())
+
+
+def _strip_latin_diacritics(text: str) -> str:
+    characters: list[str] = []
+    previous_base_is_latin = False
+    for character in unicodedata.normalize("NFD", text):
+        if unicodedata.combining(character):
+            if previous_base_is_latin:
+                continue
+            characters.append(character)
+            continue
+        characters.append(character)
+        previous_base_is_latin = _is_latin_character(character)
+    return unicodedata.normalize("NFC", "".join(characters))
+
+
+def _is_latin_character(character: str) -> bool:
+    return unicodedata.name(character, "").startswith("LATIN ")
 
 
 def _sort_entrypoint_question_aliases_by_match_order(

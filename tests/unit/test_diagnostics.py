@@ -846,9 +846,46 @@ def test_diagnostics_warns_for_cross_language_question_alias_duplicates() -> Non
     )
 
 
+def test_diagnostics_warns_for_accent_folded_question_alias_duplicates() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
+    package = _alias_package(
+        ("demo.alpha", {"es": ["menú de cámara"]}),
+        ("demo.bravo", {"es": ["menu de camara"]}),
+    )
+
+    report = diagnostics.diagnose_configuration(
+        profile=profile,
+        material_package=package,
+    )
+
+    alias_check = next(check for check in report.checks if check.name == "question aliases")
+    assert alias_check.status == "WARN"
+    assert alias_check.detail == (
+        "1 duplicate normalized package-owned question alias: "
+        "'menu de camara' (languages: es) maps to demo.alpha, demo.bravo; "
+        "first match is demo.alpha"
+    )
+
+
 def test_diagnostics_ignores_same_entrypoint_question_alias_duplicates() -> None:
     profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
     package = _alias_package(("demo.alpha", {"en": ["Chat", " chat "]}))
+
+    report = diagnostics.diagnose_configuration(
+        profile=profile,
+        material_package=package,
+    )
+
+    alias_check = next(check for check in report.checks if check.name == "question aliases")
+    assert alias_check.status == "OK"
+    assert alias_check.detail == (
+        "2 package-owned aliases have no cross-entrypoint duplicates"
+    )
+
+
+def test_diagnostics_allows_accent_folded_same_entrypoint_alias_duplicates() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
+    package = _alias_package(("demo.alpha", {"es": ["menú de cámara", "menu de camara"]}))
 
     report = diagnostics.diagnose_configuration(
         profile=profile,
@@ -887,6 +924,34 @@ def test_diagnostics_warns_when_answer_only_qa_shadows_entrypoint_alias() -> Non
         "1 Q&A question prompt shadows a package-owned alias: "
         "'chat' (Q&A languages: en; alias languages: en) appears in #1 chat "
         "and shadows demo.chat; first match is Q&A #1 chat"
+    )
+
+
+def test_diagnostics_warns_when_accent_folded_qa_shadows_entrypoint_alias() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
+    package = _alias_qa_package(
+        aliases=[("demo.camera", {"es": ["menú de cámara"]})],
+        qa=[
+            {
+                "question": "menu de camara",
+                "answer": "Explain camera without opening it.",
+            }
+        ],
+    )
+
+    report = diagnostics.diagnose_configuration(
+        profile=profile,
+        material_package=package,
+    )
+
+    overlap_check = next(
+        check for check in report.checks if check.name == "qa alias overlap"
+    )
+    assert overlap_check.status == "WARN"
+    assert overlap_check.detail == (
+        "1 Q&A question prompt shadows a package-owned alias: "
+        "'menu de camara' (Q&A languages: en; alias languages: es) appears in "
+        "#1 menu de camara and shadows demo.camera; first match is Q&A #1 menu de camara"
     )
 
 

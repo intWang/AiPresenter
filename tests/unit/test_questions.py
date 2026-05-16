@@ -111,6 +111,47 @@ def test_mojibake_chinese_input_is_not_treated_as_supported_alias() -> None:
     assert response.can_operate is False
 
 
+def test_halfwidth_japanese_input_is_not_folded_into_package_alias(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    package = MaterialPackage.model_validate(
+        {
+            "appId": "demo",
+            "appName": "Demo",
+            "version": 1,
+            "profileIds": ["demo-profile"],
+            "operationEntrypoints": [
+                {
+                    "id": "demo.camera-menu",
+                    "title": "Camera menu",
+                    "area": "Toolbar",
+                    "purpose": "Open camera menu.",
+                    "questionAliases": {"ja": ["\u30ab\u30e1\u30e9\u30e1\u30cb\u30e5\u30fc"]},
+                    "openSteps": [
+                        {
+                            "action": "clickWindowControl",
+                            "target": "Camera",
+                            "match": {"controlType": "button"},
+                        }
+                    ],
+                }
+            ],
+            "demoFlows": [],
+            "manualControls": [],
+        }
+    )
+    monkeypatch.setattr(questions_module, "_ENTRYPOINT_ALIASES", {})
+
+    response = answer_question(
+        package=package,
+        question="\uff76\uff92\uff97\uff92\uff86\uff6d\uff70",
+        voice=PresenterVoiceSettings(language="ja"),
+    )
+
+    assert response.entrypoint_id is None
+    assert response.can_operate is False
+
+
 def test_package_owned_alias_matches_without_legacy_alias_table() -> None:
     package = MaterialPackage.model_validate(
         {
@@ -1671,6 +1712,81 @@ def test_ringcentral_spanish_location_questions_match_package_aliases_without_le
     ],
 )
 def test_ringcentral_spanish_safety_questions_stay_qa_first_with_aliases(
+    monkeypatch: pytest.MonkeyPatch,
+    question: str,
+    entrypoint_id: str | None,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    monkeypatch.setattr(questions_module, "_ENTRYPOINT_ALIASES", {})
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(language="en"),
+    )
+
+    assert response.entrypoint_id == entrypoint_id
+    assert response.can_operate is False
+
+
+def test_ringcentral_spanish_unaccented_location_questions_match_curated_aliases(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    monkeypatch.setattr(questions_module, "_ENTRYPOINT_ALIASES", {})
+
+    expected = {
+        "Donde esta el menu de camara en la reunion?": (
+            "ringcentral.video.toolbar.video-menu",
+            True,
+        ),
+        "Donde esta el panel de informacion de la reunion?": (
+            "ringcentral.video.top.meeting-info",
+            False,
+        ),
+        "Donde esta el boton de levantar la mano?": (
+            "ringcentral.video.toolbar.raise-hand",
+            False,
+        ),
+        "Donde esta la configuracion avanzada de video?": (
+            "ringcentral.video.settings.video",
+            True,
+        ),
+        "Donde esta el estado del microfono en reunion?": (
+            "ringcentral.video.toolbar.audio",
+            False,
+        ),
+        "Donde esta el panel de notas y transcripcion?": (
+            "ringcentral.video.more.notes",
+            False,
+        ),
+    }
+
+    for question, (entrypoint_id, can_operate) in expected.items():
+        response = answer_question(
+            package=package,
+            question=question,
+            voice=PresenterVoiceSettings(language="en"),
+        )
+        assert response.entrypoint_id == entrypoint_id
+        assert response.can_operate is can_operate
+
+
+@pytest.mark.parametrize(
+    ("question", "entrypoint_id"),
+    [
+        (
+            "Como manejo la grabacion de la reunion de forma segura?",
+            "ringcentral.video.more.recording",
+        ),
+        (
+            "Puede AiPresenter enviar una reaccion o levantar la mano de forma segura?",
+            None,
+        ),
+        ("Puede leer los mensajes del chat o los nombres de participantes?", None),
+    ],
+)
+def test_ringcentral_spanish_unaccented_safety_questions_stay_qa_first(
     monkeypatch: pytest.MonkeyPatch,
     question: str,
     entrypoint_id: str | None,

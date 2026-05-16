@@ -325,14 +325,14 @@ def test_ringcentral_spanish_seed_qa_and_aliases_are_present() -> None:
     }
 
 
-def test_ringcentral_localization_status_reports_spanish_short_demo_wedges() -> None:
+def test_ringcentral_localization_status_reports_spanish_meeting_controls_tour() -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
 
     report = build_localization_status(package, language="es")
 
     assert report.package_id == "ringcentral-video"
     assert report.language == "es"
-    assert report.demo_localized_steps == 7
+    assert report.demo_localized_steps == 29
     assert report.demo_total_steps == 51
     assert report.qa_localized_questions == 12
     assert report.qa_localized_answers == 12
@@ -347,7 +347,9 @@ def test_ringcentral_localization_status_reports_spanish_short_demo_wedges() -> 
     assert report.flow_by_id["meeting-basics-demo"].localized_steps == 3
     assert report.flow_by_id["meeting-basics-demo"].total_steps == 3
     assert report.flow_by_id["meeting-basics-demo"].missing_step_ids == ()
-    assert report.flow_by_id["meeting-controls-tour"].localized_steps == 0
+    assert report.flow_by_id["meeting-controls-tour"].localized_steps == 22
+    assert report.flow_by_id["meeting-controls-tour"].total_steps == 22
+    assert report.flow_by_id["meeting-controls-tour"].missing_step_ids == ()
     assert report.flow_by_id["meeting-control-map-demo"].localized_steps == 0
 
 
@@ -952,7 +954,7 @@ def test_all_ringcentral_demo_flow_steps_have_chinese_localized_narration() -> N
             assert has_cjk(zh_text), f"{flow.id}:{step.id}"
 
 
-def test_ringcentral_spanish_qas_and_short_demo_wedges_are_localized() -> None:
+def test_ringcentral_spanish_qas_and_meeting_controls_tour_are_localized() -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
     expected_spanish_demo_steps = [
         "vbg-blur-demo:open-video-settings",
@@ -962,6 +964,28 @@ def test_ringcentral_spanish_qas_and_short_demo_wedges_are_localized() -> None:
         "meeting-basics-demo:show-mic",
         "meeting-basics-demo:show-participants",
         "meeting-basics-demo:show-chat",
+        "meeting-controls-tour:meeting-overview",
+        "meeting-controls-tour:explain-meeting-info",
+        "meeting-controls-tour:explain-network-quality",
+        "meeting-controls-tour:explain-view-layout",
+        "meeting-controls-tour:explain-report-issue",
+        "meeting-controls-tour:explain-add-coworkers",
+        "meeting-controls-tour:explain-invite",
+        "meeting-controls-tour:explain-participants",
+        "meeting-controls-tour:explain-chat",
+        "meeting-controls-tour:explain-microphone",
+        "meeting-controls-tour:explain-audio-menu",
+        "meeting-controls-tour:explain-camera",
+        "meeting-controls-tour:explain-camera-menu",
+        "meeting-controls-tour:explain-share",
+        "meeting-controls-tour:explain-reactions",
+        "meeting-controls-tour:explain-raise-hand",
+        "meeting-controls-tour:explain-more",
+        "meeting-controls-tour:explain-recording",
+        "meeting-controls-tour:explain-notes",
+        "meeting-controls-tour:explain-background-settings",
+        "meeting-controls-tour:explain-settings",
+        "meeting-controls-tour:explain-leave",
     ]
 
     missing_questions = [
@@ -999,6 +1023,34 @@ def test_ringcentral_spanish_qas_and_short_demo_wedges_are_localized() -> None:
     assert "Participants" in basics_text_by_step["show-participants"]
     assert "Chat" in basics_text_by_step["show-chat"]
     assert "privado" in basics_text_by_step["show-chat"]
+
+    controls_flow = package.demo_flow_by_id("meeting-controls-tour")
+    controls_text_by_step = {
+        step.id: step.narration.localized_text["es"] for step in controls_flow.steps
+    }
+    assert "RingCentral Video" in controls_text_by_step["meeting-overview"]
+    assert "Meeting ID" in controls_text_by_step["explain-meeting-info"]
+    assert "Network quality" in controls_text_by_step["explain-network-quality"]
+    assert "Gallery view" in controls_text_by_step["explain-view-layout"]
+    assert "Report" in controls_text_by_step["explain-report-issue"]
+    assert "Add coworkers" in controls_text_by_step["explain-add-coworkers"]
+    assert "Invite" in controls_text_by_step["explain-invite"]
+    assert "Participants" in controls_text_by_step["explain-participants"]
+    assert "Chat" in controls_text_by_step["explain-chat"]
+    assert "Mute" in controls_text_by_step["explain-microphone"]
+    assert "Audio options" in controls_text_by_step["explain-audio-menu"]
+    assert "Start video" in controls_text_by_step["explain-camera"]
+    assert "More video settings" in controls_text_by_step["explain-camera-menu"]
+    assert "Share" in controls_text_by_step["explain-share"]
+    assert "Reactions" in controls_text_by_step["explain-reactions"]
+    assert "Raise hand" in controls_text_by_step["explain-raise-hand"]
+    assert "More" in controls_text_by_step["explain-more"]
+    assert "Recording" in controls_text_by_step["explain-recording"]
+    assert "Notes" in controls_text_by_step["explain-notes"]
+    assert "Background" in controls_text_by_step["explain-background-settings"]
+    assert "Settings" in controls_text_by_step["explain-settings"]
+    assert "Leave" in controls_text_by_step["explain-leave"]
+    assert "no hago clic" in controls_text_by_step["explain-leave"]
 
 
 def test_meeting_controls_tour_renders_chinese_narration_text() -> None:

@@ -338,7 +338,7 @@ def test_diagnostics_require_localization_flags_package_only_runtime_language() 
     )
     assert localization_check.status == "FAIL"
     assert "required es localization incomplete" in localization_check.detail
-    assert "7/51 demo steps" in localization_check.detail
+    assert "29/51 demo steps" in localization_check.detail
     assert "12/12 Q&A questions" in localization_check.detail
     assert "12/12 Q&A answers" in localization_check.detail
     runtime_language_check = next(

@@ -680,6 +680,9 @@ demoFlows:
         connection health, layout, and reporting. The bottom toolbar covers audio, video, sharing, people, chat,
         reactions, and safety actions.
       localizedText:
+        es: RingCentral Video organiza la reunión alrededor del lienzo en vivo. La barra superior cubre identidad
+          de la reunión, conexión, diseño y reportes; la barra inferior cubre audio, video, Share, Participants,
+          Chat, Reactions y acciones de seguridad.
         ja: RingCentral Video の会議画面は、中央のライブ会議キャンバスを中心に整理されています。上部バーでは会議情報、接続状態、表示レイアウト、問題報告を確認し、下部ツールバーでは音声、ビデオ、共有、参加者、Chat、リアクション、安全操作を扱います。
         zh: RingCentral Video 的会议窗口可以分成三块：上方看会议身份、连接状态、视图和问题反馈；下方管理音频、视频、共享、成员、聊天、互动和安全操作；中间是实时会议画面。
       placement: before
@@ -692,6 +695,8 @@ demoFlows:
       text: 'First, the info button opens meeting details: host, meeting ID, copy link, dial-in information, and
         encryption status. I treat those values as private unless you ask for them.'
       localizedText:
+        es: Primero, el botón de información abre detalles como host, Meeting ID, copiar enlace, dial-in y cifrado.
+          Trato esos valores como privados salvo que los pidas de forma explícita.
         ja: まず info ボタンを見ると、主催者、Meeting ID、リンクのコピー、ダイヤルイン情報、暗号化状態などの会議詳細を開けます。これらの値は、ユーザーが明示的に求めるまで非公開情報として扱い、こちらから読み上げません。
         zh: 先看 info 按钮。它会打开主持人、会议 ID、复制链接、拨入信息和加密状态；这些值默认属于敏感信息，我只说明位置，不主动朗读。
       placement: during
@@ -705,6 +710,8 @@ demoFlows:
       text: Next is network quality. This is where you check packet loss, jitter, and latency for sharing, video,
         and audio when the meeting feels unstable.
       localizedText:
+        es: Después está Network quality. Aquí revisas packet loss, jitter y latency de Share, video y audio cuando
+          la reunión se siente inestable, sin asumir una causa sin datos.
         ja: 次は Network quality です。会議が不安定に感じるとき、共有、ビデオ、音声に関するパケットロス、ジッター、遅延をここで確認できます。観測値がないまま原因を決めつけません。
         zh: 接着是 Network quality。会议不稳定时，可以从这里查看共享、视频和音频的丢包、抖动和延迟。
       placement: during
@@ -718,6 +725,8 @@ demoFlows:
       text: Views changes how you see the meeting. It includes Gallery view and Full screen, so it affects layout
         without changing anyone in the call.
       localizedText:
+        es: Views cambia cómo ves la reunión. Incluye Gallery view y Full screen, así que modifica tu diseño local
+          sin cambiar el estado de nadie en la llamada.
         ja: Views は会議の見え方を切り替える入口です。Gallery view や Full screen などがあり、変更されるのは自分の表示レイアウトだけで、通話中の他の参加者の状態は変わりません。
         zh: Views 用来调整你看到会议的布局，比如 Gallery view 或 Full screen；它只改变本地显示，不会影响通话里的其他人。
       placement: during
@@ -731,6 +740,8 @@ demoFlows:
       text: Report opens the troubleshooting dialog for audio, video, screen sharing, joining, notes, transcript,
         or other issues. It blocks the meeting controls, so I close it before moving on.
       localizedText:
+        es: Report abre el diálogo de troubleshooting para audio, video, screen sharing, entrada, Notes, Transcript
+          u otros problemas. Cubre los controles de la reunión, así que lo cierro antes de continuar.
         ja: Report は、音声、ビデオ、画面共有、参加、Notes、Transcript、その他の問題について確認するトラブルシューティング用のダイアログを開きます。観測値がないまま原因を決めつけません。このダイアログは会議コントロールを遮るため、説明したら閉じます。
         zh: Report 会打开故障反馈窗口，适合处理音频、视频、屏幕共享、入会、笔记、转录或其他问题。它会挡住会议控制区，所以讲完后需要关闭。
       placement: during
@@ -744,6 +755,8 @@ demoFlows:
       text: Moving into people controls, Add coworkers opens the invite dialog from the empty meeting view. You can
         search for a coworker, copy the meeting link, or send an invite.
       localizedText:
+        es: Al pasar a controles de personas, Add coworkers abre el diálogo Invite desde la vista de reunión vacía.
+          Puedes buscar a un compañero, copiar el enlace o preparar una invitación sin leer datos privados.
         ja: メンバー関連の操作に移ります。空の会議画面にある Add coworkers は Invite ダイアログを開き、同僚の検索や会議リンクの確認、招待の準備に使います。名前、メールアドレス、候補、非公開の招待リンクは、ユーザーが明示的に求め、表示内容が確認されるまで読み上げません。このダイアログは会議コントロールを遮るため、説明したら閉じます。
         zh: 进入成员相关控制。空会议里的 Add coworkers 会打开邀请窗口，可以搜索同事、复制会议链接或发送邀请。
       placement: during
@@ -757,6 +770,8 @@ demoFlows:
       text: The Invite button in the toolbar opens the same invite flow. It is the regular place to bring someone
         into an active meeting.
       localizedText:
+        es: Invite en la barra de herramientas abre el mismo flujo de invitación. Es el lugar habitual para traer
+          a alguien a una reunión activa, manteniendo nombres, correos y enlaces privados bajo control del usuario.
         ja: ツールバーの Invite は、進行中の会議で参加者を招待する通常の入口です。Add coworkers と同じ Invite ダイアログを開き、同僚の検索、会議情報のコピー、招待の準備に使えます。名前、メールアドレス、候補、非公開の招待リンクは、ユーザーが明示的に求め、表示内容が確認されるまで読み上げません。説明したら、このダイアログを閉じます。
         zh: 工具栏里的 Invite 是活跃会议中邀请他人的常规入口，可以继续添加同事或复制会议详情。
       placement: during
@@ -770,6 +785,8 @@ demoFlows:
       text: Participants opens the roster panel. From here you can confirm who is in the room and access people
         controls such as invite, lock, mute, and more options.
       localizedText:
+        es: Participants abre el panel de participantes. Desde aquí puedes confirmar quién está en la sala y acceder
+          a controles como invite, lock, mute y más opciones, sin leer nombres salvo que lo pidas.
         ja: Participants は参加者一覧パネルを開きます。ここでは会議にいる人数を確認し、招待、会議のロック、ミュート、その他の参加者操作に進めます。名前や役割は、ユーザーが明示的に求め、表示内容が確認されるまで読み上げません。説明したらパネルを閉じます。ユーザーの明確な指示なしに他の参加者をミュートしません。
         zh: Participants 会打开参会人列表。这里可以确认谁在会议里，也能进入邀请、锁定会议、静音和更多成员操作。
       placement: during
@@ -783,6 +800,8 @@ demoFlows:
       text: Chat opens the message panel. It supports messages to everyone and private conversations, but I do not
         read chat content unless you ask.
       localizedText:
+        es: Chat abre el panel de mensajes. Admite mensajes para todos y conversaciones privadas, pero no leo el
+          contenido del chat a menos que lo pidas explícitamente.
         ja: Chat はメッセージパネルを開きます。全員宛てのメッセージと非公開の会話に対応していますが、ユーザーが明示的に求めるまでチャット内容は読み上げません。説明したら、このサイドパネルを閉じます。ユーザーの明確な指示なしにメッセージを送信しません。
         zh: Chat 会打开消息面板，支持发给所有人的消息和私聊。聊天内容默认保持隐私，除非用户明确要求读取。
       placement: during
@@ -796,6 +815,8 @@ demoFlows:
       text: Now the media controls. Mute is the main privacy switch for your microphone. Before speaking, this is
         the first control to check.
       localizedText:
+        es: Ahora van los controles de medios. Mute es el interruptor principal de privacidad para tu micrófono;
+          antes de hablar, este es el primer estado que conviene revisar.
         ja: 次はメディアコントロールです。Mute はマイクの主なプライバシースイッチです。話す前に、まずここで現在の状態を確認します。ユーザーの明確な指示なしに、ミュート解除せず、マイク状態も切り替えません。
         zh: 现在看媒体控制。Mute 是麦克风的主要隐私开关；发言前，最先应该确认这里的状态。
       placement: before
@@ -808,6 +829,8 @@ demoFlows:
       text: The microphone arrow opens audio devices. You can switch microphone and speaker, leave computer audio,
         use phone audio, or go to more audio settings.
       localizedText:
+        es: La flecha del micrófono abre Audio options y los dispositivos de audio. Puedes cambiar micrófono y
+          speaker, leave computer audio, use phone audio o ir a más ajustes, sin cambiar nada sin confirmación.
         ja: マイクの矢印を開くと、音声デバイスのメニューが表示されます。ここでマイクとスピーカーの選択、コンピューター音声からの退出、電話音声の利用、その他の音声設定に進めます。ユーザーの明確な指示なしにデバイスや音声接続は切り替えません。説明したらメニューを閉じます。
         zh: 麦克风箭头会打开音频设备菜单，可以切换麦克风和扬声器、离开电脑音频、使用电话音频，或进入更多音频设置。
       placement: during
@@ -820,6 +843,8 @@ demoFlows:
     narration:
       text: Start video turns on your local camera. Once the camera is on, the same control becomes Stop video.
       localizedText:
+        es: Start video enciende la cámara local. Cuando la cámara ya está activa, el mismo control pasa a Stop
+          video; aquí solo explico el estado y no cambio la cámara sin confirmación.
         ja: Start video はローカルカメラをオンにするためのボタンです。カメラがオンになると同じ場所が Stop video になり、映像をオフにする入口になります。ここでは状態を確認して説明するだけで、ユーザーの明確な指示なしにカメラをオンまたはオフにしません。
         zh: Start video 会打开本地摄像头；开启后，同一个按钮会变成 Stop video，用来关闭视频。
       placement: before
@@ -832,6 +857,8 @@ demoFlows:
       text: The camera arrow opens camera selection and a shortcut to more video settings, including background
         configuration.
       localizedText:
+        es: La flecha de la cámara abre la selección de cámara y el acceso a More video settings, incluida la
+          configuración de Background. Solo explico la ubicación; no cambio cámara ni fondo sin indicación.
         ja: カメラ横の矢印は、カメラ選択と、背景設定を含む詳しいビデオ設定へのショートカットを開きます。ここでは場所を説明するだけで、ユーザーの明確な指示なしにカメラを切り替えません。背景やビデオ設定も変更しません。説明したらメニューを閉じます。
         zh: 摄像头箭头会打开摄像头选择，并提供进入更多视频设置的入口，包括背景配置。
       placement: during
@@ -845,6 +872,8 @@ demoFlows:
       text: Share opens the picker for your screen or application windows. It can also share system audio, but I
         do not press the final Share button unless you confirm.
       localizedText:
+        es: Share abre el selector para tu pantalla o ventanas de aplicación. También puede compartir audio del
+          sistema, pero no pulso el botón final Share hasta que confirmes qué contenido quieres mostrar.
         ja: Share は画面またはアプリケーションウィンドウの選択画面を開きます。システム音声も共有できますが、表示する内容をユーザーが確認するまで、最終的な Share ボタンは押しません。共有候補や画面内容は、明確な許可なしに読み上げません。説明したら選択画面を閉じます。
         zh: Share 会打开屏幕或应用窗口选择器，也可以共享系统音频。但在你确认要展示哪个内容前，我不会点击最终的 Share 按钮。
       placement: during
@@ -858,6 +887,8 @@ demoFlows:
       text: For lightweight interaction, React opens quick feedback such as heart, thumbs up, celebration, clap,
         smile, and Be right back.
       localizedText:
+        es: Reactions ofrece señales rápidas como heart, thumbs up, celebration, clap, smile y Be right back. Son
+          visibles en la reunión, así que no envío ninguna reacción sin una instrucción clara.
         ja: React は、発話を遮らずに気持ちや反応を示すためのリアクション欄を開きます。ハート、いいね、祝福、拍手、スマイル、Be right back などのクイックフィードバックがあります。リアクションは会議中に見えるシグナルなので、ユーザーの明確な指示なしに送信しません。説明だけの場合は送信せずに閉じます。
         zh: React 适合轻量反馈，比如爱心、点赞、庆祝、鼓掌、微笑和 Be right back，不需要打断正在说话的人。
       placement: during
@@ -871,6 +902,8 @@ demoFlows:
       text: Raise hand signals that you want attention without speaking over someone. It is a toggle, so I lower
         the hand again after showing it.
       localizedText:
+        es: Raise hand indica que quieres atención sin interrumpir a quien habla. Es un interruptor; si se muestra
+          en una demo confirmada, la mano se baja otra vez al terminar.
         ja: Raise hand は、ほかの人の発話を遮らずに注目してほしいことや発言機会を求めていることを知らせるトグル操作です。リアクションとは別の、会議中に見える注意喚起シグナルです。押すと手を上げた状態になり、もう一度押すと手を下げます。ユーザーの明確な指示なしに手を上げたり、手を下げたり、上げたままにしたりしません。ユーザーが実演を明確に確認した場合だけ操作し、その実演後は手を下げます。
         zh: Raise hand 表示你想获得发言机会，而不用打断别人。它是开关，所以展示后会再把手放下。
       placement: during
@@ -884,6 +917,8 @@ demoFlows:
       text: Finally, More is the expansion menu for deeper meeting tools. In this build, Notes is already on the
         toolbar, while More keeps Start recording, Background, and Settings.
       localizedText:
+        es: Por último, More es el menú de expansión para herramientas más profundas. En esta versión, Notes ya
+          está en la barra, mientras More conserva Start recording, Background y Settings.
         ja: 最後に More を開くと、より深い会議ツールへ進むための拡張メニューを確認できます。このビルドでは Notes はすでにツールバー上にあり、More には Start recording、Background、Settings がまとまっています。ここではメニューの場所を説明するだけで、録画の開始や背景・設定の変更は、ユーザーが明確に求めるまで実行しません。
         zh: 最后是 More，它是更深层会议工具的扩展菜单。当前版本里 Notes 已在工具栏上，More 主要保留 Start recording、Background 和 Settings。
       placement: during
@@ -897,6 +932,8 @@ demoFlows:
       text: Start recording changes the meeting state, so I only explain it in a tour. I would ask before starting
         or stopping recording.
       localizedText:
+        es: Recording cambia el estado de la reunión y puede afectar a todas las personas. En una visita guiada
+          solo explico Start recording; preguntaría antes de iniciar o detener una grabación.
         ja: Start recording は会議状態を変更し、参加者全員に影響する録画の入口です。ツアーではこの入口を説明するだけで、録画の開始や停止は自動で行いません。実際に開始または停止する前には、ユーザーへ明確に確認し、現在の役割と権限、参加者の同意や会議の合意が明確であることを前提にします。
         zh: Start recording 会改变会议状态，所以在导览里只解释入口；开始或停止录制前都需要先询问并确认。
       placement: before
@@ -909,6 +946,8 @@ demoFlows:
       text: Notes opens the Notes and Transcript panel. It can start meeting notes and can also record the meeting,
         so those actions stay under user control.
       localizedText:
+        es: Notes abre el panel Notes and Transcript. Puede iniciar meeting notes y también relacionarse con
+          Recording, así que esas acciones se mantienen bajo control explícito del usuario.
         ja: Notes は Notes and Transcript パネルを開きます。ここには Start notes と Also record this meeting があり、会議メモの開始や録画につながるため、ユーザーが明確に求めるまで操作しません。ツアーではパネルの場所と役割だけを説明し、メモや文字起こしの内容は明確な依頼と確認済みの表示状況なしに読み上げたり要約したりしません。説明後はパネルを閉じます。
         zh: Notes 会打开 Notes and Transcript 面板。这里可以启动会议笔记，也可能涉及录制相关操作，所以这些动作继续由用户控制。
       placement: during
@@ -922,6 +961,8 @@ demoFlows:
       text: Background opens the settings page for visual presentation. You can turn effects off, blur the room,
         choose a built-in background, use a video background, or upload your own.
       localizedText:
+        es: Background abre la página de Settings para la presentación visual. Puedes desactivar efectos, usar
+          Blur, elegir un fondo incluido, usar un fondo de video o subir uno propio, siempre bajo confirmación.
         ja: Background は Settings ダイアログの Background タブを開き、表示品質とプライバシーに関わる設定の場所を示します。ここには Off、Blur、仮想背景、動画背景、アップロード、Mirror my video などの項目があります。ツアーでは場所と選択肢を説明するだけで、ユーザーが明確に求めるまで背景効果や見え方は変更しません。説明後は Settings ダイアログを閉じます。
         zh: Background 会打开视觉呈现设置，可以关闭效果、模糊房间、选择内置背景、使用视频背景或上传自己的背景。
       placement: during
@@ -935,6 +976,8 @@ demoFlows:
       text: 'Settings is the complete configuration area: audio, video, background, translation, join preferences,
         and general meeting preferences.'
       localizedText:
+        es: Settings es el área completa de configuración; audio, video, Background, Translation, join preferences
+          y preferencias generales de reunión. En el tour solo explico las secciones.
         ja: Settings は Audio、Video、Background、Translation、Join preferences、General などの会議設定セクションをまとめて確認できるダイアログです。ツアーでは各セクションの場所と役割を説明するだけで、ユーザーが明確に求めるまで音声、ビデオ、背景、翻訳、入会設定、General の設定は変更しません。説明後は Settings ダイアログを閉じます。
         zh: Settings 是完整配置区域，包含音频、视频、背景、翻译、入会偏好和通用会议偏好。
       placement: during
@@ -948,6 +991,8 @@ demoFlows:
       text: Leave exits the meeting. It is a destructive control, so the presenter explains it but does not click
         it without explicit confirmation.
       localizedText:
+        es: Leave sale de la reunión. Es un control destructivo, así que el presenter explica su función, pero
+          no hago clic en Leave sin una confirmación explícita.
         ja: Leave は現在の会議から退出するための破壊的なコントロールです。ホストの場合は、全員に影響する終了系の選択肢が表示されることもあります。ツアーでは場所と役割を説明するだけで、ユーザーが明確に確認するまで Leave を実行しません。
         zh: Leave 会离开会议，是破坏性控制；Presenter 只说明它的作用，不会在没有明确确认时点击。
       placement: before

@@ -496,33 +496,56 @@ def test_ringcentral_spanish_seed_qa_and_aliases_are_present() -> None:
 def test_ringcentral_spanish_entrypoint_copy_pilot_is_present() -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
 
-    overview = package.entrypoint_by_id("ringcentral.video.overview")
-    network_quality = package.entrypoint_by_id("ringcentral.video.top.network-quality")
+    expected_spanish_display_copy = {
+        "ringcentral.video.overview": (
+            "Resumen de la reunión",
+            (
+                "Presenta la superficie de RingCentral Video antes de abrir controles "
+                "individuales."
+            ),
+        ),
+        "ringcentral.video.top.network-quality": (
+            "Calidad de red",
+            (
+                "Abre Network quality para revisar packet loss, jitter y latency de Share, "
+                "video y audio cuando la reunión se siente inestable."
+            ),
+        ),
+        "ringcentral.video.top.views": (
+            "Diseño de vista",
+            (
+                "Abre Views para revisar Gallery view o Full screen en tu vista local "
+                "sin cambiar audio, video ni participantes."
+            ),
+        ),
+        "ringcentral.video.toolbar.more": (
+            "Más acciones",
+            (
+                "Abre More para mostrar acciones adicionales de la reunión y explicar "
+                "su ubicación sin iniciar grabaciones ni otros cambios."
+            ),
+        ),
+        "ringcentral.video.more.settings": (
+            "Ajustes",
+            (
+                "Abre Settings para revisar opciones de audio, video, Background, "
+                "Translation, Join preferences y General sin cambiar configuraciones "
+                "ni leer datos privados."
+            ),
+        ),
+    }
 
-    assert overview.localized_titles == {"es": "Resumen de la reunión"}
-    assert overview.localized_purposes == {
-        "es": (
-            "Presenta la superficie de RingCentral Video antes de abrir controles "
-            "individuales."
-        )
-    }
-    assert network_quality.localized_titles == {"es": "Calidad de red"}
-    assert network_quality.localized_purposes == {
-        "es": (
-            "Abre Network quality para revisar packet loss, jitter y latency de Share, "
-            "video y audio cuando la reunión se siente inestable."
-        )
-    }
+    for entrypoint_id, (title, purpose) in expected_spanish_display_copy.items():
+        entrypoint = package.entrypoint_by_id(entrypoint_id)
+        assert entrypoint.localized_titles == {"es": title}
+        assert entrypoint.localized_purposes == {"es": purpose}
 
     localized_entrypoint_ids = {
         entrypoint.id
         for entrypoint in package.operation_entrypoints
         if entrypoint.localized_titles or entrypoint.localized_purposes
     }
-    assert localized_entrypoint_ids == {
-        "ringcentral.video.overview",
-        "ringcentral.video.top.network-quality",
-    }
+    assert localized_entrypoint_ids == set(expected_spanish_display_copy)
 
 
 def test_ringcentral_package_owns_spanish_aliases_for_location_routes() -> None:
@@ -677,8 +700,8 @@ def test_ringcentral_localization_status_reports_complete_spanish_package() -> N
     assert report.entrypoints_with_aliases == 26
     assert report.entrypoint_total == 27
     assert report.alias_total == 69
-    assert report.entrypoint_titles_present == 2
-    assert report.entrypoint_purposes_present == 2
+    assert report.entrypoint_titles_present == 5
+    assert report.entrypoint_purposes_present == 5
     assert report.required_localization_complete is True
     assert report.flow_by_id["vbg-blur-demo"].localized_steps == 4
     assert report.flow_by_id["vbg-blur-demo"].total_steps == 4

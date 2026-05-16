@@ -1897,6 +1897,37 @@ def test_spanish_entrypoint_answer_uses_package_alias_label() -> None:
                 "including packet loss, jitter, and latency."
             ),
         ),
+        (
+            "menú de vista de reunión",
+            "ringcentral.video.top.views",
+            "Diseño de vista",
+            (
+                "Abre Views para revisar Gallery view o Full screen en tu vista local "
+                "sin cambiar audio, video ni participantes."
+            ),
+            "Switch the meeting layout, including Gallery view and Full screen.",
+        ),
+        (
+            "menú de más acciones",
+            "ringcentral.video.toolbar.more",
+            "Más acciones",
+            (
+                "Abre More para mostrar acciones adicionales de la reunión y explicar "
+                "su ubicación sin iniciar grabaciones ni otros cambios."
+            ),
+            "Open additional meeting actions.",
+        ),
+        (
+            "ubicación de settings en more",
+            "ringcentral.video.more.settings",
+            "Ajustes",
+            (
+                "Abre Settings para revisar opciones de audio, video, Background, "
+                "Translation, Join preferences y General sin cambiar configuraciones "
+                "ni leer datos privados."
+            ),
+            "Open the Settings dialog.",
+        ),
     ],
 )
 def test_ringcentral_spanish_entrypoint_answer_uses_localized_pilot_copy(

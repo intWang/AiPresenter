@@ -563,8 +563,8 @@ def test_localization_report_outputs_complete_spanish_package() -> None:
     assert "- localized questions: 12/12" in result.stdout
     assert "- localized answers: 12/12" in result.stdout
     assert "questionAliases.es present on 26/27 entrypoints (69 aliases)" in result.stdout
-    assert "localizedTitles.es present on 2/27 entrypoints" in result.stdout
-    assert "localizedPurposes.es present on 2/27 entrypoints" in result.stdout
+    assert "localizedTitles.es present on 5/27 entrypoints" in result.stdout
+    assert "localizedPurposes.es present on 5/27 entrypoints" in result.stdout
     assert "Localization coverage incomplete" not in result.stdout
 
 
@@ -656,7 +656,7 @@ def test_entrypoints_lists_material_package_entrypoints_by_area() -> None:
 
 
 def test_entrypoints_language_inspects_ringcentral_localized_and_fallback_copy() -> None:
-    result = CliRunner().invoke(
+    top_bar_result = CliRunner().invoke(
         app,
         [
             "entrypoints",
@@ -669,25 +669,91 @@ def test_entrypoints_language_inspects_ringcentral_localized_and_fallback_copy()
         ],
     )
 
-    assert result.exit_code == 0
-    assert "Language: es" in result.stdout
+    assert top_bar_result.exit_code == 0
+    assert "Language: es" in top_bar_result.stdout
     assert (
         "- ringcentral.video.top.network-quality: Calidad de red "
         "[Meeting top bar] (title: localized)"
-    ) in result.stdout
+    ) in top_bar_result.stdout
     assert (
         "  purpose: Abre Network quality para revisar packet loss, jitter y latency "
         "de Share, video y audio cuando la reuni\u00f3n se siente inestable. (localized)"
-    ) in result.stdout
+    ) in top_bar_result.stdout
+    assert (
+        "- ringcentral.video.top.views: Diseño de vista "
+        "[Meeting top bar] (title: localized)"
+    ) in top_bar_result.stdout
+    assert (
+        "  purpose: Abre Views para revisar Gallery view o Full screen en tu vista "
+        "local sin cambiar audio, video ni participantes. (localized)"
+    ) in top_bar_result.stdout
     assert (
         "- ringcentral.video.top.meeting-info: Meeting information "
         "[Meeting top bar] (title: fallback)"
-    ) in result.stdout
+    ) in top_bar_result.stdout
     assert (
         "  purpose: Open meeting details including meeting title, host, meeting ID, "
         "copy link, dial-in info, encryption, and end-to-end encryption option. (fallback)"
-    ) in result.stdout
-    assert "ringcentral.video.toolbar.audio" not in result.stdout
+    ) in top_bar_result.stdout
+    assert (
+        "- ringcentral.video.top.report-issue: Report issue "
+        "[Meeting top bar] (title: fallback)"
+    ) in top_bar_result.stdout
+    assert "ringcentral.video.toolbar.audio" not in top_bar_result.stdout
+
+    toolbar_result = CliRunner().invoke(
+        app,
+        [
+            "entrypoints",
+            "--package",
+            "ringcentral-video",
+            "--area",
+            "Meeting toolbar",
+            "--language",
+            "es",
+        ],
+    )
+
+    assert toolbar_result.exit_code == 0
+    assert (
+        "- ringcentral.video.toolbar.more: Más acciones "
+        "[Meeting toolbar] (title: localized)"
+    ) in toolbar_result.stdout
+    assert (
+        "  purpose: Abre More para mostrar acciones adicionales de la reunión y "
+        "explicar su ubicación sin iniciar grabaciones ni otros cambios. (localized)"
+    ) in toolbar_result.stdout
+    assert (
+        "- ringcentral.video.toolbar.audio: Microphone control "
+        "[Meeting toolbar] (title: fallback)"
+    ) in toolbar_result.stdout
+
+    more_menu_result = CliRunner().invoke(
+        app,
+        [
+            "entrypoints",
+            "--package",
+            "ringcentral-video",
+            "--area",
+            "More menu",
+            "--language",
+            "es",
+        ],
+    )
+
+    assert more_menu_result.exit_code == 0
+    assert (
+        "- ringcentral.video.more.settings: Ajustes [More menu] (title: localized)"
+    ) in more_menu_result.stdout
+    assert (
+        "  purpose: Abre Settings para revisar opciones de audio, video, Background, "
+        "Translation, Join preferences y General sin cambiar configuraciones ni leer "
+        "datos privados. (localized)"
+    ) in more_menu_result.stdout
+    assert (
+        "- ringcentral.video.more.recording: Start recording "
+        "[More menu] (title: fallback)"
+    ) in more_menu_result.stdout
 
 
 def test_entrypoints_language_uses_package_local_metadata_without_runtime_voice_validation(

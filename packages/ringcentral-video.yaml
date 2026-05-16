@@ -133,6 +133,10 @@ operationEntrypoints:
   title: View layout menu
   area: Meeting top bar
   purpose: Switch the meeting layout, including Gallery view and Full screen.
+  localizedTitles:
+    es: Diseño de vista
+  localizedPurposes:
+    es: Abre Views para revisar Gallery view o Full screen en tu vista local sin cambiar audio, video ni participantes.
   questionAliases:
     es:
     - menú de vista de reunión
@@ -529,6 +533,10 @@ operationEntrypoints:
   title: More actions
   area: Meeting toolbar
   purpose: Open additional meeting actions.
+  localizedTitles:
+    es: Más acciones
+  localizedPurposes:
+    es: Abre More para mostrar acciones adicionales de la reunión y explicar su ubicación sin iniciar grabaciones ni otros cambios.
   questionAliases:
     es:
     - menú de más acciones
@@ -627,6 +635,10 @@ operationEntrypoints:
   title: Settings
   area: More menu
   purpose: Open the Settings dialog.
+  localizedTitles:
+    es: Ajustes
+  localizedPurposes:
+    es: Abre Settings para revisar opciones de audio, video, Background, Translation, Join preferences y General sin cambiar configuraciones ni leer datos privados.
   questionAliases:
     es:
     - ubicación de settings en more

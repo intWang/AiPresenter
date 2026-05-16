@@ -447,6 +447,72 @@ def test_diagnostics_require_localization_fails_for_incomplete_package() -> None
     assert "0/1 Q&A answers" in localization_check.detail
 
 
+def test_package_diagnostics_index_groups_aliases_and_qa_candidates() -> None:
+    package = _alias_qa_package(
+        aliases=[
+            ("demo.chat", {"en": ["Chat"], "ja": ["\u30c1\u30e3\u30c3\u30c8"]}),
+            ("demo.people", {"en": ["People"]}),
+        ],
+        qa=[
+            {
+                "question": "Can you read chat messages?",
+                "localizedQuestions": {
+                    "ja": [
+                        "\u30c1\u30e3\u30c3\u30c8\u5185\u5bb9\u3092\u8aad\u3081\u307e\u3059\u304b"
+                    ]
+                },
+                "answer": "Explain chat privacy without opening it.",
+            }
+        ],
+    )
+
+    index = diagnostics._build_package_diagnostics_index(package)
+
+    assert [alias.entrypoint_id for alias in index.aliases_by_normalized["chat"]] == [
+        "demo.chat"
+    ]
+    assert [alias.entrypoint_id for alias in index.aliases_by_language["en"]] == [
+        "demo.chat",
+        "demo.people",
+    ]
+    assert [alias.entrypoint_id for alias in index.aliases_by_language["ja"]] == [
+        "demo.chat"
+    ]
+    assert index.qa_candidates_by_normalized["can you read chat messages?"][0].item is (
+        package.qa[0]
+    )
+    japanese_question = "\u30c1\u30e3\u30c3\u30c8\u5185\u5bb9\u3092\u8aad\u3081\u307e\u3059\u304b"
+    assert index.qa_candidates_by_normalized[japanese_question][0].item is package.qa[0]
+    key = ("can you read chat messages?", id(package.qa[0]))
+    assert index.qa_candidates_by_normalized_and_item[key][0].question == (
+        "Can you read chat messages?"
+    )
+
+
+def test_diagnostics_substring_risk_uses_language_scoped_alias_index() -> None:
+    package = _alias_qa_package(
+        aliases=[
+            ("demo.chat", {"en": ["chat"]}),
+            ("demo.notes", {"ja": ["chat"]}),
+        ],
+        qa=[
+            {
+                "question": "Can you read chat messages?",
+                "answer": "Explain chat privacy without opening it.",
+            }
+        ],
+    )
+    index = diagnostics._build_package_diagnostics_index(package)
+    package._entrypoint_question_aliases = ()
+
+    substring_check = diagnostics._diagnose_qa_alias_substring_risks(package, index)
+
+    assert substring_check.status == "INFO"
+    assert "alias languages: en" in substring_check.detail
+    assert "demo.chat" in substring_check.detail
+    assert "demo.notes" not in substring_check.detail
+
+
 def test_diagnostics_reports_question_aliases_ok_for_ringcentral_package() -> None:
     profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
     package = load_material_package(Path("packages/ringcentral-video.yaml"))

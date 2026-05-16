@@ -68,6 +68,17 @@ class DiagnosticReport:
         return sum(1 for check in self.checks if check.status == "OK")
 
 
+@dataclass(frozen=True)
+class _PackageDiagnosticsIndex:
+    aliases_by_normalized: dict[str, list[EntrypointQuestionAlias]]
+    aliases_by_language: dict[str, list[EntrypointQuestionAlias]]
+    qa_candidates_by_normalized: dict[str, list[QuestionAnswerMatchCandidate]]
+    qa_candidates_by_normalized_and_item: dict[
+        tuple[str, int],
+        list[QuestionAnswerMatchCandidate],
+    ]
+
+
 def diagnose_configuration(
     *,
     profile: AppProfile,
@@ -246,10 +257,11 @@ def _diagnose_material_package(
                 f"package {material_package.app_id} does not list profile {profile.id}",
             )
         )
-    checks.append(_diagnose_question_aliases(material_package))
-    checks.append(_diagnose_qa_questions(material_package))
-    checks.append(_diagnose_qa_alias_overlaps(material_package))
-    checks.append(_diagnose_qa_alias_substring_risks(material_package))
+    index = _build_package_diagnostics_index(material_package)
+    checks.append(_diagnose_question_aliases(material_package, index))
+    checks.append(_diagnose_qa_questions(material_package, index))
+    checks.append(_diagnose_qa_alias_overlaps(material_package, index))
+    checks.append(_diagnose_qa_alias_substring_risks(material_package, index))
     checks.append(_diagnose_explainer_coverage(material_package))
 
     if flow_id is not None:
@@ -272,6 +284,36 @@ def _diagnose_material_package(
                 )
             )
     return checks
+
+
+def _build_package_diagnostics_index(
+    material_package: MaterialPackage,
+) -> _PackageDiagnosticsIndex:
+    aliases_by_normalized: dict[str, list[EntrypointQuestionAlias]] = {}
+    aliases_by_language: dict[str, list[EntrypointQuestionAlias]] = {}
+    for alias in material_package.entrypoint_question_aliases:
+        aliases_by_normalized.setdefault(alias.normalized_alias, []).append(alias)
+        aliases_by_language.setdefault(alias.language, []).append(alias)
+
+    qa_candidates_by_normalized: dict[str, list[QuestionAnswerMatchCandidate]] = {}
+    qa_candidates_by_normalized_and_item: dict[
+        tuple[str, int],
+        list[QuestionAnswerMatchCandidate],
+    ] = {}
+    for candidate in material_package.qa_question_candidates:
+        qa_candidates_by_normalized.setdefault(
+            candidate.normalized_question,
+            [],
+        ).append(candidate)
+        key = (candidate.normalized_question, id(candidate.item))
+        qa_candidates_by_normalized_and_item.setdefault(key, []).append(candidate)
+
+    return _PackageDiagnosticsIndex(
+        aliases_by_normalized=aliases_by_normalized,
+        aliases_by_language=aliases_by_language,
+        qa_candidates_by_normalized=qa_candidates_by_normalized,
+        qa_candidates_by_normalized_and_item=qa_candidates_by_normalized_and_item,
+    )
 
 
 def _diagnose_required_localization(
@@ -345,14 +387,13 @@ def _diagnose_explainer_coverage(material_package: MaterialPackage) -> Diagnosti
     )
 
 
-def _diagnose_question_aliases(material_package: MaterialPackage) -> DiagnosticCheck:
-    aliases_by_normalized: dict[str, list[EntrypointQuestionAlias]] = {}
-    for alias in material_package.entrypoint_question_aliases:
-        aliases_by_normalized.setdefault(alias.normalized_alias, []).append(alias)
-
+def _diagnose_question_aliases(
+    material_package: MaterialPackage,
+    index: _PackageDiagnosticsIndex,
+) -> DiagnosticCheck:
     conflicts = [
         (normalized_alias, aliases)
-        for normalized_alias, aliases in aliases_by_normalized.items()
+        for normalized_alias, aliases in index.aliases_by_normalized.items()
         if len(_unique_alias_entrypoint_ids(aliases)) > 1
     ]
     if not conflicts:
@@ -374,14 +415,13 @@ def _diagnose_question_aliases(material_package: MaterialPackage) -> DiagnosticC
     )
 
 
-def _diagnose_qa_questions(material_package: MaterialPackage) -> DiagnosticCheck:
-    candidates_by_normalized: dict[str, list[QuestionAnswerMatchCandidate]] = {}
-    for candidate in material_package.qa_question_candidates:
-        candidates_by_normalized.setdefault(candidate.normalized_question, []).append(candidate)
-
+def _diagnose_qa_questions(
+    material_package: MaterialPackage,
+    index: _PackageDiagnosticsIndex,
+) -> DiagnosticCheck:
     conflicts = [
         (normalized_question, candidates)
-        for normalized_question, candidates in candidates_by_normalized.items()
+        for normalized_question, candidates in index.qa_candidates_by_normalized.items()
         if len(_unique_qa_items(candidates)) > 1
     ]
     if not conflicts:
@@ -403,19 +443,10 @@ def _diagnose_qa_questions(material_package: MaterialPackage) -> DiagnosticCheck
     )
 
 
-def _diagnose_qa_alias_overlaps(material_package: MaterialPackage) -> DiagnosticCheck:
-    aliases_by_normalized: dict[str, list[EntrypointQuestionAlias]] = {}
-    for alias in material_package.entrypoint_question_aliases:
-        aliases_by_normalized.setdefault(alias.normalized_alias, []).append(alias)
-
-    candidates_by_item: dict[
-        tuple[str, int],
-        list[QuestionAnswerMatchCandidate],
-    ] = {}
-    for candidate in material_package.qa_question_candidates:
-        key = (candidate.normalized_question, id(candidate.item))
-        candidates_by_item.setdefault(key, []).append(candidate)
-
+def _diagnose_qa_alias_overlaps(
+    material_package: MaterialPackage,
+    index: _PackageDiagnosticsIndex,
+) -> DiagnosticCheck:
     conflicts: list[
         tuple[
             str,
@@ -423,8 +454,11 @@ def _diagnose_qa_alias_overlaps(material_package: MaterialPackage) -> Diagnostic
             list[EntrypointQuestionAlias],
         ]
     ] = []
-    for (normalized_question, _item_id), candidates in candidates_by_item.items():
-        aliases = aliases_by_normalized.get(normalized_question, [])
+    for (
+        normalized_question,
+        _item_id,
+    ), candidates in index.qa_candidates_by_normalized_and_item.items():
+        aliases = index.aliases_by_normalized.get(normalized_question, [])
         if not aliases:
             continue
         related_ids = set(candidates[0].item.related_entrypoint_ids)
@@ -459,7 +493,10 @@ def _diagnose_qa_alias_overlaps(material_package: MaterialPackage) -> Diagnostic
     )
 
 
-def _diagnose_qa_alias_substring_risks(material_package: MaterialPackage) -> DiagnosticCheck:
+def _diagnose_qa_alias_substring_risks(
+    material_package: MaterialPackage,
+    index: _PackageDiagnosticsIndex,
+) -> DiagnosticCheck:
     conflicts: list[
         tuple[
             str,
@@ -475,9 +512,8 @@ def _diagnose_qa_alias_substring_risks(material_package: MaterialPackage) -> Dia
         related_ids = set(candidate.item.related_entrypoint_ids)
         aliases = [
             alias
-            for alias in material_package.entrypoint_question_aliases
-            if alias.language == question_language
-            and alias.normalized_alias
+            for alias in index.aliases_by_language.get(question_language, [])
+            if alias.normalized_alias
             and alias.normalized_alias != normalized_question
             and alias.normalized_alias in normalized_question
             and alias.entrypoint_id not in related_ids

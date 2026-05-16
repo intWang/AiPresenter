@@ -221,6 +221,8 @@ _ENTRYPOINT_ALIASES: dict[str, tuple[str, ...]] = {
         "结束会议",
     ),
 }
+_LEGACY_ENTRYPOINT_ALIAS_SIGNATURE: tuple[tuple[str, tuple[str, ...]], ...] = ()
+_LEGACY_ENTRYPOINT_ALIAS_MATCHES: tuple[tuple[str, str], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -428,20 +430,14 @@ def _match_entrypoint_alias(
     if package_match is not None:
         return package_match
 
-    best_entrypoint_id: str | None = None
-    best_alias_length = 0
-    for entrypoint_id, aliases in _ENTRYPOINT_ALIASES.items():
-        for alias in aliases:
-            normalized_alias = alias.casefold()
-            if normalized_alias in normalized_question and len(normalized_alias) > best_alias_length:
-                best_entrypoint_id = entrypoint_id
-                best_alias_length = len(normalized_alias)
-    if best_entrypoint_id is None:
-        return None
-    try:
-        return package.entrypoint_by_id(best_entrypoint_id)
-    except KeyError:
-        return None
+    for entrypoint_id, normalized_alias in _legacy_entrypoint_alias_matches():
+        if normalized_alias not in normalized_question:
+            continue
+        try:
+            return package.entrypoint_by_id(entrypoint_id)
+        except KeyError:
+            return None
+    return None
 
 
 def _match_package_entrypoint_alias(
@@ -452,6 +448,29 @@ def _match_package_entrypoint_alias(
         if alias.normalized_alias in normalized_question:
             return package.entrypoint_by_id(alias.entrypoint_id)
     return None
+
+
+def _legacy_entrypoint_alias_matches() -> tuple[tuple[str, str], ...]:
+    global _LEGACY_ENTRYPOINT_ALIAS_MATCHES
+    global _LEGACY_ENTRYPOINT_ALIAS_SIGNATURE
+    signature = tuple(
+        (entrypoint_id, aliases)
+        for entrypoint_id, aliases in _ENTRYPOINT_ALIASES.items()
+    )
+    if _LEGACY_ENTRYPOINT_ALIAS_SIGNATURE == signature:
+        return _LEGACY_ENTRYPOINT_ALIAS_MATCHES
+
+    matches = [
+        (entrypoint_id, normalized_alias)
+        for entrypoint_id, aliases in _ENTRYPOINT_ALIASES.items()
+        for alias in aliases
+        if (normalized_alias := alias.casefold())
+    ]
+    _LEGACY_ENTRYPOINT_ALIAS_MATCHES = tuple(
+        sorted(matches, key=lambda match: len(match[1]), reverse=True)
+    )
+    _LEGACY_ENTRYPOINT_ALIAS_SIGNATURE = signature
+    return _LEGACY_ENTRYPOINT_ALIAS_MATCHES
 
 
 def _score_entrypoint_match(candidate: EntrypointMatchCandidate, query_tokens: set[str]) -> int:

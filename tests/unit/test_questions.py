@@ -1687,6 +1687,41 @@ def test_legacy_alias_table_remains_dynamic_for_runtime_matching(
     assert response.entrypoint_id == "ringcentral.video.toolbar.chat"
 
 
+def test_legacy_alias_matches_are_precomputed_longest_first(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        questions_module,
+        "_ENTRYPOINT_ALIASES",
+        {
+            "demo.short": ("aa",),
+            "demo.long": ("AAAA", "bbb"),
+        },
+    )
+
+    assert questions_module._legacy_entrypoint_alias_matches() == (
+        ("demo.long", "aaaa"),
+        ("demo.long", "bbb"),
+        ("demo.short", "aa"),
+    )
+
+
+def test_legacy_alias_match_cache_rebuilds_after_in_place_alias_change(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    aliases = {"demo.short": ("aa",)}
+    monkeypatch.setattr(questions_module, "_ENTRYPOINT_ALIASES", aliases)
+
+    assert questions_module._legacy_entrypoint_alias_matches() == (("demo.short", "aa"),)
+
+    aliases["demo.long"] = ("BBBB",)
+
+    assert questions_module._legacy_entrypoint_alias_matches() == (
+        ("demo.long", "bbbb"),
+        ("demo.short", "aa"),
+    )
+
+
 def test_risky_entrypoint_answer_is_not_operable() -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
 

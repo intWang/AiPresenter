@@ -24,12 +24,12 @@ This index separates product-scope sources from executable automation evidence f
 
 | Source | Role | Repository Signal |
 | --- | --- | --- |
-| `packages/ringcentral-video.yaml` | Main package knowledge | 27 entrypoints, 4 flows, 21 explainers, 11 QA items, manual controls, safety notes. |
+| `packages/ringcentral-video.yaml` | Main package knowledge | 27 entrypoints, 4 flows, 21 explainers, 11 QA items with Chinese and Japanese Q&A localization, manual controls, safety notes. |
 | `profiles/ringcentral-video*.yaml` | Runtime profiles | Launch/bind paths and provider combinations for fake, OpenAI, Codex CLI, Piper, Windows SAPI paths. |
 | `src/ai_presenter/adapters/ringcentral.py` | State extraction | Meeting joined, mic, camera, participant count, permission/waiting-room dialogs, connection warning. |
 | `src/ai_presenter/runtime/package_demo.py` | Action execution | Supported actions and cleanup modes for package `openSteps`. |
 | `src/ai_presenter/runtime/adaptive_demo.py` | Demo adaptation | Current participant-count adjustment for empty-room vs active meeting behavior. |
-| `src/ai_presenter/runtime/questions.py` | Question matching | English token matching plus Cycle 006 package-owned localized Q&A and `questionAliases`; legacy Python aliases remain as fallback. |
+| `src/ai_presenter/runtime/questions.py` | Question matching | English token matching plus package-owned localized Q&A and `questionAliases`; Japanese Q&A now has localized no-match text, while legacy Python aliases remain as fallback. |
 | `docs/runbooks/ringcentral-manual-acceptance.md` | Manual acceptance checklist | Procedure only; dated acceptance evidence must be recorded in `docs/knowledge/ringcentral-video/acceptance-runs.md`. |
 | `docs/knowledge/ringcentral-video/evidence-index.md` | Evidence navigation | Cross-links package entrypoints, observation evidence, locator confidence, privacy policy, and next acceptance targets. |
 | `docs/knowledge/ringcentral-video/validation-checklist-index.md` | Manual validation procedure | Operator-ready checklist for turning evidence gaps into privacy-safe manual runs; proof still belongs in `acceptance-runs.md`. |
@@ -53,3 +53,4 @@ Current package coverage is strongest for in-meeting attendee controls. The offi
 - In meeting: closed captions, whiteboard, presentation mode, computer audio sharing, background noise, CPU/network detail.
 - Host/moderator: recording, security, waiting room, participant management, mute others, turn off video, moderator assignment.
 - After meeting: recordings, advanced insights, transcripts or summaries where available; current package has answer-only Q&A coverage but no executable post-meeting route.
+- Localization: Japanese coverage is complete for the existing Q&A safety set; demo-flow narration and entrypoint `questionAliases.ja` remain future work.

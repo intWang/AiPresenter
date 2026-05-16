@@ -516,6 +516,74 @@ def test_ringcentral_localized_post_meeting_artifact_questions_are_answer_only(
     assert "Start recording:" not in response.answer_text
 
 
+@pytest.mark.parametrize(
+    ("question", "expected_fragments"),
+    [
+        (
+            "\u5171\u6709\u753b\u9762\u306e\u5185\u5bb9\u3092\u8aac\u660e\u3067\u304d\u307e\u3059\u304b",
+            ("\u5171\u6709", "\u660e\u793a\u7684", "\u78ba\u8a8d"),
+        ),
+        (
+            "\u30c1\u30e3\u30c3\u30c8\u5185\u5bb9\u3084\u53c2\u52a0\u8005\u540d\u3092\u8aad\u307f\u4e0a\u3052\u3089\u308c\u307e\u3059\u304b",
+            ("\u30c1\u30e3\u30c3\u30c8", "\u53c2\u52a0\u8005", "\u660e\u793a\u7684", "\u78ba\u8a8d"),
+        ),
+        (
+            "\u5b57\u5e55\u306f\u3069\u3053\u306b\u3042\u308a\u307e\u3059\u304b",
+            ("Notes and Transcript", "Settings", "\u660e\u793a\u7684", "\u78ba\u8a8d"),
+        ),
+        (
+            "\u4f1a\u8b70\u5f8c\u306e\u9332\u753b\u3084\u6587\u5b57\u8d77\u3053\u3057\u306f\u3069\u3053\u306b\u3042\u308a\u307e\u3059\u304b",
+            (
+                "\u4f1a\u8b70\u5f8c",
+                "\u9332\u753b",
+                "\u6587\u5b57\u8d77\u3053\u3057",
+                "\u8981\u7d04",
+                "\u6d1e\u5bdf",
+                "\u53ef\u80fd",
+                "\u6a29\u9650",
+                "\u78ba\u8a8d",
+            ),
+        ),
+        (
+            "\u4f1a\u8b70\u3092\u9332\u753b\u3059\u308b\u306b\u306f\u3069\u3046\u3059\u308c\u3070\u3044\u3044\u3067\u3059\u304b",
+            ("\u9332\u753b", "\u5168\u54e1", "\u660e\u793a\u7684", "\u540c\u610f"),
+        ),
+    ],
+)
+def test_ringcentral_japanese_privacy_sensitive_questions_match_localized_answers(
+    question: str,
+    expected_fragments: tuple[str, ...],
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(language="ja", tone="professional"),
+    )
+
+    assert response.can_operate is False
+    for fragment in expected_fragments:
+        assert fragment in response.answer_text
+
+
+def test_ringcentral_japanese_unmatched_question_returns_localized_no_match() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question="\u305d\u306e\u6a5f\u80fd\u306f\u3069\u3053\u3067\u3059\u304b",
+        voice=PresenterVoiceSettings(language="ja", tone="friendly"),
+    )
+
+    assert response.entrypoint_id is None
+    assert response.can_operate is False
+    assert response.answer_text == (
+        "\u73fe\u5728\u306e\u30a2\u30d7\u30ea\u306e\u72b6\u6cc1\u3067\u306f"
+        "\u4e00\u81f4\u3059\u308b\u30b3\u30f3\u30c8\u30ed\u30fc\u30eb\u304c\u898b\u3064\u304b\u308a\u307e\u305b\u3093\u3002"
+    )
+
+
 def test_exact_qa_match_uses_precomputed_question_index() -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
     package._qa_question_candidates = ()

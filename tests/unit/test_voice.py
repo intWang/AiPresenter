@@ -31,6 +31,16 @@ def test_voice_instruction_renders_chinese_conversational_style() -> None:
     assert "conversational" in instruction
 
 
+def test_voice_instruction_renders_japanese_style() -> None:
+    settings = PresenterVoiceSettings(language="ja-JP", tone="friendly")
+
+    instruction = render_voice_instruction(settings)
+
+    assert settings.language == "ja"
+    assert "Japanese" in instruction
+    assert "warm" in instruction
+
+
 def test_voice_settings_normalize_language_aliases() -> None:
     assert PresenterVoiceSettings(language="zh-CN").language == "zh"
     assert PresenterVoiceSettings(language="zh-Hans").language == "zh"
@@ -38,6 +48,8 @@ def test_voice_settings_normalize_language_aliases() -> None:
     assert PresenterVoiceSettings(language="中文").language == "zh"
     assert PresenterVoiceSettings(language="English").language == "en"
     assert PresenterVoiceSettings(language="en-US").language == "en"
+    assert PresenterVoiceSettings(language="Japanese").language == "ja"
+    assert PresenterVoiceSettings(language="\u65e5\u672c\u8a9e").language == "ja"
 
 
 def test_presenter_language_aliases_are_public_and_canonical() -> None:
@@ -49,6 +61,15 @@ def test_presenter_language_aliases_are_public_and_canonical() -> None:
         "zh-hant",
         "chinese",
         "中文",
+    )
+
+
+def test_presenter_japanese_language_aliases_are_public_and_canonical() -> None:
+    assert voice.presenter_language_aliases("ja-JP") == (
+        "ja",
+        "ja-jp",
+        "japanese",
+        "\u65e5\u672c\u8a9e",
     )
 
 
@@ -112,6 +133,16 @@ def test_render_presenter_text_applies_expanded_english_tones() -> None:
     ).startswith("Let's troubleshoot this.")
 
 
+def test_render_presenter_text_keeps_japanese_text_without_english_prefix() -> None:
+    rendered = render_presenter_text(
+        "\u73fe\u5728\u306e\u30a2\u30d7\u30ea\u3067\u4e00\u81f4\u3059\u308b\u64cd\u4f5c\u304c\u898b\u3064\u304b\u308a\u307e\u305b\u3093\u3002",
+        PresenterVoiceSettings(language="ja", tone="friendly"),
+    )
+
+    assert rendered.startswith("\u73fe\u5728\u306e\u30a2\u30d7\u30ea")
+    assert "Happy to help" not in rendered
+
+
 def test_render_presenter_text_keeps_existing_chinese_concise_behavior() -> None:
     rendered = render_presenter_text(
         "Chat opens the panel. Settings stays available.",
@@ -148,6 +179,24 @@ def test_voice_validation_allows_chinese_windows_sapi_profile() -> None:
     profile.providers.speech = "windows-sapi-zh"
 
     validate_profile_voice(profile, PresenterVoiceSettings(language="zh"))
+
+
+def test_voice_validation_allows_japanese_openai_profile() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-openai.example.yaml"))
+
+    validate_profile_voice(profile, PresenterVoiceSettings(language="ja-JP"))
+
+
+def test_voice_validation_rejects_japanese_local_sapi_profile() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
+
+    with pytest.raises(ValueError) as exc_info:
+        validate_profile_voice(profile, PresenterVoiceSettings(language="ja"))
+
+    message = str(exc_info.value)
+    assert "Japanese / Professional" in message
+    assert "speech provider windows-sapi-en" in message
+    assert "openai" in message
 
 
 def test_voice_validation_allows_chinese_piper_profile_with_sapi_fallback() -> None:

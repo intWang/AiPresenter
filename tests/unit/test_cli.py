@@ -443,7 +443,7 @@ def test_localization_report_outputs_ringcentral_chinese_coverage() -> None:
     assert "Loaded profile" not in result.stdout
 
 
-def test_localization_report_outputs_zero_for_explicit_uncovered_language() -> None:
+def test_localization_report_outputs_japanese_qa_without_demo_narration() -> None:
     result = CliRunner().invoke(
         app,
         ["localization-report", "--package", "ringcentral-video", "--language", "ja"],
@@ -453,8 +453,8 @@ def test_localization_report_outputs_zero_for_explicit_uncovered_language() -> N
     assert "Language: ja" in result.stdout
     assert "- meeting-controls-tour: 0/22 narration localized" in result.stdout
     assert "missing: meeting-overview" in result.stdout
-    assert "- localized questions: 0/11" in result.stdout
-    assert "- localized answers: 0/11" in result.stdout
+    assert "- localized questions: 11/11" in result.stdout
+    assert "- localized answers: 11/11" in result.stdout
     assert "questionAliases.ja present on 0/27 entrypoints (0 aliases)" in result.stdout
 
 
@@ -476,7 +476,7 @@ def test_localization_report_require_complete_passes_for_chinese() -> None:
     assert "Localization coverage incomplete" not in result.stdout
 
 
-def test_localization_report_require_complete_fails_for_uncovered_language() -> None:
+def test_localization_report_require_complete_fails_for_japanese_demo_gap() -> None:
     result = CliRunner().invoke(
         app,
         [
@@ -492,8 +492,8 @@ def test_localization_report_require_complete_fails_for_uncovered_language() -> 
     assert result.exit_code == 1
     assert "Language: ja" in result.stdout
     assert "missing: meeting-overview" in result.stdout
-    assert "- localized questions: 0/11" in result.stdout
-    assert "- localized answers: 0/11" in result.stdout
+    assert "- localized questions: 11/11" in result.stdout
+    assert "- localized answers: 11/11" in result.stdout
     assert "Localization coverage incomplete for ja." in result.stdout
 
 
@@ -834,6 +834,7 @@ def test_voices_lists_language_tone_choices() -> None:
     assert "Languages:" in result.stdout
     assert "English aliases:" in result.stdout
     assert "Chinese aliases:" in result.stdout
+    assert "Japanese aliases:" in result.stdout
     assert "Tones:" in result.stdout
     assert "Coach aliases:" in result.stdout
     assert "Support aliases:" in result.stdout
@@ -856,6 +857,7 @@ def test_voices_profile_reports_supported_and_unsupported_languages() -> None:
     assert "Configured speech provider: fake" in result.stdout
     assert "English / Professional: supported via fake" in result.stdout
     assert "Chinese / Professional: unsupported" in result.stdout
+    assert "Japanese / Professional: unsupported" in result.stdout
 
 
 def test_voices_profile_reports_local_asset_status(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -929,9 +931,9 @@ def test_doctor_loads_profile_package_and_flow(monkeypatch: pytest.MonkeyPatch) 
     assert "[OK] question aliases:" in result.stdout
     assert "53 package-owned aliases have no cross-entrypoint duplicates" in result.stdout
     assert "[OK] qa questions:" in result.stdout
-    assert "52 Q&A question prompts have no cross-item duplicates" in result.stdout
+    assert "63 Q&A question prompts have no cross-item duplicates" in result.stdout
     assert "[OK] qa alias overlap:" in result.stdout
-    assert "52 Q&A question prompts have no unsafe package-owned alias overlaps" in result.stdout
+    assert "63 Q&A question prompts have no unsafe package-owned alias overlaps" in result.stdout
     assert "[OK] explainer coverage" in result.stdout
     assert "[OK] demo flow: meeting-control-map-demo" in result.stdout
     assert "[OK] presenter context" in result.stdout

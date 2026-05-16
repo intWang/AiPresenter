@@ -86,6 +86,16 @@ def test_ringcentral_all_qa_items_have_chinese_localized_questions_and_answers()
         assert set(item.related_entrypoint_ids) <= entrypoint_ids
 
 
+def test_ringcentral_all_qa_items_have_japanese_localized_questions_and_answers() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    entrypoint_ids = {entrypoint.id for entrypoint in package.operation_entrypoints}
+
+    for item in package.qa:
+        assert item.localized_questions.get("ja"), item.question
+        assert item.localized_answers.get("ja", "").strip(), item.question
+        assert set(item.related_entrypoint_ids) <= entrypoint_ids
+
+
 def test_ringcentral_localization_status_reports_chinese_coverage() -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
 
@@ -104,6 +114,24 @@ def test_ringcentral_localization_status_reports_chinese_coverage() -> None:
     assert report.alias_total == 49
     assert report.flow_by_id["meeting-controls-tour"].localized_steps == 22
     assert report.flow_by_id["meeting-controls-tour"].total_steps == 22
+
+
+def test_ringcentral_localization_status_reports_japanese_qa_coverage() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    report = build_localization_status(package, language="ja")
+
+    assert report.package_id == "ringcentral-video"
+    assert report.language == "ja"
+    assert report.demo_localized_steps == 0
+    assert report.demo_total_steps == 51
+    assert report.qa_localized_questions == 11
+    assert report.qa_localized_answers == 11
+    assert report.qa_total == 11
+    assert report.entrypoints_with_aliases == 0
+    assert report.entrypoint_total == 27
+    assert report.alias_total == 0
+    assert report.required_localization_complete is False
 
 
 def test_localization_status_marks_required_chinese_coverage_complete() -> None:
@@ -236,9 +264,9 @@ def test_localization_status_treats_blank_localized_questions_as_missing() -> No
 def test_localization_status_reports_zero_for_explicit_uncovered_language() -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
 
-    report = build_localization_status(package, language="ja")
+    report = build_localization_status(package, language="fr")
 
-    assert report.language == "ja"
+    assert report.language == "fr"
     assert report.demo_localized_steps == 0
     assert report.demo_total_steps == 51
     assert report.qa_localized_questions == 0

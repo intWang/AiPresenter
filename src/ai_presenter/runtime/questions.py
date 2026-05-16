@@ -47,6 +47,10 @@ _QUESTION_EXPLAIN_ONLY_ENTRYPOINT_IDS = frozenset(
 _NO_MATCH_ANSWERS = {
     "en": "I could not find a matching control in the active app context.",
     "zh": "\u6211\u6ca1\u6709\u5728\u5f53\u524d\u5e94\u7528\u4e0a\u4e0b\u6587\u4e2d\u627e\u5230\u5339\u914d\u7684\u63a7\u4ef6\u3002",
+    "ja": (
+        "\u73fe\u5728\u306e\u30a2\u30d7\u30ea\u306e\u72b6\u6cc1\u3067\u306f"
+        "\u4e00\u81f4\u3059\u308b\u30b3\u30f3\u30c8\u30ed\u30fc\u30eb\u304c\u898b\u3064\u304b\u308a\u307e\u305b\u3093\u3002"
+    ),
 }
 _ENTRYPOINT_ALIASES: dict[str, tuple[str, ...]] = {
     "ringcentral.video.toolbar.chat": (

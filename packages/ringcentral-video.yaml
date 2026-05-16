@@ -12,6 +12,10 @@ operationEntrypoints:
   title: Video tab in RingCentralDevelop
   area: RingCentralDevelop
   purpose: Open the Video meetings surface before starting or joining meetings.
+  questionAliases:
+    es:
+    - pestaña de video en ringcentral
+    - sección de video de ringcentral
   openSteps:
   - action: focusWindow
     match:
@@ -25,6 +29,10 @@ operationEntrypoints:
   title: Start meeting
   area: RingCentralDevelop Video tab
   purpose: Start an instant RingCentral Video meeting.
+  questionAliases:
+    es:
+    - botón start en ringcentral video
+    - entrada de reunión instantánea en ringcentral
   openSteps:
   - action: clickButton
     target: Start
@@ -36,6 +44,10 @@ operationEntrypoints:
   area: Meeting window
   purpose: Introduce the RingCentral Video meeting surface before opening individual controls.
   questionAliases:
+    es:
+    - resumen de la ventana de reunión
+    - mapa de controles de reunión
+    - orientación de controles de reunión
     ja:
     - 会議画面の概要
     - 会議画面の見取り図
@@ -52,6 +64,10 @@ operationEntrypoints:
     and end-to-end encryption option.
   questionPolicy: answerOnly
   questionAliases:
+    es:
+    - ubicación de meeting information
+    - panel de información de la reunión
+    - entrada de detalles de la reunión
     ja:
     - 会議情報の場所
     - Meeting information の場所
@@ -82,6 +98,10 @@ operationEntrypoints:
   area: Meeting top bar
   purpose: Show diagnostic network quality for sharing, video, and audio, including packet loss, jitter, and latency.
   questionAliases:
+    es:
+    - ubicación de network quality
+    - panel de calidad de red
+    - diagnóstico de conexión de reunión
     ja:
     - ネットワーク品質
     - 接続品質
@@ -106,6 +126,10 @@ operationEntrypoints:
   area: Meeting top bar
   purpose: Switch the meeting layout, including Gallery view and Full screen.
   questionAliases:
+    es:
+    - menú de vista de reunión
+    - selector de diseño de vista
+    - ubicación de views
     ja:
     - 表示レイアウト
     - 表示切り替え
@@ -126,6 +150,10 @@ operationEntrypoints:
   area: Meeting top bar
   purpose: Open the issue reporting dialog for Audio, Video, Screen sharing, Meeting join, Notes and transcript,
     or Other.
+  questionAliases:
+    es:
+    - ubicación de report issue
+    - entrada para reportar problema técnico
   openSteps:
   - action: clickWindowRelative
     target: Report
@@ -142,6 +170,9 @@ operationEntrypoints:
   area: Meeting canvas
   purpose: Open the Invite others dialog from the empty-meeting callout.
   questionAliases:
+    es:
+    - ubicación de add coworkers
+    - aviso para agregar compañeros en sala vacía
     zh:
     - 加同事
     - 邀请同事
@@ -163,6 +194,10 @@ operationEntrypoints:
   area: Meeting toolbar
   purpose: Toggle mute and unmute in the live meeting.
   questionAliases:
+    es:
+    - ubicación del botón mute
+    - control del micrófono en la barra
+    - estado del micrófono en reunión
     ja:
     - マイク
     - ミュート
@@ -186,6 +221,10 @@ operationEntrypoints:
   purpose: Open microphone and speaker device controls, audio level indicators, leave-computer-audio, phone-audio,
     and more audio settings.
   questionAliases:
+    es:
+    - menú de audio de la reunión
+    - selector de micrófono y altavoz
+    - ubicación de audio options
     ja:
     - 音声メニュー
     - マイクメニュー
@@ -211,6 +250,10 @@ operationEntrypoints:
   area: Meeting toolbar
   purpose: Toggle local camera on or off.
   questionAliases:
+    es:
+    - ubicación de start video
+    - control de cámara en la barra
+    - estado de la cámara en reunión
     zh:
     - 摄像头
     - 开视频
@@ -229,6 +272,10 @@ operationEntrypoints:
   area: Meeting toolbar
   purpose: Open camera device selection and the More video settings shortcut.
   questionAliases:
+    es:
+    - menú de cámara en la reunión
+    - selector de cámara en video
+    - ubicación de more video settings
     ja:
     - カメラメニュー
     - ビデオメニュー
@@ -252,6 +299,10 @@ operationEntrypoints:
   title: More video settings
   area: Video menu
   purpose: Open camera, quality, gallery, and related video settings.
+  questionAliases:
+    es:
+    - configuración avanzada de video
+    - ajustes de cámara y calidad
   openSteps:
   - action: clickWindowControl
     target: More
@@ -271,6 +322,7 @@ operationEntrypoints:
   purpose: Configure blur, built-in virtual backgrounds, video backgrounds, or custom uploads.
   questionAliases:
     es:
+    - ajustes de fondo
     - configuración de fondo
     - fondo virtual
     - desenfocar fondo
@@ -316,6 +368,10 @@ operationEntrypoints:
   area: Meeting toolbar
   purpose: Start sharing a screen, window, or selected content.
   questionAliases:
+    es:
+    - ubicación del botón share
+    - entrada para compartir contenido
+    - selector de compartir pantalla
     zh:
     - 共享屏幕
     - 分享屏幕
@@ -337,6 +393,10 @@ operationEntrypoints:
   area: Meeting toolbar
   purpose: Invite coworkers or copy meeting details.
   questionAliases:
+    es:
+    - ubicación de invite
+    - entrada para invitar participantes
+    - panel de invitación de la reunión
     zh:
     - 邀请
     - 邀请别人
@@ -359,6 +419,10 @@ operationEntrypoints:
   area: Meeting toolbar
   purpose: Open participant list and meeting people controls.
   questionAliases:
+    es:
+    - panel de participantes
+    - lista de participantes
+    - controles de participantes
     ja:
     - 参加者
     - 参加者一覧
@@ -383,6 +447,10 @@ operationEntrypoints:
   area: Meeting toolbar
   purpose: Open in-meeting chat.
   questionAliases:
+    es:
+    - panel de chat de la reunión
+    - entrada del chat en la reunión
+    - superficie de chat de la reunión
     ja:
     - チャット
     - チャットパネル
@@ -408,6 +476,10 @@ operationEntrypoints:
   area: Meeting toolbar
   purpose: Send meeting reactions without interrupting speech.
   questionAliases:
+    es:
+    - ubicación de reactions
+    - botón de reacciones en la barra
+    - panel de señales de reacción
     ja:
     - React ボタンの場所
     - リアクション欄の場所
@@ -427,6 +499,10 @@ operationEntrypoints:
   area: Meeting toolbar
   purpose: Raise or lower hand to request attention.
   questionAliases:
+    es:
+    - ubicación de raise hand
+    - botón de levantar la mano
+    - control de mano levantada
     ja:
     - 挙手ボタンの場所
     - 挙手の場所
@@ -445,6 +521,10 @@ operationEntrypoints:
   title: More actions
   area: Meeting toolbar
   purpose: Open additional meeting actions.
+  questionAliases:
+    es:
+    - menú de más acciones
+    - más controles de reunión
   openSteps:
   - action: clickWindowControl
     target: More
@@ -462,6 +542,9 @@ operationEntrypoints:
   area: More menu
   purpose: Start recording the meeting.
   questionAliases:
+    es:
+    - ubicación de start recording
+    - entrada de recording en more
     ja:
     - Start recording の場所
     - 録画ボタンの場所
@@ -480,6 +563,10 @@ operationEntrypoints:
   purpose: Open the Notes and Transcript side panel.
   questionPolicy: answerOnly
   questionAliases:
+    es:
+    - ubicación de notes and transcript
+    - panel de notas y transcripción
+    - entrada de notes en more
     ja:
     - Notes and Transcript の場所
     - ノートと文字起こしの場所
@@ -510,6 +597,10 @@ operationEntrypoints:
   title: Background
   area: More menu
   purpose: Open the Settings dialog directly on the Background tab.
+  questionAliases:
+    es:
+    - ubicación de background en more
+    - fondo desde el menú more
   openSteps:
   - action: clickWindowControl
     target: More
@@ -528,6 +619,10 @@ operationEntrypoints:
   title: Settings
   area: More menu
   purpose: Open the Settings dialog.
+  questionAliases:
+    es:
+    - ubicación de settings en more
+    - centro de ajustes de reunión
   openSteps:
   - action: clickWindowControl
     target: More
@@ -547,6 +642,9 @@ operationEntrypoints:
   area: Meeting toolbar
   purpose: Leave or end the meeting.
   questionAliases:
+    es:
+    - ubicación del botón leave
+    - opciones para abandonar la reunión
     zh:
     - 离开会议
     - 退出会议

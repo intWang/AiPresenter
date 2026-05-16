@@ -319,10 +319,148 @@ def test_ringcentral_spanish_seed_qa_and_aliases_are_present() -> None:
     assert "Background" in answer
     assert "Blur" in answer
     assert set(aliases) == {
+        "ajustes de fondo",
         "configuración de fondo",
         "fondo virtual",
         "desenfocar fondo",
     }
+
+
+def test_ringcentral_package_owns_spanish_aliases_for_location_routes() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    aliases_by_entrypoint: dict[str, set[str]] = {}
+    for alias in package.entrypoint_question_aliases:
+        if alias.language != "es":
+            continue
+        aliases_by_entrypoint.setdefault(alias.entrypoint_id, set()).add(alias.alias)
+
+    expected_aliases = {
+        "ringcentral.develop.video.tab": {
+            "pestaña de video en ringcentral",
+            "sección de video de ringcentral",
+        },
+        "ringcentral.develop.video.start": {
+            "botón start en ringcentral video",
+            "entrada de reunión instantánea en ringcentral",
+        },
+        "ringcentral.video.overview": {
+            "resumen de la ventana de reunión",
+            "mapa de controles de reunión",
+            "orientación de controles de reunión",
+        },
+        "ringcentral.video.top.meeting-info": {
+            "ubicación de meeting information",
+            "panel de información de la reunión",
+            "entrada de detalles de la reunión",
+        },
+        "ringcentral.video.top.network-quality": {
+            "ubicación de network quality",
+            "panel de calidad de red",
+            "diagnóstico de conexión de reunión",
+        },
+        "ringcentral.video.top.views": {
+            "menú de vista de reunión",
+            "selector de diseño de vista",
+            "ubicación de views",
+        },
+        "ringcentral.video.top.report-issue": {
+            "ubicación de report issue",
+            "entrada para reportar problema técnico",
+        },
+        "ringcentral.video.main.add-coworkers": {
+            "ubicación de add coworkers",
+            "aviso para agregar compañeros en sala vacía",
+        },
+        "ringcentral.video.toolbar.audio": {
+            "ubicación del botón mute",
+            "control del micrófono en la barra",
+            "estado del micrófono en reunión",
+        },
+        "ringcentral.video.toolbar.audio-menu": {
+            "menú de audio de la reunión",
+            "selector de micrófono y altavoz",
+            "ubicación de audio options",
+        },
+        "ringcentral.video.toolbar.video": {
+            "ubicación de start video",
+            "control de cámara en la barra",
+            "estado de la cámara en reunión",
+        },
+        "ringcentral.video.toolbar.video-menu": {
+            "menú de cámara en la reunión",
+            "selector de cámara en video",
+            "ubicación de more video settings",
+        },
+        "ringcentral.video.settings.video": {
+            "configuración avanzada de video",
+            "ajustes de cámara y calidad",
+        },
+        "ringcentral.video.settings.background": {
+            "ajustes de fondo",
+            "configuración de fondo",
+            "fondo virtual",
+            "desenfocar fondo",
+        },
+        "ringcentral.video.toolbar.share": {
+            "ubicación del botón share",
+            "entrada para compartir contenido",
+            "selector de compartir pantalla",
+        },
+        "ringcentral.video.toolbar.invite": {
+            "ubicación de invite",
+            "entrada para invitar participantes",
+            "panel de invitación de la reunión",
+        },
+        "ringcentral.video.toolbar.participants": {
+            "panel de participantes",
+            "lista de participantes",
+            "controles de participantes",
+        },
+        "ringcentral.video.toolbar.chat": {
+            "panel de chat de la reunión",
+            "entrada del chat en la reunión",
+            "superficie de chat de la reunión",
+        },
+        "ringcentral.video.toolbar.react": {
+            "ubicación de reactions",
+            "botón de reacciones en la barra",
+            "panel de señales de reacción",
+        },
+        "ringcentral.video.toolbar.raise-hand": {
+            "ubicación de raise hand",
+            "botón de levantar la mano",
+            "control de mano levantada",
+        },
+        "ringcentral.video.toolbar.more": {
+            "menú de más acciones",
+            "más controles de reunión",
+        },
+        "ringcentral.video.more.recording": {
+            "ubicación de start recording",
+            "entrada de recording en more",
+        },
+        "ringcentral.video.more.notes": {
+            "ubicación de notes and transcript",
+            "panel de notas y transcripción",
+            "entrada de notes en more",
+        },
+        "ringcentral.video.more.background": {
+            "ubicación de background en more",
+            "fondo desde el menú more",
+        },
+        "ringcentral.video.more.settings": {
+            "ubicación de settings en more",
+            "centro de ajustes de reunión",
+        },
+        "ringcentral.video.toolbar.leave": {
+            "ubicación del botón leave",
+            "opciones para abandonar la reunión",
+        },
+    }
+
+    assert set(aliases_by_entrypoint) == set(expected_aliases)
+    for entrypoint_id, aliases in expected_aliases.items():
+        assert aliases == aliases_by_entrypoint[entrypoint_id]
 
 
 def test_ringcentral_localization_status_reports_complete_spanish_package() -> None:
@@ -337,9 +475,9 @@ def test_ringcentral_localization_status_reports_complete_spanish_package() -> N
     assert report.qa_localized_questions == 12
     assert report.qa_localized_answers == 12
     assert report.qa_total == 12
-    assert report.entrypoints_with_aliases == 1
+    assert report.entrypoints_with_aliases == 26
     assert report.entrypoint_total == 27
-    assert report.alias_total == 3
+    assert report.alias_total == 69
     assert report.required_localization_complete is True
     assert report.flow_by_id["vbg-blur-demo"].localized_steps == 4
     assert report.flow_by_id["vbg-blur-demo"].total_steps == 4

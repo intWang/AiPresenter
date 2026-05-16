@@ -323,6 +323,8 @@ def _match_qa(package: MaterialPackage, normalized_question: str) -> QuestionAns
             return candidate.item
         if candidate.normalized_question in normalized_question:
             return candidate.item
+    if _match_package_entrypoint_alias(package, normalized_question) is not None:
+        return None
     query_tokens = _meaningful_tokens(normalized_question)
     if not query_tokens:
         return None

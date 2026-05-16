@@ -478,7 +478,7 @@ def test_localization_report_outputs_complete_spanish_package() -> None:
     assert "Localization report: 51/51 demo steps" in result.stdout
     assert "- localized questions: 12/12" in result.stdout
     assert "- localized answers: 12/12" in result.stdout
-    assert "questionAliases.es present on 1/27 entrypoints (3 aliases)" in result.stdout
+    assert "questionAliases.es present on 26/27 entrypoints (69 aliases)" in result.stdout
     assert "Localization coverage incomplete" not in result.stdout
 
 
@@ -987,7 +987,7 @@ def test_doctor_loads_profile_package_and_flow(monkeypatch: pytest.MonkeyPatch) 
     assert "[OK] package: loaded ringcentral-video" in result.stdout
     assert "[OK] package profile support" in result.stdout
     assert "[OK] question aliases:" in result.stdout
-    assert "90 package-owned aliases have no cross-entrypoint duplicates" in result.stdout
+    assert "156 package-owned aliases have no cross-entrypoint duplicates" in result.stdout
     assert "[OK] qa questions:" in result.stdout
     assert "84 Q&A question prompts have no cross-item duplicates" in result.stdout
     assert "[OK] qa alias overlap:" in result.stdout

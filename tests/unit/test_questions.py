@@ -1522,6 +1522,172 @@ def test_ringcentral_japanese_meeting_control_questions_match_package_aliases_wi
     assert camera_response.entrypoint_id != "ringcentral.video.toolbar.video"
 
 
+def test_ringcentral_spanish_location_questions_match_package_aliases_without_legacy_table(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    monkeypatch.setattr(questions_module, "_ENTRYPOINT_ALIASES", {})
+
+    expected = {
+        "¿Dónde está la pestaña de video en ringcentral?": (
+            "ringcentral.develop.video.tab",
+            False,
+        ),
+        "¿Dónde está el botón start en ringcentral video?": (
+            "ringcentral.develop.video.start",
+            False,
+        ),
+        "Explícame el mapa de controles de reunión": (
+            "ringcentral.video.overview",
+            False,
+        ),
+        "¿Dónde está la ubicación de meeting information?": (
+            "ringcentral.video.top.meeting-info",
+            False,
+        ),
+        "¿Dónde veo la ubicación de network quality?": (
+            "ringcentral.video.top.network-quality",
+            True,
+        ),
+        "¿Dónde está el menú de vista de reunión?": (
+            "ringcentral.video.top.views",
+            True,
+        ),
+        "¿Dónde está la ubicación de report issue?": (
+            "ringcentral.video.top.report-issue",
+            True,
+        ),
+        "¿Dónde está la ubicación de add coworkers?": (
+            "ringcentral.video.main.add-coworkers",
+            False,
+        ),
+        "¿Dónde está la ubicación del botón mute?": (
+            "ringcentral.video.toolbar.audio",
+            False,
+        ),
+        "¿Dónde está el menú de audio de la reunión?": (
+            "ringcentral.video.toolbar.audio-menu",
+            False,
+        ),
+        "¿Dónde está la ubicación de start video?": (
+            "ringcentral.video.toolbar.video",
+            False,
+        ),
+        "¿Dónde está el menú de cámara en la reunión?": (
+            "ringcentral.video.toolbar.video-menu",
+            True,
+        ),
+        "¿Dónde está la configuración avanzada de video?": (
+            "ringcentral.video.settings.video",
+            True,
+        ),
+        "¿Dónde están los ajustes de fondo?": (
+            "ringcentral.video.settings.background",
+            True,
+        ),
+        "¿Dónde está el selector de compartir pantalla?": (
+            "ringcentral.video.toolbar.share",
+            False,
+        ),
+        "¿Dónde está la ubicación de invite?": (
+            "ringcentral.video.toolbar.invite",
+            False,
+        ),
+        "Muéstrame el panel de participantes": (
+            "ringcentral.video.toolbar.participants",
+            True,
+        ),
+        "¿Dónde está el panel de chat de la reunión?": (
+            "ringcentral.video.toolbar.chat",
+            True,
+        ),
+        "¿Dónde está la ubicación de reactions?": (
+            "ringcentral.video.toolbar.react",
+            False,
+        ),
+        "¿Dónde está el botón de levantar la mano?": (
+            "ringcentral.video.toolbar.raise-hand",
+            False,
+        ),
+        "¿Dónde está el menú de más acciones?": (
+            "ringcentral.video.toolbar.more",
+            True,
+        ),
+        "¿Dónde está la ubicación de start recording?": (
+            "ringcentral.video.more.recording",
+            False,
+        ),
+        "¿Dónde está la ubicación de notes and transcript?": (
+            "ringcentral.video.more.notes",
+            False,
+        ),
+        "¿Dónde está la ubicación de background en more?": (
+            "ringcentral.video.more.background",
+            True,
+        ),
+        "¿Dónde está la ubicación de settings en more?": (
+            "ringcentral.video.more.settings",
+            True,
+        ),
+        "¿Dónde está la ubicación del botón leave?": (
+            "ringcentral.video.toolbar.leave",
+            False,
+        ),
+    }
+
+    for question, (entrypoint_id, can_operate) in expected.items():
+        response = answer_question(
+            package=package,
+            question=question,
+            voice=PresenterVoiceSettings(language="en"),
+        )
+        assert response.entrypoint_id == entrypoint_id
+        assert response.can_operate is can_operate
+
+    notes_response = answer_question(
+        package=package,
+        question="¿Dónde está la ubicación de notes and transcript?",
+        voice=PresenterVoiceSettings(language="en"),
+    )
+    assert create_question_interrupt_step(package, notes_response) is None
+
+
+@pytest.mark.parametrize(
+    ("question", "entrypoint_id"),
+    [
+        ("¿Puede leer los mensajes del chat o los nombres de participantes?", None),
+        (
+            "¿Puede el presenter describir el contenido compartido en pantalla?",
+            "ringcentral.video.toolbar.share",
+        ),
+        (
+            "¿Cómo manejo la grabación de la reunión de forma segura?",
+            "ringcentral.video.more.recording",
+        ),
+        (
+            "¿Puede AiPresenter enviar una reacción o levantar la mano de forma segura?",
+            None,
+        ),
+    ],
+)
+def test_ringcentral_spanish_safety_questions_stay_qa_first_with_aliases(
+    monkeypatch: pytest.MonkeyPatch,
+    question: str,
+    entrypoint_id: str | None,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    monkeypatch.setattr(questions_module, "_ENTRYPOINT_ALIASES", {})
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(language="en"),
+    )
+
+    assert response.entrypoint_id == entrypoint_id
+    assert response.can_operate is False
+
+
 def test_ringcentral_japanese_chat_privacy_question_stays_answer_only_with_aliases(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

@@ -22,6 +22,7 @@ This uses the default fake providers. It verifies desktop automation, window bin
 - [ ] Run `.venv\Scripts\ai-presenter voices` and confirm language and tone aliases are listed.
 - [ ] Run `.venv\Scripts\ai-presenter voices --profile ringcentral-video-bind-speaker` and confirm English and Chinese routes are supported.
 - [ ] Run `.venv\Scripts\ai-presenter doctor --profile ringcentral-video-bind-speaker --language zh-CN --tone friendly` and confirm `[OK] voice: Chinese / Friendly supported via speech=windows-sapi-zh`.
+- [ ] Run `.venv\Scripts\ai-presenter doctor --profile ringcentral-video-bind-speaker --package ringcentral-video --flow meeting-control-map-demo --language zh-CN --tone friendly --require-localization` before a Chinese demo; confirm `[OK] localization:` as well as voice readiness.
 - [ ] Run `.venv\Scripts\ai-presenter doctor --profile ringcentral-video-bind-speaker --language zh-CN --tone friendly` before a local Chinese-voice demo; when the Huihui SAPI voice is installed, confirm both `[OK] voice:` and `[OK] voice assets:`.
 - [ ] Run `.venv\Scripts\ai-presenter demo --profile ringcentral-video-bind-speaker --package ringcentral-video --flow meeting-control-map-demo --language zh-CN --tone friendly --dry-run`; verify `Loaded voice: Chinese / Friendly`.
 - [ ] Run `.venv\Scripts\ai-presenter controller --profile ringcentral-video-bind-speaker --package ringcentral-video --flow meeting-control-map-demo --language English --tone coach --dry-run`; verify `Loaded voice: English / Coach`.

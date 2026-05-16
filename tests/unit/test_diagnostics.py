@@ -5,6 +5,8 @@ from typer.testing import CliRunner
 
 from ai_presenter.cli import app
 from ai_presenter.config.loader import load_profile
+from ai_presenter.packages.loader import load_material_package
+from ai_presenter.packages.models import MaterialPackage
 from ai_presenter.runtime import diagnostics
 from ai_presenter.runtime.voice import PresenterVoiceSettings
 from ai_presenter.runtime.voice_assets import VoiceAssetAvailability
@@ -192,6 +194,119 @@ def test_diagnostics_fails_for_missing_piper_voice_assets(
         for check in report.checks
         if check.name == "voice assets"
     )
+
+
+def test_diagnostics_require_localization_fails_without_package() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
+
+    report = diagnostics.diagnose_configuration(
+        profile=profile,
+        require_localization=True,
+    )
+
+    localization_check = next(
+        check for check in report.checks if check.name == "localization"
+    )
+    assert localization_check.status == "FAIL"
+    assert "--require-localization requires --package" in localization_check.detail
+
+
+def test_diagnostics_require_localization_passes_for_ringcentral_chinese() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    report = diagnostics.diagnose_configuration(
+        profile=profile,
+        material_package=package,
+        require_localization=True,
+        localization_language="zh",
+    )
+
+    localization_check = next(
+        check for check in report.checks if check.name == "localization"
+    )
+    assert localization_check.status == "OK"
+    assert "required zh localization complete" in localization_check.detail
+    assert "51/51 demo steps" in localization_check.detail
+    assert "8/8 Q&A questions" in localization_check.detail
+    assert "8/8 Q&A answers" in localization_check.detail
+
+
+def test_diagnostics_require_localization_fails_for_incomplete_package() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
+    package = MaterialPackage.model_validate(
+        {
+            "appId": "demo",
+            "appName": "Demo",
+            "version": 1,
+            "profileIds": ["ringcentral-video-bind-speaker"],
+            "operationEntrypoints": [
+                {
+                    "id": "demo.panel",
+                    "title": "Panel",
+                    "area": "Main",
+                    "purpose": "Open panel.",
+                    "openSteps": [],
+                }
+            ],
+            "demoFlows": [
+                {
+                    "id": "demo-flow",
+                    "title": "Demo",
+                    "goal": "Show the panel.",
+                    "steps": [
+                        {
+                            "id": "intro",
+                            "title": "Intro",
+                            "action": {
+                                "entrypointId": "demo.panel",
+                                "operation": "explain",
+                            },
+                            "narration": {
+                                "text": "Show the panel.",
+                                "localizedText": {"zh": "Localized intro."},
+                            },
+                        },
+                        {
+                            "id": "missing",
+                            "title": "Missing",
+                            "action": {
+                                "entrypointId": "demo.panel",
+                                "operation": "explain",
+                            },
+                            "narration": {"text": "Missing localization."},
+                        },
+                    ],
+                }
+            ],
+            "qa": [
+                {
+                    "question": "Where is the panel?",
+                    "answer": "Open Panel.",
+                    "localizedQuestions": {"zh": ["Panel?"]},
+                    "localizedAnswers": {},
+                    "relatedEntrypointIds": ["demo.panel"],
+                }
+            ],
+            "manualControls": [],
+        }
+    )
+
+    report = diagnostics.diagnose_configuration(
+        profile=profile,
+        material_package=package,
+        require_localization=True,
+        localization_language="zh",
+    )
+
+    localization_check = next(
+        check for check in report.checks if check.name == "localization"
+    )
+    assert localization_check.status == "FAIL"
+    assert "required zh localization incomplete" in localization_check.detail
+    assert "1/2 demo steps" in localization_check.detail
+    assert "1/1 Q&A questions" in localization_check.detail
+    assert "0/1 Q&A answers" in localization_check.detail
 
 
 def test_doctor_uses_unified_missing_flow_message(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -855,6 +855,7 @@ def test_doctor_loads_profile_package_and_flow(monkeypatch: pytest.MonkeyPatch) 
     assert "[OK] demo flow: meeting-control-map-demo" in result.stdout
     assert "[OK] presenter context" in result.stdout
     assert "[WARN] RingCentral config" in result.stdout
+    assert "localization:" not in result.stdout
     assert "Doctor completed:" in result.stdout
 
 
@@ -888,6 +889,83 @@ def test_doctor_accepts_language_and_tone_voice_preflight(
     assert result.exit_code == 0
     assert "[OK] voice: Chinese / Friendly supported via speech=windows-sapi-zh" in result.stdout
     assert "[OK] voice assets:" in result.stdout
+
+
+def test_doctor_require_localization_fails_without_package(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(diagnostics, "_iter_process_executable_paths", lambda process_name: [])
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "doctor",
+            "--profile",
+            "ringcentral-video-bind-speaker",
+            "--require-localization",
+        ],
+    )
+
+    assert result.exit_code == 1
+    assert (
+        "[FAIL] localization: --require-localization requires --package"
+        in result.stdout
+    )
+
+
+def test_doctor_require_localization_passes_for_chinese_package(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(diagnostics, "_iter_process_executable_paths", lambda process_name: [])
+    monkeypatch.setattr(
+        diagnostics,
+        "check_voice_asset_availability",
+        lambda *_args, **_kwargs: VoiceAssetAvailability(
+            status="OK",
+            route="windows-sapi-zh",
+            detail="speech=windows-sapi-zh found installed SAPI voice matching Huihui",
+        ),
+    )
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "doctor",
+            "--profile",
+            "ringcentral-video-bind-speaker",
+            "--package",
+            "ringcentral-video",
+            "--language",
+            "zh-CN",
+            "--tone",
+            "friendly",
+            "--require-localization",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "[OK] localization: required zh localization complete" in result.stdout
+
+
+def test_doctor_require_localization_defaults_to_chinese_when_no_voice_selected(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(diagnostics, "_iter_process_executable_paths", lambda process_name: [])
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "doctor",
+            "--profile",
+            "ringcentral-video-bind-speaker",
+            "--package",
+            "ringcentral-video",
+            "--require-localization",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "[OK] localization: required zh localization complete" in result.stdout
 
 
 def test_doctor_rejects_unsupported_profile_voice(

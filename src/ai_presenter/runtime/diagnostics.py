@@ -10,6 +10,8 @@ from typing import Literal
 
 from ai_presenter.config.models import AppProfile
 from ai_presenter.config.models import DesktopAppProfile
+from ai_presenter.packages.localization_status import LocalizationStatusReport
+from ai_presenter.packages.localization_status import build_localization_status
 from ai_presenter.packages.models import MaterialPackage
 from ai_presenter.runtime.package_demo import demo_flow_by_id
 from ai_presenter.runtime.voice import PresenterVoiceSettings
@@ -66,6 +68,8 @@ def diagnose_configuration(
     flow_id: str | None = None,
     ringcentral_config: Path | None = None,
     voice: PresenterVoiceSettings | None = None,
+    require_localization: bool = False,
+    localization_language: str | None = None,
 ) -> DiagnosticReport:
     checks = [
         DiagnosticCheck("OK", "profile", f"loaded {profile.id} ({profile.type.value})"),
@@ -83,6 +87,15 @@ def diagnose_configuration(
             )
     else:
         checks.extend(_diagnose_material_package(profile, material_package, flow_id))
+
+    if require_localization:
+        language = localization_language or (voice.language if voice is not None else "zh")
+        checks.append(
+            _diagnose_required_localization(
+                material_package,
+                language=language,
+            )
+        )
 
     if _is_ringcentral_video_profile(profile):
         checks.append(_diagnose_ringcentral_config(ringcentral_config))
@@ -245,6 +258,36 @@ def _diagnose_material_package(
                 )
             )
     return checks
+
+
+def _diagnose_required_localization(
+    material_package: MaterialPackage | None,
+    *,
+    language: str,
+) -> DiagnosticCheck:
+    if material_package is None:
+        return DiagnosticCheck(
+            "FAIL",
+            "localization",
+            "--require-localization requires --package",
+        )
+    report = build_localization_status(material_package, language=language)
+    status: DiagnosticStatus = "OK" if report.required_localization_complete else "FAIL"
+    state = "complete" if status == "OK" else "incomplete"
+    return DiagnosticCheck(
+        status,
+        "localization",
+        f"required {report.language} localization {state}: "
+        f"{_format_localization_counts(report)}",
+    )
+
+
+def _format_localization_counts(report: LocalizationStatusReport) -> str:
+    return (
+        f"{report.demo_localized_steps}/{report.demo_total_steps} demo steps, "
+        f"{report.qa_localized_questions}/{report.qa_total} Q&A questions, "
+        f"{report.qa_localized_answers}/{report.qa_total} Q&A answers"
+    )
 
 
 def _diagnose_explainer_coverage(material_package: MaterialPackage) -> DiagnosticCheck:

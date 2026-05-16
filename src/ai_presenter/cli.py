@@ -485,6 +485,14 @@ def doctor(
         "--tone",
         help="Optional presenter tone voice check.",
     ),
+    require_localization: bool = typer.Option(
+        False,
+        "--require-localization",
+        help=(
+            "Fail if the selected package language lacks required demo narration "
+            "or Q&A localization."
+        ),
+    ),
     debug: bool = typer.Option(False, "--debug", help="Enable debug logs."),
 ) -> None:
     """Check profile, package, flow, and local RingCentral prerequisites."""
@@ -503,6 +511,8 @@ def doctor(
         flow_id=flow,
         ringcentral_config=ringcentral_config,
         voice=voice,
+        require_localization=require_localization,
+        localization_language=voice.language if voice is not None else None,
     )
     for line in format_diagnostic_report(report):
         typer.echo(line)

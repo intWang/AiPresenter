@@ -123,7 +123,7 @@ def test_ringcentral_localization_status_reports_japanese_demo_and_qa_coverage()
 
     assert report.package_id == "ringcentral-video"
     assert report.language == "ja"
-    assert report.demo_localized_steps == 35
+    assert report.demo_localized_steps == 36
     assert report.demo_total_steps == 51
     assert report.qa_localized_questions == 12
     assert report.qa_localized_answers == 12
@@ -138,10 +138,10 @@ def test_ringcentral_localization_status_reports_japanese_demo_and_qa_coverage()
     assert report.flow_by_id["meeting-basics-demo"].total_steps == 3
     assert report.flow_by_id["meeting-controls-tour"].localized_steps == 22
     assert report.flow_by_id["meeting-controls-tour"].total_steps == 22
-    assert report.flow_by_id["meeting-control-map-demo"].localized_steps == 6
+    assert report.flow_by_id["meeting-control-map-demo"].localized_steps == 7
     assert report.flow_by_id["meeting-control-map-demo"].total_steps == 22
     assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids[0] == (
-        "control-map-participants"
+        "control-map-chat"
     )
 
 
@@ -1667,6 +1667,74 @@ def test_meeting_control_map_has_japanese_add_coworkers_narration() -> None:
     assert "コピーします" not in ja_text
     assert "読み上げます" not in ja_text
     assert "参加者がいる場合も" not in ja_text
+    assert "必ず" not in ja_text
+
+
+def test_meeting_control_map_has_japanese_participants_narration() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    flow = package.demo_flow_by_id("meeting-control-map-demo")
+    step = next(step for step in flow.steps if step.id == "control-map-participants")
+
+    assert step.action.entrypoint_id == "ringcentral.video.toolbar.participants"
+    assert step.action.operation == "open"
+    assert step.narration.placement == "during"
+    assert step.narration.action_offset_ms == 350
+    participants_entrypoint = package.entrypoint_by_id(
+        "ringcentral.video.toolbar.participants"
+    )
+    assert participants_entrypoint.question_aliases["ja"] == [
+        "参加者",
+        "参加者一覧",
+        "参加者パネル",
+    ]
+    assert len(participants_entrypoint.open_steps) == 1
+    open_step = participants_entrypoint.open_steps[0]
+    assert open_step.action == "clickWindowControl"
+    assert open_step.target == "Participants"
+    assert open_step.match["controlType"] == "button"
+    assert open_step.match["cleanup"] == "toggle"
+    assert "attendee count" in participants_entrypoint.presenter_notes[0]
+    assert "meeting control" in participants_entrypoint.presenter_notes[0]
+    assert "Do not identify participants" in participants_entrypoint.presenter_notes[1]
+    assert "verified and allowed" in participants_entrypoint.presenter_notes[1]
+    assert "Participant and Chat tabs" in participants_entrypoint.presenter_notes[2]
+    assert "search" in participants_entrypoint.presenter_notes[2]
+    assert "invite" in participants_entrypoint.presenter_notes[2]
+    assert "lock" in participants_entrypoint.presenter_notes[2]
+    assert "mute" in participants_entrypoint.presenter_notes[2]
+    assert "raise-hand" in participants_entrypoint.presenter_notes[2]
+    assert "more controls" in participants_entrypoint.presenter_notes[2]
+    assert "Toggle the Participants button" in participants_entrypoint.presenter_notes[3]
+    assert "before opening Chat" in participants_entrypoint.presenter_notes[3]
+    ja_text = step.narration.localized_text["ja"]
+    assert ja_text.strip()
+    assert has_cjk(ja_text)
+    assert "Participants" in ja_text
+    assert "参加者" in ja_text
+    assert "一覧" in ja_text
+    assert "人数" in ja_text
+    assert "Invite" in ja_text
+    assert "ロック" in ja_text
+    assert "ミュート" in ja_text
+    assert "挙手" in ja_text
+    assert "その他" in ja_text
+    assert "ユーザー" in ja_text
+    assert "明示的" in ja_text
+    assert "求め" in ja_text
+    assert "表示内容" in ja_text
+    assert "確認" in ja_text
+    assert "読み上げません" in ja_text
+    assert "閉じます" in ja_text
+    assert "名前を読み上げます" not in ja_text
+    assert "参加者を特定します" not in ja_text
+    assert "ミュートします" not in ja_text
+    assert "ロックします" not in ja_text
+    assert "Invite を押します" not in ja_text
+    assert "招待します" not in ja_text
+    assert "検索します" not in ja_text
+    assert "挙手させます" not in ja_text
+    assert "操作します" not in ja_text
+    assert "全員" not in ja_text
     assert "必ず" not in ja_text
 
 

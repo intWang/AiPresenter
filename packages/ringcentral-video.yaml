@@ -984,6 +984,7 @@ demoFlows:
       text: Participants is the meeting roster. It helps you confirm who is present and exposes people controls
         like invite, lock, mute, raise hand, and more options.
       localizedText:
+        ja: Participants は会議の参加者一覧パネルです。ここでは現在の人数を確認し、Invite、会議のロック、ミュート、挙手、その他の参加者操作に進める場所を把握できます。ただし、名前や役割などの参加者情報は、ユーザーが明示的に求め、表示内容が確認されるまで読み上げません。説明後は、Chat を開く前にこのパネルを閉じます。
         zh: Participants 是参会人列表。你可以确认谁在会议里，也能找到邀请、锁定会议、静音、举手和更多成员操作。
       placement: during
       actionOffsetMs: 350

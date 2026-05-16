@@ -711,6 +711,7 @@ demoFlows:
       text: Participants opens the roster panel. From here you can confirm who is in the room and access people
         controls such as invite, lock, mute, and more options.
       localizedText:
+        ja: Participants は参加者一覧パネルを開きます。ここでは会議にいる人数を確認し、招待、会議のロック、ミュート、その他の参加者操作に進めます。名前や役割は、ユーザーが明示的に求め、表示内容が確認されるまで読み上げません。説明したらパネルを閉じます。ユーザーの明確な指示なしに他の参加者をミュートしません。
         zh: Participants 会打开参会人列表。这里可以确认谁在会议里，也能进入邀请、锁定会议、静音和更多成员操作。
       placement: during
       actionOffsetMs: 350

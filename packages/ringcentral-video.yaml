@@ -724,6 +724,7 @@ demoFlows:
       text: Chat opens the message panel. It supports messages to everyone and private conversations, but I do not
         read chat content unless you ask.
       localizedText:
+        ja: Chat はメッセージパネルを開きます。全員宛てのメッセージと非公開の会話に対応していますが、ユーザーが明示的に求めるまでチャット内容は読み上げません。説明したら、このサイドパネルを閉じます。ユーザーの明確な指示なしにメッセージを送信しません。
         zh: Chat 会打开消息面板，支持发给所有人的消息和私聊。聊天内容默认保持隐私，除非用户明确要求读取。
       placement: during
       actionOffsetMs: 350

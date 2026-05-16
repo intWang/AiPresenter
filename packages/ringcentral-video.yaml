@@ -1112,6 +1112,7 @@ demoFlows:
       text: Recording changes the meeting state and may affect consent, so it is explain-only in this tour. I would
         ask before starting or stopping it.
       localizedText:
+        ja: Start recording は、会議の状態を変え、参加者への通知や同意、組織ポリシー、ホスト権限に関わる録画の入口です。このコントロールマップでは入口だけを説明し、録画の開始や停止は行いません。実際に扱う場合は、ユーザーが明確に求め、現在の役割やポリシーで許可されていること、参加者の同意や会議の合意が確認できてから進めます。
         zh: 录制会改变会议状态，也可能涉及参会人的同意。所以这里我只解释入口，不会自动开始或停止录制。
       placement: before
   - id: control-map-notes

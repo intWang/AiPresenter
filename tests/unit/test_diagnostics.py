@@ -332,7 +332,7 @@ def test_diagnostics_require_localization_reports_japanese_qa_complete_but_demo_
     )
     assert localization_check.status == "FAIL"
     assert "required ja localization incomplete" in localization_check.detail
-    assert "45/51 demo steps" in localization_check.detail
+    assert "46/51 demo steps" in localization_check.detail
     assert "12/12 Q&A questions" in localization_check.detail
     assert "12/12 Q&A answers" in localization_check.detail
 

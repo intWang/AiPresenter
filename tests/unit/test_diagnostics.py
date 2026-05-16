@@ -59,6 +59,43 @@ def _qa_package(*items: dict[str, object]) -> MaterialPackage:
     )
 
 
+def _alias_qa_package(
+    *,
+    aliases: list[tuple[str, dict[str, list[str]]]],
+    qa: list[dict[str, object]],
+) -> MaterialPackage:
+    entrypoints = [
+        {
+            "id": entrypoint_id,
+            "title": entrypoint_id.rsplit(".", maxsplit=1)[-1].title(),
+            "area": "Main",
+            "purpose": f"Open {entrypoint_id}.",
+            "questionAliases": entrypoint_aliases,
+            "openSteps": [],
+        }
+        for entrypoint_id, entrypoint_aliases in aliases
+    ]
+    return MaterialPackage.model_validate(
+        {
+            "appId": "demo",
+            "appName": "Demo",
+            "version": 1,
+            "profileIds": ["ringcentral-video-bind-speaker"],
+            "operationEntrypoints": entrypoints,
+            "demoFlows": [],
+            "explainers": {
+                entrypoint["id"]: {
+                    "shortScript": f"{entrypoint['id']}.",
+                    "relatedEntrypointIds": [entrypoint["id"]],
+                }
+                for entrypoint in entrypoints
+            },
+            "qa": qa,
+            "manualControls": [],
+        }
+    )
+
+
 def test_ringcentral_config_is_auto_discovered_from_running_process(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -386,6 +423,24 @@ def test_diagnostics_reports_qa_questions_ok_for_ringcentral_package() -> None:
     assert qa_check.detail == "44 Q&A question prompts have no cross-item duplicates"
 
 
+def test_diagnostics_reports_qa_alias_overlap_ok_for_ringcentral_package() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    report = diagnostics.diagnose_configuration(
+        profile=profile,
+        material_package=package,
+    )
+
+    overlap_check = next(
+        check for check in report.checks if check.name == "qa alias overlap"
+    )
+    assert overlap_check.status == "OK"
+    assert overlap_check.detail == (
+        "44 Q&A question prompts have no unsafe package-owned alias overlaps"
+    )
+
+
 def test_diagnostics_warns_for_duplicate_qa_questions() -> None:
     profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
     package = _qa_package(
@@ -538,6 +593,90 @@ def test_diagnostics_ignores_same_entrypoint_question_alias_duplicates() -> None
     assert alias_check.status == "OK"
     assert alias_check.detail == (
         "2 package-owned aliases have no cross-entrypoint duplicates"
+    )
+
+
+def test_diagnostics_warns_when_answer_only_qa_shadows_entrypoint_alias() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
+    package = _alias_qa_package(
+        aliases=[("demo.chat", {"en": ["chat"]})],
+        qa=[
+            {
+                "question": "chat",
+                "answer": "Explain chat without opening it.",
+            }
+        ],
+    )
+
+    report = diagnostics.diagnose_configuration(
+        profile=profile,
+        material_package=package,
+    )
+
+    overlap_check = next(
+        check for check in report.checks if check.name == "qa alias overlap"
+    )
+    assert overlap_check.status == "WARN"
+    assert overlap_check.detail == (
+        "1 Q&A question prompt shadows a package-owned alias: "
+        "'chat' (Q&A languages: en; alias languages: en) appears in #1 chat "
+        "and shadows demo.chat; first match is Q&A #1 chat"
+    )
+
+
+def test_diagnostics_warns_when_trimmed_qa_question_shadows_entrypoint_alias() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
+    package = _alias_qa_package(
+        aliases=[("demo.privacy", {"en": ["privacy settings"]})],
+        qa=[
+            {
+                "question": "privacy settings ",
+                "answer": "Explain privacy without opening it.",
+            }
+        ],
+    )
+
+    report = diagnostics.diagnose_configuration(
+        profile=profile,
+        material_package=package,
+    )
+
+    overlap_check = next(
+        check for check in report.checks if check.name == "qa alias overlap"
+    )
+    assert overlap_check.status == "WARN"
+    assert overlap_check.detail == (
+        "1 Q&A question prompt shadows a package-owned alias: "
+        "'privacy settings' (Q&A languages: en; alias languages: en) "
+        "appears in #1 privacy settings  and shadows demo.privacy; "
+        "first match is Q&A #1 privacy settings "
+    )
+
+
+def test_diagnostics_allows_qa_alias_overlap_for_related_entrypoint() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
+    package = _alias_qa_package(
+        aliases=[("demo.chat", {"en": ["chat"]})],
+        qa=[
+            {
+                "question": "chat",
+                "answer": "Open chat.",
+                "relatedEntrypointIds": ["demo.chat"],
+            }
+        ],
+    )
+
+    report = diagnostics.diagnose_configuration(
+        profile=profile,
+        material_package=package,
+    )
+
+    overlap_check = next(
+        check for check in report.checks if check.name == "qa alias overlap"
+    )
+    assert overlap_check.status == "OK"
+    assert overlap_check.detail == (
+        "1 Q&A question prompts have no unsafe package-owned alias overlaps"
     )
 
 

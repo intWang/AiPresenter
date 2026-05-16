@@ -930,6 +930,8 @@ def test_doctor_loads_profile_package_and_flow(monkeypatch: pytest.MonkeyPatch) 
     assert "53 package-owned aliases have no cross-entrypoint duplicates" in result.stdout
     assert "[OK] qa questions:" in result.stdout
     assert "44 Q&A question prompts have no cross-item duplicates" in result.stdout
+    assert "[OK] qa alias overlap:" in result.stdout
+    assert "44 Q&A question prompts have no unsafe package-owned alias overlaps" in result.stdout
     assert "[OK] explainer coverage" in result.stdout
     assert "[OK] demo flow: meeting-control-map-demo" in result.stdout
     assert "[OK] presenter context" in result.stdout
@@ -1037,6 +1039,59 @@ manualControls: []
     assert "[WARN] qa questions:" in result.stdout
     assert "'where is privacy?' (languages: en)" in result.stdout
     assert "first match is #1 Where is privacy?" in result.stdout
+    assert "1 warning, 0 failed" in result.stdout
+
+
+def test_doctor_warns_when_qa_question_shadows_entrypoint_alias(tmp_path: Path) -> None:
+    config_path = tmp_path / "config.ini"
+    config_path.write_text("[General]\nDisableAffinityMask=true\n", encoding="utf-8")
+    package_path = tmp_path / "qa-alias-overlap-package.yaml"
+    package_path.write_text(
+        """
+appId: demo
+appName: Demo
+version: 1
+profileIds: [ringcentral-video-bind-speaker]
+operationEntrypoints:
+  - id: demo.chat
+    title: Chat
+    area: Main
+    purpose: Open chat.
+    questionAliases:
+      en:
+        - chat
+    openSteps: []
+demoFlows: []
+explainers:
+  chat:
+    shortScript: Chat.
+    relatedEntrypointIds: [demo.chat]
+qa:
+  - question: chat
+    answer: Explain chat without opening it.
+manualControls: []
+""",
+        encoding="utf-8",
+    )
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "doctor",
+            "--profile",
+            "ringcentral-video-bind-speaker",
+            "--package",
+            str(package_path),
+            "--ringcentral-config",
+            str(config_path),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "[WARN] qa alias overlap:" in result.stdout
+    assert "'chat' (Q&A languages: en; alias languages: en)" in result.stdout
+    assert "shadows demo.chat" in result.stdout
+    assert "first match is Q&A #1 chat" in result.stdout
     assert "1 warning, 0 failed" in result.stdout
 
 

@@ -240,6 +240,7 @@ def _diagnose_material_package(
         )
     checks.append(_diagnose_question_aliases(material_package))
     checks.append(_diagnose_qa_questions(material_package))
+    checks.append(_diagnose_qa_alias_overlaps(material_package))
     checks.append(_diagnose_explainer_coverage(material_package))
 
     if flow_id is not None:
@@ -373,6 +374,84 @@ def _diagnose_qa_questions(material_package: MaterialPackage) -> DiagnosticCheck
         f"{len(conflicts)} duplicate normalized Q&A question {prompt_word}: "
         f"{_format_qa_question_conflict(material_package, normalized_question, candidates)}{suffix}",
     )
+
+
+def _diagnose_qa_alias_overlaps(material_package: MaterialPackage) -> DiagnosticCheck:
+    aliases_by_normalized: dict[str, list[EntrypointQuestionAlias]] = {}
+    for alias in material_package.entrypoint_question_aliases:
+        aliases_by_normalized.setdefault(alias.normalized_alias, []).append(alias)
+
+    candidates_by_item: dict[
+        tuple[str, int],
+        list[QuestionAnswerMatchCandidate],
+    ] = {}
+    for candidate in material_package.qa_question_candidates:
+        key = (_normalize_user_question(candidate.question), id(candidate.item))
+        candidates_by_item.setdefault(key, []).append(candidate)
+
+    conflicts: list[
+        tuple[
+            str,
+            list[QuestionAnswerMatchCandidate],
+            list[EntrypointQuestionAlias],
+        ]
+    ] = []
+    for (normalized_question, _item_id), candidates in candidates_by_item.items():
+        aliases = aliases_by_normalized.get(normalized_question, [])
+        if not aliases:
+            continue
+        related_ids = set(candidates[0].item.related_entrypoint_ids)
+        unsafe_aliases = [
+            alias for alias in aliases if alias.entrypoint_id not in related_ids
+        ]
+        if unsafe_aliases:
+            conflicts.append((normalized_question, candidates, unsafe_aliases))
+
+    if not conflicts:
+        return DiagnosticCheck(
+            "OK",
+            "qa alias overlap",
+            f"{len(material_package.qa_question_candidates)} Q&A question prompts "
+            "have no unsafe package-owned alias overlaps",
+        )
+
+    normalized_question, candidates, aliases = conflicts[0]
+    prompt_word = "prompt" if len(conflicts) == 1 else "prompts"
+    shadow_phrase = (
+        "shadows a package-owned alias"
+        if len(conflicts) == 1
+        else "shadow package-owned aliases"
+    )
+    suffix = "" if len(conflicts) == 1 else f"; and {len(conflicts) - 1} more"
+    return DiagnosticCheck(
+        "WARN",
+        "qa alias overlap",
+        f"{len(conflicts)} Q&A question {prompt_word} {shadow_phrase}: "
+        f"{_format_qa_alias_overlap_conflict(material_package, normalized_question, candidates, aliases)}"
+        f"{suffix}",
+    )
+
+
+def _format_qa_alias_overlap_conflict(
+    material_package: MaterialPackage,
+    normalized_question: str,
+    candidates: list[QuestionAnswerMatchCandidate],
+    aliases: list[EntrypointQuestionAlias],
+) -> str:
+    item = candidates[0].item
+    label = _format_qa_item_label(material_package, item)
+    qa_languages = _ordered_unique(_qa_question_language(candidate) for candidate in candidates)
+    alias_languages = _ordered_unique(alias.language for alias in aliases)
+    alias_entrypoint_ids = _unique_alias_entrypoint_ids(aliases)
+    return (
+        f"{normalized_question!r} (Q&A languages: {', '.join(qa_languages)}; "
+        f"alias languages: {', '.join(alias_languages)}) appears in {label} "
+        f"and shadows {', '.join(alias_entrypoint_ids)}; first match is Q&A {label}"
+    )
+
+
+def _normalize_user_question(question: str) -> str:
+    return question.casefold().strip()
 
 
 def _format_qa_question_conflict(

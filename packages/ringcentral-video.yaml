@@ -73,6 +73,10 @@ operationEntrypoints:
   area: Meeting top bar
   purpose: Show diagnostic network quality for sharing, video, and audio, including packet loss, jitter, and latency.
   questionAliases:
+    ja:
+    - ネットワーク品質
+    - 接続品質
+    - 通話が不安定
     zh:
     - 网络质量
     - 连接质量
@@ -92,6 +96,11 @@ operationEntrypoints:
   title: View layout menu
   area: Meeting top bar
   purpose: Switch the meeting layout, including Gallery view and Full screen.
+  questionAliases:
+    ja:
+    - 表示レイアウト
+    - 表示切り替え
+    - ギャラリービュー
   openSteps:
   - action: clickWindowRelative
     target: Views
@@ -168,6 +177,10 @@ operationEntrypoints:
   purpose: Open microphone and speaker device controls, audio level indicators, leave-computer-audio, phone-audio,
     and more audio settings.
   questionAliases:
+    ja:
+    - 音声メニュー
+    - マイクメニュー
+    - スピーカーメニュー
     zh:
     - 音频设置
     - 换麦克风
@@ -207,6 +220,10 @@ operationEntrypoints:
   area: Meeting toolbar
   purpose: Open camera device selection and the More video settings shortcut.
   questionAliases:
+    ja:
+    - カメラメニュー
+    - ビデオメニュー
+    - カメラ選択
     zh:
     - 视频设置
     - 换摄像头

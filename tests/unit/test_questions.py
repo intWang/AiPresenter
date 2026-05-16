@@ -806,25 +806,57 @@ def test_ringcentral_chinese_questions_match_package_aliases_without_legacy_tabl
             assert response.can_operate is True
 
 
-def test_ringcentral_japanese_meeting_basics_questions_match_package_aliases_without_legacy_table(
+def test_ringcentral_japanese_meeting_control_questions_match_package_aliases_without_legacy_table(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
     monkeypatch.setattr(questions_module, "_ENTRYPOINT_ALIASES", {})
 
     expected = {
-        "マイクはどこですか": "ringcentral.video.toolbar.audio",
-        "参加者一覧はどこですか": "ringcentral.video.toolbar.participants",
-        "チャットパネルはどこですか": "ringcentral.video.toolbar.chat",
+        "ネットワーク品質を確認したい": (
+            "ringcentral.video.top.network-quality",
+            True,
+        ),
+        "表示レイアウトはどこですか": ("ringcentral.video.top.views", True),
+        "音声メニューはどこですか": (
+            "ringcentral.video.toolbar.audio-menu",
+            False,
+        ),
+        "スピーカーメニューはどこですか": (
+            "ringcentral.video.toolbar.audio-menu",
+            False,
+        ),
+        "カメラメニューはどこですか": (
+            "ringcentral.video.toolbar.video-menu",
+            True,
+        ),
+        "カメラ選択はどこですか": (
+            "ringcentral.video.toolbar.video-menu",
+            True,
+        ),
+        "マイクはどこですか": ("ringcentral.video.toolbar.audio", False),
+        "参加者一覧はどこですか": (
+            "ringcentral.video.toolbar.participants",
+            True,
+        ),
+        "チャットパネルはどこですか": ("ringcentral.video.toolbar.chat", True),
     }
 
-    for question, entrypoint_id in expected.items():
+    for question, (entrypoint_id, can_operate) in expected.items():
         response = answer_question(
             package=package,
             question=question,
             voice=PresenterVoiceSettings(language="ja"),
         )
         assert response.entrypoint_id == entrypoint_id
+        assert response.can_operate is can_operate
+
+    camera_response = answer_question(
+        package=package,
+        question="カメラメニューはどこですか",
+        voice=PresenterVoiceSettings(language="ja"),
+    )
+    assert camera_response.entrypoint_id != "ringcentral.video.toolbar.video"
 
 
 def test_ringcentral_japanese_chat_privacy_question_stays_answer_only_with_aliases(

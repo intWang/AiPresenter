@@ -426,7 +426,7 @@ def test_diagnostics_reports_question_aliases_ok_for_ringcentral_package() -> No
     alias_check = next(check for check in report.checks if check.name == "question aliases")
     assert alias_check.status == "OK"
     assert alias_check.detail == (
-        "62 package-owned aliases have no cross-entrypoint duplicates"
+        "74 package-owned aliases have no cross-entrypoint duplicates"
     )
 
 

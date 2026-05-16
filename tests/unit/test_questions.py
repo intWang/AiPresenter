@@ -769,7 +769,7 @@ def test_ringcentral_sensitive_prompt_routing_is_tone_invariant(
     assert baseline.can_operate is expected_can_operate
     assert baseline_interrupt is expected_interrupt
 
-    for tone in ("friendly", "coach", "support", "privacy"):
+    for tone in ("friendly", "coach", "support", "empathetic", "privacy"):
         response = answer_question(
             package=package,
             question=question,

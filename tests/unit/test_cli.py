@@ -460,7 +460,7 @@ def test_localization_report_outputs_japanese_demo_and_qa_coverage() -> None:
     assert "missing: explain-leave" not in result.stdout
     assert "- localized questions: 12/12" in result.stdout
     assert "- localized answers: 12/12" in result.stdout
-    assert "questionAliases.ja present on 12/27 entrypoints (32 aliases)" in result.stdout
+    assert "questionAliases.ja present on 13/27 entrypoints (34 aliases)" in result.stdout
 
 
 def test_localization_report_require_complete_passes_for_chinese() -> None:
@@ -940,7 +940,7 @@ def test_doctor_loads_profile_package_and_flow(monkeypatch: pytest.MonkeyPatch) 
     assert "[OK] package: loaded ringcentral-video" in result.stdout
     assert "[OK] package profile support" in result.stdout
     assert "[OK] question aliases:" in result.stdout
-    assert "85 package-owned aliases have no cross-entrypoint duplicates" in result.stdout
+    assert "87 package-owned aliases have no cross-entrypoint duplicates" in result.stdout
     assert "[OK] qa questions:" in result.stdout
     assert "71 Q&A question prompts have no cross-item duplicates" in result.stdout
     assert "[OK] qa alias overlap:" in result.stdout

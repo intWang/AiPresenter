@@ -1093,6 +1093,14 @@ def test_ringcentral_japanese_meeting_control_questions_match_package_aliases_wi
             "ringcentral.video.more.recording",
             False,
         ),
+        "Notes and Transcript の場所はどこですか": (
+            "ringcentral.video.more.notes",
+            False,
+        ),
+        "ノートと文字起こしの場所はどこですか": (
+            "ringcentral.video.more.notes",
+            False,
+        ),
         "ネットワーク品質を確認したい": (
             "ringcentral.video.top.network-quality",
             True,
@@ -1130,6 +1138,15 @@ def test_ringcentral_japanese_meeting_control_questions_match_package_aliases_wi
         )
         assert response.entrypoint_id == entrypoint_id
         assert response.can_operate is can_operate
+
+    notes_response = answer_question(
+        package=package,
+        question="ノートと文字起こしの場所はどこですか",
+        voice=PresenterVoiceSettings(language="ja"),
+    )
+    assert notes_response.entrypoint_id == "ringcentral.video.more.notes"
+    assert notes_response.can_operate is False
+    assert create_question_interrupt_step(package, notes_response) is None
 
     camera_response = answer_question(
         package=package,

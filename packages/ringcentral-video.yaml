@@ -476,6 +476,9 @@ operationEntrypoints:
   purpose: Open the Notes and Transcript side panel.
   questionPolicy: answerOnly
   questionAliases:
+    ja:
+    - Notes and Transcript の場所
+    - ノートと文字起こしの場所
     zh:
     - 笔记
     - 转录

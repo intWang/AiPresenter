@@ -605,6 +605,48 @@ def test_package_language_alias_normalization_is_documented() -> None:
     assert "resolved package key" in normalized_lifecycle_text
 
 
+def test_entrypoints_language_marker_contract_is_documented() -> None:
+    readme_text = Path("README.md").read_text(encoding="utf-8")
+    lifecycle_text = Path("docs/knowledge/language-lifecycle.md").read_text(
+        encoding="utf-8"
+    )
+    normalized_readme_text = " ".join(readme_text.split())
+    normalized_lifecycle_text = " ".join(lifecycle_text.split())
+
+    assert (
+        "entrypoints --package ringcentral-video --language es"
+        in normalized_readme_text
+    )
+    assert "Spanish" in normalized_readme_text
+    assert "es-MX" in normalized_readme_text
+    assert "Language: es" in normalized_readme_text
+    assert "(title: localized)" in normalized_readme_text
+    assert "(title: fallback)" in normalized_readme_text
+    assert "not evidence of runtime Spanish readiness" in normalized_readme_text
+    assert "matcher expansion" in normalized_readme_text
+    assert "provider availability" in normalized_readme_text
+    assert "live RingCentral Video acceptance" in normalized_readme_text
+
+    assert "For Spanish inputs such as `es`, `Spanish`, and `es-MX`" in lifecycle_text
+    assert "Language: es" in normalized_lifecycle_text
+    assert "(title: localized)" in normalized_lifecycle_text
+    assert "(title: fallback)" in normalized_lifecycle_text
+    assert "display-source labels only" in normalized_lifecycle_text
+    assert "not evidence of runtime Spanish readiness" in normalized_lifecycle_text
+    assert "matcher expansion" in normalized_lifecycle_text
+    assert "provider compatibility" in normalized_lifecycle_text
+    assert "live RingCentral Video acceptance" in normalized_lifecycle_text
+
+    overclaim_patterns = (
+        "`--language es` is runtime-selectable",
+        "entrypoints --language es proves",
+        "entrypoints --language es supports Spanish",
+        "entrypoints --language es validates runtime",
+    )
+    for overclaim in overclaim_patterns:
+        assert overclaim not in normalized_readme_text
+
+
 def test_localization_report_keeps_unknown_package_language_key_raw() -> None:
     result = CliRunner().invoke(
         app,

@@ -62,6 +62,11 @@ This note defines the difference between package-local language coverage and run
 
    - `ai-presenter entrypoints --package ringcentral-video --language <lang>`
 
+   For Spanish inputs such as `es`, `Spanish`, and `es-MX`, the command
+   displays `Language: es`. Each entrypoint line marks the title source with
+   `(title: localized)` or `(title: fallback)`, and the following `purpose:`
+   line ends in `(localized)` or `(fallback)`.
+
    Important boundary:
 
    - `entrypoints --language <lang>` is package-local inspection. For known presenter
@@ -75,8 +80,10 @@ This note defines the difference between package-local language coverage and run
    - `localized` source markers mean nonblank package-local display copy was
      found for that field.
    - `fallback` source markers mean canonical title or purpose copy was shown.
-   - The command does not validate runtime voice support, providers, speech
-     assets, controller language choices, or live RingCentral Video acceptance.
+   - These markers are display-source labels only. They are not evidence of
+     runtime Spanish readiness, matcher expansion, provider compatibility,
+     voice asset availability, controller/demo execution, or live RingCentral
+     Video acceptance.
 
 4. Diagnostics-ready package inspection
 

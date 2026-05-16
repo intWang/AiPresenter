@@ -50,16 +50,18 @@ Inspect package-local Spanish entrypoint display metadata:
 .\.venv\Scripts\ai-presenter entrypoints --package ringcentral-video --language es
 ```
 
-This command inspects package-local localized and fallback entrypoint title and
-purpose metadata only. It does not validate runtime voice support, providers,
-local SAPI/Piper assets, controller or demo execution, or live RingCentral Video
-acceptance.
+This is package-local entrypoint display metadata inspection. With `--language
+es`, the command prints `Language: es`, marks localized titles as `(title:
+localized)`, marks localized purposes as `(localized)`, and marks canonical
+title/purpose fallbacks as `(title: fallback)` and `(fallback)`. These markers
+are display-source labels only. They are not evidence of runtime Spanish
+readiness, matcher expansion, provider availability, local SAPI/Piper assets,
+controller or demo execution, or live RingCentral Video acceptance.
+Known aliases such as `Spanish` and `es-MX` normalize to package key `es`, so
+those inputs also print `Language: es`.
 
 Use `doctor --require-localization --localization-language ...` when checking package
 localization keys that are separate from runtime presenter voice support.
-Spanish RingCentral Video package localization is complete, and `--language es`
-is runtime-selectable only with OpenAI-backed speech profiles. Local SAPI and
-Piper routes do not support Spanish yet.
 The language lifecycle and promotion gates are documented in
 `docs/knowledge/language-lifecycle.md`.
 

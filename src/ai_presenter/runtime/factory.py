@@ -28,7 +28,6 @@ from ai_presenter.runtime.events import EventDetector
 from ai_presenter.runtime.material_runtime import MaterialDemoRuntime
 from ai_presenter.runtime.narration import NarrationEngine
 from ai_presenter.runtime.package_demo import PackageActionExecutor
-from ai_presenter.runtime.package_demo import demo_flow_by_id
 from ai_presenter.runtime.presenter_context import load_presenter_context
 from ai_presenter.runtime.presenter import PresenterLoop
 from ai_presenter.runtime.profile_runner import ProfileRunner
@@ -284,7 +283,7 @@ def _run_material_demo_on_handle(
     voice_settings = voice or PresenterVoiceSettings()
     validate_profile_voice(profile, voice_settings)
     speech_provider_name = resolve_speech_provider_name(profile, voice_settings)
-    flow = demo_flow_by_id(material_package, flow_id)
+    flow = material_package.demo_flow_by_id(flow_id)
     action_executor = PackageActionExecutor(
         package=material_package,
         driver=desktop,

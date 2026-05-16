@@ -14,7 +14,6 @@ from ai_presenter.packages.localization_status import LocalizationStatusReport
 from ai_presenter.packages.localization_status import build_localization_status
 from ai_presenter.packages.models import EntrypointQuestionAlias
 from ai_presenter.packages.models import MaterialPackage
-from ai_presenter.runtime.package_demo import demo_flow_by_id
 from ai_presenter.runtime.voice import PresenterVoiceSettings
 from ai_presenter.runtime.voice import language_label
 from ai_presenter.runtime.voice import resolve_speech_provider_name
@@ -242,7 +241,7 @@ def _diagnose_material_package(
 
     if flow_id is not None:
         try:
-            flow = demo_flow_by_id(material_package, flow_id)
+            flow = material_package.demo_flow_by_id(flow_id)
         except KeyError as exc:
             checks.append(
                 DiagnosticCheck(

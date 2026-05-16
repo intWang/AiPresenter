@@ -7,7 +7,7 @@ from time import perf_counter
 from typing import Protocol
 
 from ai_presenter.desktop.base import WindowHandle
-from ai_presenter.packages.models import DemoFlow, DemoStepAction, MaterialPackage, PackageOpenStep
+from ai_presenter.packages.models import DemoStepAction, MaterialPackage, PackageOpenStep
 from ai_presenter.runtime.logging import elapsed_ms, log_timed_event
 
 logger = logging.getLogger("ai_presenter.runtime.package_demo")
@@ -334,7 +334,3 @@ def _cleanup_mode(steps: list[PackageOpenStep]) -> str:
         if cleanup is not None and cleanup.strip():
             return cleanup.strip()
     return "none"
-
-
-def demo_flow_by_id(package: MaterialPackage, flow_id: str) -> DemoFlow:
-    return package.demo_flow_by_id(flow_id)

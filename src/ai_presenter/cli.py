@@ -14,7 +14,6 @@ from ai_presenter.packages.localization_status import render_localization_status
 from ai_presenter.packages.loader import load_material_package
 from ai_presenter.runtime.controller_view_model import render_voice_label
 from ai_presenter.runtime.logging import configure_logging
-from ai_presenter.runtime.package_demo import demo_flow_by_id
 from ai_presenter.runtime.voice import PRESENTER_LANGUAGE_CHOICES
 from ai_presenter.runtime.voice import PRESENTER_TONE_CHOICES
 from ai_presenter.runtime.voice import PresenterVoiceSettings
@@ -176,7 +175,7 @@ def demo(
     loaded_profile = load_profile(resolve_profile(profile))
     loaded_package = load_material_package(resolve_material_package(package))
     try:
-        loaded_flow = demo_flow_by_id(loaded_package, flow)
+        loaded_flow = loaded_package.demo_flow_by_id(flow)
     except KeyError as exc:
         raise typer.BadParameter(str(exc.args[0])) from exc
 
@@ -221,7 +220,7 @@ def controller(
     loaded_profile = load_profile(resolve_profile(profile))
     loaded_package = load_material_package(resolve_material_package(package))
     try:
-        loaded_flow = demo_flow_by_id(loaded_package, flow)
+        loaded_flow = loaded_package.demo_flow_by_id(flow)
     except KeyError as exc:
         raise typer.BadParameter(str(exc.args[0])) from exc
 

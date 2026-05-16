@@ -196,22 +196,8 @@ def make_handle() -> WindowHandle:
     return WindowHandle("RingCentralVideo", 123, "RingCentralVideoClass", "RingCentral Video")
 
 
-def test_demo_flow_by_id_delegates_to_package_lookup() -> None:
-    package = make_package().model_copy(
-        update={
-            "demo_flows": [
-                {
-                    "id": "demo-flow",
-                    "title": "Demo",
-                    "goal": "Demo",
-                    "steps": [],
-                }
-            ]
-        }
-    )
-
-    with pytest.raises(KeyError, match="Unknown demo flow: missing. Available flows:"):
-        package_demo_module.demo_flow_by_id(package, "missing")
+def test_package_demo_module_does_not_export_demo_flow_lookup_wrapper() -> None:
+    assert not hasattr(package_demo_module, "demo_flow_by_id")
 
 
 def test_package_action_executor_clicks_coordinate_step_and_cleanup() -> None:

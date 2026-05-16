@@ -123,7 +123,7 @@ def test_ringcentral_localization_status_reports_japanese_demo_and_qa_coverage()
 
     assert report.package_id == "ringcentral-video"
     assert report.language == "ja"
-    assert report.demo_localized_steps == 47
+    assert report.demo_localized_steps == 48
     assert report.demo_total_steps == 51
     assert report.qa_localized_questions == 12
     assert report.qa_localized_answers == 12
@@ -138,10 +138,10 @@ def test_ringcentral_localization_status_reports_japanese_demo_and_qa_coverage()
     assert report.flow_by_id["meeting-basics-demo"].total_steps == 3
     assert report.flow_by_id["meeting-controls-tour"].localized_steps == 22
     assert report.flow_by_id["meeting-controls-tour"].total_steps == 22
-    assert report.flow_by_id["meeting-control-map-demo"].localized_steps == 18
+    assert report.flow_by_id["meeting-control-map-demo"].localized_steps == 19
     assert report.flow_by_id["meeting-control-map-demo"].total_steps == 22
     assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids[0] == (
-        "control-map-background"
+        "control-map-settings"
     )
 
 
@@ -1975,7 +1975,7 @@ def test_meeting_control_map_has_japanese_camera_menu_narration() -> None:
     assert report.entrypoints_with_aliases == 3
     assert report.alias_total == 9
     assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids[0] == (
-        "control-map-background"
+        "control-map-settings"
     )
     assert len(camera_menu_entrypoint.open_steps) == 1
     open_step = camera_menu_entrypoint.open_steps[0]
@@ -2037,7 +2037,7 @@ def test_meeting_control_map_has_japanese_share_narration() -> None:
     assert report.entrypoints_with_aliases == 3
     assert report.alias_total == 9
     assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids[0] == (
-        "control-map-background"
+        "control-map-settings"
     )
     assert len(share_entrypoint.open_steps) == 1
     open_step = share_entrypoint.open_steps[0]
@@ -2101,7 +2101,7 @@ def test_meeting_control_map_has_japanese_reactions_narration() -> None:
     assert report.entrypoints_with_aliases == 3
     assert report.alias_total == 9
     assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids[0] == (
-        "control-map-background"
+        "control-map-settings"
     )
     assert len(reactions_entrypoint.open_steps) == 1
     open_step = reactions_entrypoint.open_steps[0]
@@ -2172,7 +2172,7 @@ def test_meeting_control_map_has_japanese_raise_hand_narration() -> None:
     assert report.entrypoints_with_aliases == 3
     assert report.alias_total == 9
     assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids[0] == (
-        "control-map-background"
+        "control-map-settings"
     )
     assert len(raise_hand_entrypoint.open_steps) == 1
     open_step = raise_hand_entrypoint.open_steps[0]
@@ -2237,7 +2237,7 @@ def test_meeting_control_map_has_japanese_more_narration() -> None:
     assert report.entrypoints_with_aliases == 3
     assert report.alias_total == 9
     assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids[0] == (
-        "control-map-background"
+        "control-map-settings"
     )
     assert len(more_entrypoint.open_steps) == 1
     open_step = more_entrypoint.open_steps[0]
@@ -2310,7 +2310,7 @@ def test_meeting_control_map_has_japanese_recording_narration() -> None:
     assert report.entrypoints_with_aliases == 3
     assert report.alias_total == 9
     assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids[0] == (
-        "control-map-background"
+        "control-map-settings"
     )
     assert recording_entrypoint.open_steps == []
     assert "Observed under More as Start recording." in recording_entrypoint.presenter_notes
@@ -2354,7 +2354,7 @@ def test_meeting_control_map_has_japanese_notes_narration() -> None:
     assert report.entrypoints_with_aliases == 3
     assert report.alias_total == 9
     assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids[0] == (
-        "control-map-background"
+        "control-map-settings"
     )
     assert len(notes_entrypoint.open_steps) == 2
     more_step, notes_step = notes_entrypoint.open_steps
@@ -2375,7 +2375,7 @@ def test_meeting_control_map_has_japanese_notes_narration() -> None:
     recording_step = next(step for step in flow.steps if step.id == "control-map-recording")
     assert "ja" in recording_step.narration.localized_text
     background_step = next(step for step in flow.steps if step.id == "control-map-background")
-    assert "ja" not in background_step.narration.localized_text
+    assert "ja" in background_step.narration.localized_text
     ja_text = step.narration.localized_text["ja"]
     assert ja_text.strip()
     assert has_cjk(ja_text)
@@ -2400,6 +2400,83 @@ def test_meeting_control_map_has_japanese_notes_narration() -> None:
     assert "メモを作成します" not in ja_text
     assert "内容を読み上げます" not in ja_text
     assert "要約します" not in ja_text
+    assert "クリックします" not in ja_text
+    assert "自動" not in ja_text
+
+
+def test_meeting_control_map_has_japanese_background_narration() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    flow = package.demo_flow_by_id("meeting-control-map-demo")
+    step = next(step for step in flow.steps if step.id == "control-map-background")
+
+    assert step.action.entrypoint_id == "ringcentral.video.more.background"
+    assert step.action.operation == "open"
+    assert step.narration.placement == "during"
+    assert step.narration.action_offset_ms == 400
+    report = build_localization_status(package, language="ja")
+    background_entrypoint = package.entrypoint_by_id("ringcentral.video.more.background")
+    assert "ja" not in background_entrypoint.question_aliases
+    assert report.entrypoints_with_aliases == 3
+    assert report.alias_total == 9
+    assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids[0] == (
+        "control-map-settings"
+    )
+    assert len(background_entrypoint.open_steps) == 2
+    more_step, background_step = background_entrypoint.open_steps
+    assert more_step.action == "clickWindowControl"
+    assert more_step.target == "More"
+    assert more_step.match["occurrence"] == "3"
+    assert more_step.match["controlType"] == "button"
+    assert background_step.action == "clickWindowControl"
+    assert background_step.target == "Background"
+    assert background_step.match["cleanup"] == "settings"
+    assert "Settings dialog tabs" in background_entrypoint.presenter_notes[0]
+    assert "Off" in background_entrypoint.presenter_notes[1]
+    assert "Blur" in background_entrypoint.presenter_notes[1]
+    assert "built-in static backgrounds" in background_entrypoint.presenter_notes[1]
+    assert "video backgrounds" in background_entrypoint.presenter_notes[1]
+    assert "upload" in background_entrypoint.presenter_notes[1]
+    assert "Mirror my video" in background_entrypoint.presenter_notes[1]
+    assert "Close the Settings dialog" in background_entrypoint.presenter_notes[2]
+    notes_step = next(step for step in flow.steps if step.id == "control-map-notes")
+    assert "ja" in notes_step.narration.localized_text
+    settings_step = next(step for step in flow.steps if step.id == "control-map-settings")
+    assert "ja" not in settings_step.narration.localized_text
+    ja_text = step.narration.localized_text["ja"]
+    assert ja_text.strip()
+    assert has_cjk(ja_text)
+    assert "Background" in ja_text
+    assert "背景" in ja_text
+    assert "プライバシー" in ja_text
+    assert "見え方" in ja_text
+    assert "Off" in ja_text
+    assert "Blur" in ja_text
+    assert "画像" in ja_text
+    assert "動画背景" in ja_text
+    assert "アップロード" in ja_text
+    assert "Mirror my video" in ja_text
+    assert "候補" in ja_text
+    assert "表示して説明" in ja_text
+    assert "変更しません" in ja_text
+    assert "選びません" in ja_text
+    assert "明確に求め" in ja_text
+    assert "表示された選択肢" in ja_text
+    assert "部屋" in ja_text
+    assert "背景サムネイル" in ja_text
+    assert "視覚内容" in ja_text
+    assert "読み取ったり説明したりしません" in ja_text
+    assert "閉じます" in ja_text
+    assert "Blur にします" not in ja_text
+    assert "背景を変更します" not in ja_text
+    assert "背景を選択します" not in ja_text
+    assert "背景を選びます" not in ja_text
+    assert "画像をアップロードします" not in ja_text
+    assert "動画背景を適用します" not in ja_text
+    assert "Mirror my video をオンにします" not in ja_text
+    assert "部屋を確認します" not in ja_text
+    assert "サムネイルを説明します" not in ja_text
+    assert "プライバシーを保護します" not in ja_text
+    assert "完全に隠します" not in ja_text
     assert "クリックします" not in ja_text
     assert "自動" not in ja_text
 

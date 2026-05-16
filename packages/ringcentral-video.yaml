@@ -1137,6 +1137,7 @@ demoFlows:
       text: Background settings protect presentation quality and privacy. You can turn effects off, blur the room,
         use a built-in image or video background, or upload your own.
       localizedText:
+        ja: Background は、Settings ダイアログの Background タブを開き、背景の見え方、表示品質、プライバシーに関わる選択肢を確認する場所です。ここには Off、Blur、内蔵画像、動画背景、アップロード、Mirror my video などの候補があります。このツアーでは選択肢を表示して説明するだけで、背景効果を変更しません。Blur を選びませんし、画像や動画背景を選択またはアップロードしません。実際に変更する場合も、ユーザーが明確に求め、表示された選択肢を確認できるまで進めません。部屋や背景サムネイルなどの視覚内容は、明確な依頼がない限り読み取ったり説明したりしません。説明後は Settings ダイアログを閉じます。
         zh: 背景设置关系到展示效果和隐私。你可以关闭效果、模糊房间、选择内置图片或视频背景，也可以上传自己的背景。
       placement: during
       actionOffsetMs: 400

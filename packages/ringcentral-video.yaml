@@ -1099,6 +1099,7 @@ demoFlows:
       text: Finally, More is the advanced shelf. Since Notes is already on the toolbar here, More gathers riskier
         or less frequent tools such as recording, background, and settings.
       localizedText:
+        ja: 最後に More は、二次的な会議操作をまとめた拡張メニューです。このビルドでは Notes はすでにツールバー上にあり、More には Start recording、Background、Settings など、使用頻度が低い操作や慎重に扱う操作がまとまっています。ここでは入口だけを説明し、録画の開始、背景や設定の変更、退出につながる操作は、ユーザーが明確に求めるまで実行しません。
         zh: 最后看 More。它像一个高级工具架；当前 Notes 已经在工具栏上，所以这里主要放录制、背景和设置这些低频或更谨慎的功能。
       placement: during
       actionOffsetMs: 350

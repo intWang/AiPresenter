@@ -462,6 +462,26 @@ def test_diagnostics_reports_qa_alias_overlap_ok_for_ringcentral_package() -> No
     )
 
 
+def test_diagnostics_reports_qa_alias_substring_info_for_ringcentral_package() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    report = diagnostics.diagnose_configuration(
+        profile=profile,
+        material_package=package,
+    )
+
+    substring_check = next(
+        check for check in report.checks if check.name == "qa alias substring risk"
+    )
+    assert substring_check.status == "INFO"
+    assert substring_check.detail.startswith(
+        "11 Q&A question prompts contain package-owned alias substrings outside "
+        "related entrypoints"
+    )
+    assert "Q&A-first matching still applies" in substring_check.detail
+
+
 def test_diagnostics_warns_for_duplicate_qa_questions() -> None:
     profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
     package = _qa_package(
@@ -689,6 +709,118 @@ def test_diagnostics_warns_when_answer_only_qa_shadows_entrypoint_alias() -> Non
         "1 Q&A question prompt shadows a package-owned alias: "
         "'chat' (Q&A languages: en; alias languages: en) appears in #1 chat "
         "and shadows demo.chat; first match is Q&A #1 chat"
+    )
+
+
+def test_diagnostics_reports_qa_alias_substring_info() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
+    package = _alias_qa_package(
+        aliases=[("demo.chat", {"en": ["chat"]})],
+        qa=[
+            {
+                "question": "Can you read chat messages?",
+                "answer": "Explain chat privacy without opening it.",
+            }
+        ],
+    )
+
+    report = diagnostics.diagnose_configuration(
+        profile=profile,
+        material_package=package,
+    )
+
+    substring_check = next(
+        check for check in report.checks if check.name == "qa alias substring risk"
+    )
+    assert substring_check.status == "INFO"
+    assert substring_check.detail == (
+        "1 Q&A question prompt contains package-owned alias substrings outside "
+        "related entrypoints: 'can you read chat messages?' (Q&A languages: en; "
+        "alias languages: en) appears in #1 Can you read chat messages? and "
+        "contains aliases for demo.chat; Q&A-first matching still applies"
+    )
+
+
+def test_diagnostics_escapes_non_ascii_qa_alias_substring_prompt() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
+    package = _alias_qa_package(
+        aliases=[("demo.chat", {"ja": ["\u30c1\u30e3\u30c3\u30c8"]})],
+        qa=[
+            {
+                "question": "Can you read chat messages?",
+                "localizedQuestions": {
+                    "ja": [
+                        "\u30c1\u30e3\u30c3\u30c8\u5185\u5bb9\u3092\u8aad\u307f\u4e0a\u3052\u3089\u308c\u307e\u3059\u304b"
+                    ]
+                },
+                "answer": "Explain chat privacy without opening it.",
+            }
+        ],
+    )
+
+    report = diagnostics.diagnose_configuration(
+        profile=profile,
+        material_package=package,
+    )
+
+    substring_check = next(
+        check for check in report.checks if check.name == "qa alias substring risk"
+    )
+    assert substring_check.status == "INFO"
+    substring_check.detail.encode("ascii")
+    assert "\\u30c1\\u30e3\\u30c3\\u30c8" in substring_check.detail
+
+
+def test_diagnostics_allows_qa_alias_substring_for_related_entrypoint() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
+    package = _alias_qa_package(
+        aliases=[("demo.chat", {"en": ["chat"]})],
+        qa=[
+            {
+                "question": "Where are chat controls?",
+                "answer": "Open chat.",
+                "relatedEntrypointIds": ["demo.chat"],
+            }
+        ],
+    )
+
+    report = diagnostics.diagnose_configuration(
+        profile=profile,
+        material_package=package,
+    )
+
+    substring_check = next(
+        check for check in report.checks if check.name == "qa alias substring risk"
+    )
+    assert substring_check.status == "OK"
+    assert substring_check.detail == (
+        "1 Q&A question prompt has no unsafe package-owned alias substrings"
+    )
+
+
+def test_diagnostics_excludes_exact_alias_overlap_from_substring_info() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
+    package = _alias_qa_package(
+        aliases=[("demo.chat", {"en": ["chat"]})],
+        qa=[
+            {
+                "question": "chat",
+                "answer": "Explain chat without opening it.",
+            }
+        ],
+    )
+
+    report = diagnostics.diagnose_configuration(
+        profile=profile,
+        material_package=package,
+    )
+
+    substring_check = next(
+        check for check in report.checks if check.name == "qa alias substring risk"
+    )
+    assert substring_check.status == "OK"
+    assert substring_check.detail == (
+        "1 Q&A question prompt has no unsafe package-owned alias substrings"
     )
 
 

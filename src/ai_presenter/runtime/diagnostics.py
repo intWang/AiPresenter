@@ -23,7 +23,7 @@ from ai_presenter.runtime.voice import tone_label
 from ai_presenter.runtime.voice import validate_profile_voice
 from ai_presenter.runtime.voice_assets import check_voice_asset_availability
 
-DiagnosticStatus = Literal["OK", "WARN", "FAIL"]
+DiagnosticStatus = Literal["OK", "INFO", "WARN", "FAIL"]
 
 _SUPPORTED_VISION_PROVIDERS = frozenset({"fake"})
 _SUPPORTED_NARRATION_PROVIDERS = frozenset({"fake", "codex-cli", "openai"})
@@ -57,6 +57,10 @@ class DiagnosticReport:
     @property
     def warning_count(self) -> int:
         return sum(1 for check in self.checks if check.status == "WARN")
+
+    @property
+    def info_count(self) -> int:
+        return sum(1 for check in self.checks if check.status == "INFO")
 
     @property
     def ok_count(self) -> int:
@@ -119,10 +123,12 @@ def format_diagnostic_report(report: DiagnosticReport) -> list[str]:
         for check in report.checks
     ]
     failed_word = "failed" if report.failed_count == 1 else "failed"
+    info_word = "info" if report.info_count == 1 else "info"
     warning_word = "warning" if report.warning_count == 1 else "warnings"
     lines.append(
         "Doctor completed: "
-        f"{report.ok_count} ok, {report.warning_count} {warning_word}, "
+        f"{report.ok_count} ok, {report.info_count} {info_word}, "
+        f"{report.warning_count} {warning_word}, "
         f"{report.failed_count} {failed_word}."
     )
     return lines
@@ -241,6 +247,7 @@ def _diagnose_material_package(
     checks.append(_diagnose_question_aliases(material_package))
     checks.append(_diagnose_qa_questions(material_package))
     checks.append(_diagnose_qa_alias_overlaps(material_package))
+    checks.append(_diagnose_qa_alias_substring_risks(material_package))
     checks.append(_diagnose_explainer_coverage(material_package))
 
     if flow_id is not None:
@@ -429,6 +436,77 @@ def _diagnose_qa_alias_overlaps(material_package: MaterialPackage) -> Diagnostic
         f"{len(conflicts)} Q&A question {prompt_word} {shadow_phrase}: "
         f"{_format_qa_alias_overlap_conflict(material_package, normalized_question, candidates, aliases)}"
         f"{suffix}",
+    )
+
+
+def _diagnose_qa_alias_substring_risks(material_package: MaterialPackage) -> DiagnosticCheck:
+    conflicts: list[
+        tuple[
+            str,
+            list[QuestionAnswerMatchCandidate],
+            list[EntrypointQuestionAlias],
+        ]
+    ] = []
+    for candidate in material_package.qa_question_candidates:
+        normalized_question = candidate.normalized_question
+        if not normalized_question:
+            continue
+        question_language = _qa_question_language(candidate)
+        related_ids = set(candidate.item.related_entrypoint_ids)
+        aliases = [
+            alias
+            for alias in material_package.entrypoint_question_aliases
+            if alias.language == question_language
+            and alias.normalized_alias
+            and alias.normalized_alias != normalized_question
+            and alias.normalized_alias in normalized_question
+            and alias.entrypoint_id not in related_ids
+        ]
+        if not aliases:
+            continue
+        conflicts.append((normalized_question, [candidate], aliases))
+
+    if not conflicts:
+        prompt_count = len(material_package.qa_question_candidates)
+        prompt_word = "prompt" if prompt_count == 1 else "prompts"
+        verb = "has" if prompt_count == 1 else "have"
+        return DiagnosticCheck(
+            "OK",
+            "qa alias substring risk",
+            f"{prompt_count} Q&A question {prompt_word} {verb} "
+            "no unsafe package-owned alias substrings",
+        )
+
+    normalized_question, candidates, aliases = conflicts[0]
+    prompt_word = "prompt" if len(conflicts) == 1 else "prompts"
+    verb = "contains" if len(conflicts) == 1 else "contain"
+    suffix = "" if len(conflicts) == 1 else f"; and {len(conflicts) - 1} more"
+    return DiagnosticCheck(
+        "INFO",
+        "qa alias substring risk",
+        f"{len(conflicts)} Q&A question {prompt_word} {verb} "
+        "package-owned alias substrings outside related entrypoints: "
+        f"{_format_qa_alias_substring_conflict(material_package, normalized_question, candidates, aliases)}"
+        f"{suffix}",
+    )
+
+
+def _format_qa_alias_substring_conflict(
+    material_package: MaterialPackage,
+    normalized_question: str,
+    candidates: list[QuestionAnswerMatchCandidate],
+    aliases: list[EntrypointQuestionAlias],
+) -> str:
+    item = candidates[0].item
+    label = _format_qa_item_label(material_package, item)
+    qa_languages = _ordered_unique(_qa_question_language(candidate) for candidate in candidates)
+    alias_languages = _ordered_unique(alias.language for alias in aliases)
+    alias_entrypoint_ids = _unique_alias_entrypoint_ids(aliases)
+    return (
+        f"{normalized_question!a} (Q&A languages: {', '.join(qa_languages)}; "
+        f"alias languages: {', '.join(alias_languages)}) appears in {label} "
+        f"and contains aliases for {', '.join(alias_entrypoint_ids)}; "
+        "Q&A-first matching still applies"
     )
 
 

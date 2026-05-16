@@ -24,7 +24,7 @@ This index separates product-scope sources from executable automation evidence f
 
 | Source | Role | Repository Signal |
 | --- | --- | --- |
-| `packages/ringcentral-video.yaml` | Main package knowledge | 27 entrypoints, 4 flows, 21 explainers, 11 QA items with Chinese and Japanese Q&A localization, manual controls, safety notes. |
+| `packages/ringcentral-video.yaml` | Main package knowledge | 27 entrypoints, 4 flows, 21 explainers, 12 QA items with Chinese and Japanese Q&A localization, manual controls, safety notes. |
 | `profiles/ringcentral-video*.yaml` | Runtime profiles | Launch/bind paths and provider combinations for fake, OpenAI, Codex CLI, Piper, Windows SAPI paths. |
 | `src/ai_presenter/adapters/ringcentral.py` | State extraction | Meeting joined, mic, camera, participant count, permission/waiting-room dialogs, connection warning. |
 | `src/ai_presenter/runtime/package_demo.py` | Action execution | Supported actions and cleanup modes for package `openSteps`. |
@@ -54,3 +54,4 @@ Current package coverage is strongest for in-meeting attendee controls. The offi
 - Host/moderator: recording, security, waiting room, participant management, mute others, turn off video, moderator assignment.
 - After meeting: recordings, advanced insights, transcripts or summaries where available; current package has answer-only Q&A coverage but no executable post-meeting route.
 - Localization: Japanese coverage is complete for the existing Q&A safety set; demo-flow narration and entrypoint `questionAliases.ja` remain future work.
+- Meeting signals: Reactions and Raise hand now have answer-only safety Q&A; plain location questions should still route to their toolbar entrypoints.

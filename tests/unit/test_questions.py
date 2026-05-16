@@ -584,6 +584,113 @@ def test_ringcentral_japanese_unmatched_question_returns_localized_no_match() ->
     )
 
 
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Can AiPresenter send a reaction or raise my hand?",
+        "Can you send a thumbs up reaction?",
+        "Can you raise my hand for me?",
+        "How do I use reactions safely?",
+        "How should AiPresenter handle raise hand?",
+    ],
+)
+def test_ringcentral_reaction_and_raise_hand_safety_questions_are_answer_only(
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(),
+    )
+
+    assert response.entrypoint_id is None
+    assert response.can_operate is False
+    assert "Reactions" in response.answer_text
+    assert "Raise hand" in response.answer_text
+    assert "visible meeting signals" in response.answer_text
+    assert "explicitly asks" in response.answer_text
+    assert "Close the reaction strip" in response.answer_text
+    assert "lower the hand" in response.answer_text
+
+
+@pytest.mark.parametrize(
+    ("question", "voice", "expected_fragments"),
+    [
+        (
+            "\u53ef\u4ee5\u5e2e\u6211\u53d1\u8868\u60c5\u6216\u4e3e\u624b\u5417",
+            PresenterVoiceSettings(language="zh", tone="professional"),
+            ("\u53cd\u5e94", "\u4e3e\u624b", "\u53ef\u89c1", "\u660e\u786e\u8981\u6c42", "\u653e\u4e0b\u624b"),
+        ),
+        (
+            "\u30ea\u30a2\u30af\u30b7\u30e7\u30f3\u3092\u9001\u3063\u305f\u308a\u624b\u3092\u4e0a\u3052\u305f\u308a\u3067\u304d\u307e\u3059\u304b",
+            PresenterVoiceSettings(language="ja", tone="professional"),
+            ("\u30ea\u30a2\u30af\u30b7\u30e7\u30f3", "\u624b\u3092\u4e0a\u3052", "\u8868\u793a", "\u660e\u793a\u7684", "\u4e0b\u3052"),
+        ),
+    ],
+)
+def test_ringcentral_localized_reaction_and_raise_hand_safety_questions_are_answer_only(
+    question: str,
+    voice: PresenterVoiceSettings,
+    expected_fragments: tuple[str, ...],
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=voice,
+    )
+
+    assert response.entrypoint_id is None
+    assert response.can_operate is False
+    for fragment in expected_fragments:
+        assert fragment in response.answer_text
+
+
+def test_ringcentral_raise_hand_location_question_still_routes_to_entrypoint() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question="Where is Raise hand?",
+        voice=PresenterVoiceSettings(),
+    )
+
+    assert response.entrypoint_id == "ringcentral.video.toolbar.raise-hand"
+    assert response.can_operate is False
+    assert response.answer_text.startswith("Raise hand:")
+
+
+def test_ringcentral_reactions_location_question_still_routes_to_entrypoint() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question="Where are Reactions?",
+        voice=PresenterVoiceSettings(),
+    )
+
+    assert response.entrypoint_id == "ringcentral.video.toolbar.react"
+    assert response.can_operate is False
+    assert response.answer_text.startswith("Reactions:")
+
+
+def test_ringcentral_notes_location_fragment_question_still_routes_to_entrypoint() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question="Where are Notes and transcript",
+        voice=PresenterVoiceSettings(),
+    )
+
+    assert response.entrypoint_id == "ringcentral.video.more.notes"
+    assert response.can_operate is True
+    assert response.answer_text.startswith("Notes and transcript:")
+
+
 def test_exact_qa_match_uses_precomputed_question_index() -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
     package._qa_question_candidates = ()

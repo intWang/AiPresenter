@@ -214,6 +214,9 @@ def _match_qa(package: MaterialPackage, normalized_question: str) -> QuestionAns
     if exact_match is not None:
         return exact_match
 
+    if _is_entrypoint_title_lookup(package, normalized_question):
+        return None
+
     for candidate in package.qa_question_candidates:
         if (
             normalized_question
@@ -240,6 +243,15 @@ def _match_qa(package: MaterialPackage, normalized_question: str) -> QuestionAns
     if best_score >= 2:
         return best_match
     return None
+
+
+def _is_entrypoint_title_lookup(package: MaterialPackage, normalized_question: str) -> bool:
+    if not normalized_question.startswith(("where is ", "where are ")):
+        return False
+    return any(
+        normalize_question_prompt(entrypoint.title) in normalized_question
+        for entrypoint in package.operation_entrypoints
+    )
 
 
 def _qa_answer_text(item: QuestionAnswer, voice: PresenterVoiceSettings) -> str:

@@ -1358,6 +1358,24 @@ qa:
   localizedAnswers:
     ja: Participants パネルで参加者数、検索、招待、主催者またはモデレーター向けの操作領域を説明できます。ユーザーが明示的に求め、表示内容が確認されている場合を除き、他の人をミュートしたり、削除したり、会議をロックしたり、セキュリティ設定を変更したり、名前や役割を読み上げたりしません。
     zh: 可以说明 Participants 面板在哪里，以及它用于查看人数、搜索、邀请和主持人或协管员相关控制。不要自动静音他人、移除参会者、锁定会议、修改安全设置，或朗读姓名和角色；只有在用户明确要求并且可见内容已验证时才继续。
+- question: Can AiPresenter send a reaction or raise my hand safely?
+  localizedQuestions:
+    en:
+    - Can you send a thumbs up reaction?
+    - Can you raise my hand for me?
+    - How do I use reactions safely?
+    - How should AiPresenter handle raise hand?
+    ja:
+    - リアクションを送ったり手を上げたりできますか
+    zh:
+    - 可以帮我发表情或举手吗
+    - 怎么安全使用举手和表情
+  answer: Reactions and Raise hand are visible meeting signals. AiPresenter can explain where they are, but should
+    not send a reaction, raise a hand, or leave a hand raised unless the user explicitly asks. Close the reaction
+    strip without sending anything when the user is only exploring, and lower the hand after any confirmed demonstration.
+  localizedAnswers:
+    ja: リアクションと手を上げる操作は、会議中に表示されるシグナルです。AiPresenter は場所を説明できますが、ユーザーが明示的に求めた場合を除き、リアクションを送ったり、手を上げたり、手を上げたままにしたりしません。確認だけの場合は送信せずにリアクション欄を閉じ、実演後は手を下げます。
+    zh: Reactions 和 Raise hand 都是会在会议中可见的信号。AiPresenter 可以说明它们在哪里，但除非用户明确要求，不要发送反应、举手，或让手一直保持举起状态。用户只是了解入口时，应关闭反应面板且不发送任何内容；如果经过确认做了演示，结束后要放下手。
 - question: How do I make sure my audio and video are ready?
   localizedQuestions:
     ja:

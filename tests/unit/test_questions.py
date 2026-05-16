@@ -649,6 +649,124 @@ def test_ringcentral_localized_reaction_and_raise_hand_safety_questions_are_answ
         assert fragment in response.answer_text
 
 
+@pytest.mark.parametrize(
+    "question",
+    [
+        "リアクションを送って",
+        "いいねして",
+        "拍手して",
+        "ハートを送って",
+    ],
+)
+def test_ringcentral_japanese_reaction_send_requests_stay_non_operable(
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(language="ja"),
+    )
+
+    assert response.can_operate is False
+    assert response.entrypoint_id != "ringcentral.video.toolbar.react"
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "手を上げて",
+        "挙手して",
+        "手を下げて",
+        "挙手を取り消して",
+    ],
+)
+def test_ringcentral_japanese_raise_hand_toggle_requests_stay_non_operable(
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(language="ja"),
+    )
+
+    assert response.can_operate is False
+    assert response.entrypoint_id != "ringcentral.video.toolbar.raise-hand"
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "誰がリアクションしたか教えて",
+        "誰が手を上げていますか",
+        "挙手している人を教えて",
+    ],
+)
+def test_ringcentral_japanese_reaction_and_raise_hand_identity_requests_stay_non_operable(
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(language="ja"),
+    )
+
+    assert response.can_operate is False
+    assert response.entrypoint_id not in {
+        "ringcentral.video.toolbar.react",
+        "ringcentral.video.toolbar.raise-hand",
+        "ringcentral.video.toolbar.participants",
+    }
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "ホストとして全員の手を下げて",
+        "主催者として参加者をミュートして",
+    ],
+)
+def test_ringcentral_japanese_host_signal_control_requests_stay_non_operable(
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(language="ja"),
+    )
+
+    assert response.can_operate is False
+    assert response.entrypoint_id not in {
+        "ringcentral.video.toolbar.raise-hand",
+        "ringcentral.video.toolbar.participants",
+    }
+
+
+def test_ringcentral_japanese_mixed_english_raise_hand_location_stays_safety_answer(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    monkeypatch.setattr(questions_module, "_ENTRYPOINT_ALIASES", {})
+
+    response = answer_question(
+        package=package,
+        question="Raise hand の場所はどこですか",
+        voice=PresenterVoiceSettings(language="ja"),
+    )
+
+    assert response.entrypoint_id is None
+    assert response.can_operate is False
+    assert "リアクション" in response.answer_text
+    assert "明示的" in response.answer_text
+
+
 def test_ringcentral_raise_hand_location_question_still_routes_to_entrypoint() -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
 
@@ -827,6 +945,22 @@ def test_ringcentral_japanese_meeting_control_questions_match_package_aliases_wi
         ),
         "会議画面の概要を教えて": ("ringcentral.video.overview", False),
         "会議画面の見取り図はありますか": ("ringcentral.video.overview", False),
+        "React ボタンの場所はどこですか": (
+            "ringcentral.video.toolbar.react",
+            False,
+        ),
+        "リアクション欄の場所はどこですか": (
+            "ringcentral.video.toolbar.react",
+            False,
+        ),
+        "挙手ボタンの場所はどこですか": (
+            "ringcentral.video.toolbar.raise-hand",
+            False,
+        ),
+        "挙手の場所はどこですか": (
+            "ringcentral.video.toolbar.raise-hand",
+            False,
+        ),
         "ネットワーク品質を確認したい": (
             "ringcentral.video.top.network-quality",
             True,

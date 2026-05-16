@@ -402,6 +402,10 @@ operationEntrypoints:
   title: Reactions
   area: Meeting toolbar
   purpose: Send meeting reactions without interrupting speech.
+  questionAliases:
+    ja:
+    - React ボタンの場所
+    - リアクション欄の場所
   openSteps:
   - action: clickWindowControl
     target: React
@@ -417,6 +421,10 @@ operationEntrypoints:
   title: Raise hand
   area: Meeting toolbar
   purpose: Raise or lower hand to request attention.
+  questionAliases:
+    ja:
+    - 挙手ボタンの場所
+    - 挙手の場所
   openSteps:
   - action: clickWindowControl
     target: Raise hand

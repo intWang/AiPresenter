@@ -128,9 +128,9 @@ def test_ringcentral_localization_status_reports_japanese_demo_and_qa_coverage()
     assert report.qa_localized_questions == 12
     assert report.qa_localized_answers == 12
     assert report.qa_total == 12
-    assert report.entrypoints_with_aliases == 9
+    assert report.entrypoints_with_aliases == 11
     assert report.entrypoint_total == 27
-    assert report.alias_total == 26
+    assert report.alias_total == 30
     assert report.required_localization_complete is True
     assert report.flow_by_id["vbg-blur-demo"].localized_steps == 4
     assert report.flow_by_id["vbg-blur-demo"].total_steps == 4
@@ -409,6 +409,14 @@ def test_ringcentral_package_owns_japanese_aliases_for_meeting_control_routes() 
             "カメラメニュー",
             "ビデオメニュー",
             "カメラ選択",
+        },
+        "ringcentral.video.toolbar.react": {
+            "React ボタンの場所",
+            "リアクション欄の場所",
+        },
+        "ringcentral.video.toolbar.raise-hand": {
+            "挙手ボタンの場所",
+            "挙手の場所",
         },
         "ringcentral.video.toolbar.participants": {"参加者", "参加者一覧", "参加者パネル"},
         "ringcentral.video.toolbar.chat": {"チャット", "チャットパネル", "メッセージ"},
@@ -1451,8 +1459,8 @@ def test_meeting_control_map_has_japanese_meeting_info_narration() -> None:
         "Meeting information の場所",
         "会議詳細の入口",
     ]
-    assert report.entrypoints_with_aliases == 9
-    assert report.alias_total == 26
+    assert report.entrypoints_with_aliases == 11
+    assert report.alias_total == 30
     assert len(meeting_info_entrypoint.open_steps) == 1
     open_step = meeting_info_entrypoint.open_steps[0]
     assert open_step.action == "clickWindowRelative"
@@ -1503,8 +1511,8 @@ def test_meeting_control_map_has_japanese_network_narration() -> None:
         "接続品質",
         "通話が不安定",
     ]
-    assert report.entrypoints_with_aliases == 9
-    assert report.alias_total == 26
+    assert report.entrypoints_with_aliases == 11
+    assert report.alias_total == 30
     assert len(network_entrypoint.open_steps) == 1
     open_step = network_entrypoint.open_steps[0]
     assert open_step.action == "clickWindowRelative"
@@ -1555,8 +1563,8 @@ def test_meeting_control_map_has_japanese_views_narration() -> None:
         "表示切り替え",
         "ギャラリービュー",
     ]
-    assert report.entrypoints_with_aliases == 9
-    assert report.alias_total == 26
+    assert report.entrypoints_with_aliases == 11
+    assert report.alias_total == 30
     assert len(views_entrypoint.open_steps) == 1
     open_step = views_entrypoint.open_steps[0]
     assert open_step.action == "clickWindowRelative"
@@ -1916,8 +1924,8 @@ def test_meeting_control_map_has_japanese_audio_menu_narration() -> None:
         "マイクメニュー",
         "スピーカーメニュー",
     ]
-    assert report.entrypoints_with_aliases == 9
-    assert report.alias_total == 26
+    assert report.entrypoints_with_aliases == 11
+    assert report.alias_total == 30
     assert len(audio_menu_entrypoint.open_steps) == 1
     open_step = audio_menu_entrypoint.open_steps[0]
     assert open_step.action == "clickWindowControl"
@@ -1971,8 +1979,8 @@ def test_meeting_control_map_has_japanese_camera_narration() -> None:
     report = build_localization_status(package, language="ja")
     camera_entrypoint = package.entrypoint_by_id("ringcentral.video.toolbar.video")
     assert "ja" not in camera_entrypoint.question_aliases
-    assert report.entrypoints_with_aliases == 9
-    assert report.alias_total == 26
+    assert report.entrypoints_with_aliases == 11
+    assert report.alias_total == 30
     assert len(camera_entrypoint.open_steps) == 1
     open_step = camera_entrypoint.open_steps[0]
     assert open_step.action == "clickWindowControl"
@@ -2028,8 +2036,8 @@ def test_meeting_control_map_has_japanese_camera_menu_narration() -> None:
         "ビデオメニュー",
         "カメラ選択",
     ]
-    assert report.entrypoints_with_aliases == 9
-    assert report.alias_total == 26
+    assert report.entrypoints_with_aliases == 11
+    assert report.alias_total == 30
     assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids == ()
     assert len(camera_menu_entrypoint.open_steps) == 1
     open_step = camera_menu_entrypoint.open_steps[0]
@@ -2088,8 +2096,8 @@ def test_meeting_control_map_has_japanese_share_narration() -> None:
     report = build_localization_status(package, language="ja")
     share_entrypoint = package.entrypoint_by_id("ringcentral.video.toolbar.share")
     assert "ja" not in share_entrypoint.question_aliases
-    assert report.entrypoints_with_aliases == 9
-    assert report.alias_total == 26
+    assert report.entrypoints_with_aliases == 11
+    assert report.alias_total == 30
     assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids == ()
     assert len(share_entrypoint.open_steps) == 1
     open_step = share_entrypoint.open_steps[0]
@@ -2149,9 +2157,12 @@ def test_meeting_control_map_has_japanese_reactions_narration() -> None:
     assert step.narration.action_offset_ms == 350
     report = build_localization_status(package, language="ja")
     reactions_entrypoint = package.entrypoint_by_id("ringcentral.video.toolbar.react")
-    assert "ja" not in reactions_entrypoint.question_aliases
-    assert report.entrypoints_with_aliases == 9
-    assert report.alias_total == 26
+    assert reactions_entrypoint.question_aliases["ja"] == [
+        "React ボタンの場所",
+        "リアクション欄の場所",
+    ]
+    assert report.entrypoints_with_aliases == 11
+    assert report.alias_total == 30
     assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids == ()
     assert len(reactions_entrypoint.open_steps) == 1
     open_step = reactions_entrypoint.open_steps[0]
@@ -2218,9 +2229,12 @@ def test_meeting_control_map_has_japanese_raise_hand_narration() -> None:
     raise_hand_entrypoint = package.entrypoint_by_id(
         "ringcentral.video.toolbar.raise-hand"
     )
-    assert "ja" not in raise_hand_entrypoint.question_aliases
-    assert report.entrypoints_with_aliases == 9
-    assert report.alias_total == 26
+    assert raise_hand_entrypoint.question_aliases["ja"] == [
+        "挙手ボタンの場所",
+        "挙手の場所",
+    ]
+    assert report.entrypoints_with_aliases == 11
+    assert report.alias_total == 30
     assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids == ()
     assert len(raise_hand_entrypoint.open_steps) == 1
     open_step = raise_hand_entrypoint.open_steps[0]
@@ -2282,8 +2296,8 @@ def test_meeting_control_map_has_japanese_more_narration() -> None:
     report = build_localization_status(package, language="ja")
     more_entrypoint = package.entrypoint_by_id("ringcentral.video.toolbar.more")
     assert "ja" not in more_entrypoint.question_aliases
-    assert report.entrypoints_with_aliases == 9
-    assert report.alias_total == 26
+    assert report.entrypoints_with_aliases == 11
+    assert report.alias_total == 30
     assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids == ()
     assert len(more_entrypoint.open_steps) == 1
     open_step = more_entrypoint.open_steps[0]
@@ -2353,8 +2367,8 @@ def test_meeting_control_map_has_japanese_recording_narration() -> None:
     report = build_localization_status(package, language="ja")
     recording_entrypoint = package.entrypoint_by_id("ringcentral.video.more.recording")
     assert "ja" not in recording_entrypoint.question_aliases
-    assert report.entrypoints_with_aliases == 9
-    assert report.alias_total == 26
+    assert report.entrypoints_with_aliases == 11
+    assert report.alias_total == 30
     assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids == ()
     assert recording_entrypoint.open_steps == []
     assert "Observed under More as Start recording." in recording_entrypoint.presenter_notes
@@ -2395,8 +2409,8 @@ def test_meeting_control_map_has_japanese_notes_narration() -> None:
     report = build_localization_status(package, language="ja")
     notes_entrypoint = package.entrypoint_by_id("ringcentral.video.more.notes")
     assert "ja" not in notes_entrypoint.question_aliases
-    assert report.entrypoints_with_aliases == 9
-    assert report.alias_total == 26
+    assert report.entrypoints_with_aliases == 11
+    assert report.alias_total == 30
     assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids == ()
     assert len(notes_entrypoint.open_steps) == 2
     more_step, notes_step = notes_entrypoint.open_steps
@@ -2458,8 +2472,8 @@ def test_meeting_control_map_has_japanese_background_narration() -> None:
     report = build_localization_status(package, language="ja")
     background_entrypoint = package.entrypoint_by_id("ringcentral.video.more.background")
     assert "ja" not in background_entrypoint.question_aliases
-    assert report.entrypoints_with_aliases == 9
-    assert report.alias_total == 26
+    assert report.entrypoints_with_aliases == 11
+    assert report.alias_total == 30
     assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids == ()
     assert len(background_entrypoint.open_steps) == 2
     more_step, background_step = background_entrypoint.open_steps
@@ -2533,8 +2547,8 @@ def test_meeting_control_map_has_japanese_settings_narration() -> None:
     report = build_localization_status(package, language="ja")
     settings_entrypoint = package.entrypoint_by_id("ringcentral.video.more.settings")
     assert "ja" not in settings_entrypoint.question_aliases
-    assert report.entrypoints_with_aliases == 9
-    assert report.alias_total == 26
+    assert report.entrypoints_with_aliases == 11
+    assert report.alias_total == 30
     assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids == ()
     assert len(settings_entrypoint.open_steps) == 2
     more_step, settings_step = settings_entrypoint.open_steps
@@ -2609,8 +2623,8 @@ def test_meeting_control_map_has_japanese_leave_narration() -> None:
     assert leave_entrypoint.purpose == "Leave or end the meeting."
     assert leave_entrypoint.open_steps == []
     assert "ja" not in leave_entrypoint.question_aliases
-    assert report.entrypoints_with_aliases == 9
-    assert report.alias_total == 26
+    assert report.entrypoints_with_aliases == 11
+    assert report.alias_total == 30
     assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids == ()
     assert "Treat this as destructive during a tour." in leave_entrypoint.presenter_notes
     assert any(
@@ -2675,8 +2689,8 @@ def test_meeting_control_map_has_japanese_summary_narration() -> None:
     assert report.demo_localized_steps == 51
     assert report.demo_total_steps == 51
     assert report.required_localization_complete is True
-    assert report.entrypoints_with_aliases == 9
-    assert report.alias_total == 26
+    assert report.entrypoints_with_aliases == 11
+    assert report.alias_total == 30
     assert report.flow_by_id["meeting-control-map-demo"].localized_steps == 22
     assert report.flow_by_id["meeting-control-map-demo"].total_steps == 22
     assert report.flow_by_id["meeting-control-map-demo"].missing_step_ids == ()

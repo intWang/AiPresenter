@@ -103,6 +103,12 @@ The first Piper voice download can take a little while. The profile outputs to t
 Use `docs/runbooks/ringcentral-manual-acceptance.md` for the RingCentral MVP checklist,
 including the controller target, question, language, tone, and running-app scan acceptance path.
 
+## Maintainer Knowledge
+
+Use `docs/knowledge/ai-presenter-maintenance.md` before choosing the next optimization
+artifact, especially when deciding between package content, runtime code, RingCentral
+knowledge docs, runbooks, presenter skills, and future skill candidates.
+
 ## Material Packages
 
 App-level presenter knowledge lives under `packages/`. The first package is

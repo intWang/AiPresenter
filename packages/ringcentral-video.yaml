@@ -812,6 +812,7 @@ demoFlows:
       text: Raise hand signals that you want attention without speaking over someone. It is a toggle, so I lower
         the hand again after showing it.
       localizedText:
+        ja: Raise hand は、ほかの人の発話を遮らずに注目してほしいことや発言機会を求めていることを知らせるトグル操作です。リアクションとは別の、会議中に見える注意喚起シグナルです。押すと手を上げた状態になり、もう一度押すと手を下げます。ユーザーの明確な指示なしに手を上げたり、手を下げたり、上げたままにしたりしません。ユーザーが実演を明確に確認した場合だけ操作し、その実演後は手を下げます。
         zh: Raise hand 表示你想获得发言机会，而不用打断别人。它是开关，所以展示后会再把手放下。
       placement: during
       actionOffsetMs: 350

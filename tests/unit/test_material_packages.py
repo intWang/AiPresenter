@@ -123,7 +123,7 @@ def test_ringcentral_localization_status_reports_japanese_demo_and_qa_coverage()
 
     assert report.package_id == "ringcentral-video"
     assert report.language == "ja"
-    assert report.demo_localized_steps == 22
+    assert report.demo_localized_steps == 23
     assert report.demo_total_steps == 51
     assert report.qa_localized_questions == 12
     assert report.qa_localized_answers == 12
@@ -136,7 +136,7 @@ def test_ringcentral_localization_status_reports_japanese_demo_and_qa_coverage()
     assert report.flow_by_id["vbg-blur-demo"].total_steps == 4
     assert report.flow_by_id["meeting-basics-demo"].localized_steps == 3
     assert report.flow_by_id["meeting-basics-demo"].total_steps == 3
-    assert report.flow_by_id["meeting-controls-tour"].localized_steps == 15
+    assert report.flow_by_id["meeting-controls-tour"].localized_steps == 16
     assert report.flow_by_id["meeting-controls-tour"].total_steps == 22
 
 
@@ -1092,6 +1092,42 @@ def test_meeting_controls_tour_has_japanese_reactions_narration() -> None:
     assert "Raise hand" not in ja_text
     assert "手を上げ" not in ja_text
     assert "送信します" not in ja_text
+
+
+def test_meeting_controls_tour_has_japanese_raise_hand_narration() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    flow = package.demo_flow_by_id("meeting-controls-tour")
+    step = next(step for step in flow.steps if step.id == "explain-raise-hand")
+
+    assert step.action.entrypoint_id == "ringcentral.video.toolbar.raise-hand"
+    assert step.action.operation == "toggle"
+    assert step.narration.placement == "during"
+    assert step.narration.action_offset_ms == 350
+    ja_text = step.narration.localized_text["ja"]
+    assert ja_text.strip()
+    assert has_cjk(ja_text)
+    assert "Raise hand" in ja_text
+    assert "注目" in ja_text
+    assert "発言機会" in ja_text
+    assert "遮らず" in ja_text
+    assert "トグル" in ja_text
+    assert "リアクションとは別" in ja_text
+    assert "注意喚起シグナル" in ja_text
+    assert "手を上げ" in ja_text
+    assert "手を下げ" in ja_text
+    assert "会議中に見える" in ja_text
+    assert "ユーザー" in ja_text
+    assert "明確な指示" in ja_text
+    assert "手を下げたり" in ja_text
+    assert "上げたまま" in ja_text
+    assert "実演を明確に確認" in ja_text
+    assert "実演" in ja_text
+    assert "実演後" in ja_text
+    assert "ハート" not in ja_text
+    assert "いいね" not in ja_text
+    assert "拍手" not in ja_text
+    assert "Be right back" not in ja_text
+    assert "送信しません" not in ja_text
 
 
 def test_rejects_duplicate_operation_entrypoint_ids(tmp_path: Path) -> None:

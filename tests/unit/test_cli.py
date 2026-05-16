@@ -705,6 +705,28 @@ def test_entrypoints_lists_material_package_entrypoints_by_area() -> None:
     assert "purpose:" not in result.stdout
 
 
+def _assert_entrypoint_display_marker(
+    output: str,
+    *,
+    entrypoint_id: str,
+    area: str,
+    title_source: str,
+    purpose_source: str,
+) -> None:
+    lines = output.splitlines()
+    line_prefix = f"- {entrypoint_id}: "
+    for index, line in enumerate(lines):
+        if not line.startswith(line_prefix):
+            continue
+        assert f"[{area}] (title: {title_source})" in line
+        assert index + 1 < len(lines)
+        purpose_line = lines[index + 1]
+        assert purpose_line.startswith("  purpose: ")
+        assert purpose_line.endswith(f"({purpose_source})")
+        return
+    raise AssertionError(f"{entrypoint_id} not found in entrypoints output")
+
+
 def test_entrypoints_language_inspects_ringcentral_localized_and_fallback_copy() -> None:
     top_bar_result = CliRunner().invoke(
         app,
@@ -765,6 +787,20 @@ def test_entrypoints_language_inspects_ringcentral_localized_and_fallback_copy()
     )
 
     assert toolbar_result.exit_code == 0
+    _assert_entrypoint_display_marker(
+        toolbar_result.stdout,
+        entrypoint_id="ringcentral.video.toolbar.audio-menu",
+        area="Meeting toolbar",
+        title_source="localized",
+        purpose_source="localized",
+    )
+    _assert_entrypoint_display_marker(
+        toolbar_result.stdout,
+        entrypoint_id="ringcentral.video.toolbar.video-menu",
+        area="Meeting toolbar",
+        title_source="localized",
+        purpose_source="localized",
+    )
     assert (
         "- ringcentral.video.toolbar.more: Más acciones "
         "[Meeting toolbar] (title: localized)"
@@ -773,10 +809,13 @@ def test_entrypoints_language_inspects_ringcentral_localized_and_fallback_copy()
         "  purpose: Abre More para mostrar acciones adicionales de la reunión y "
         "explicar su ubicación sin iniciar grabaciones ni otros cambios. (localized)"
     ) in toolbar_result.stdout
-    assert (
-        "- ringcentral.video.toolbar.audio: Microphone control "
-        "[Meeting toolbar] (title: fallback)"
-    ) in toolbar_result.stdout
+    _assert_entrypoint_display_marker(
+        toolbar_result.stdout,
+        entrypoint_id="ringcentral.video.toolbar.audio",
+        area="Meeting toolbar",
+        title_source="fallback",
+        purpose_source="fallback",
+    )
 
     more_menu_result = CliRunner().invoke(
         app,
@@ -792,6 +831,13 @@ def test_entrypoints_language_inspects_ringcentral_localized_and_fallback_copy()
     )
 
     assert more_menu_result.exit_code == 0
+    _assert_entrypoint_display_marker(
+        more_menu_result.stdout,
+        entrypoint_id="ringcentral.video.more.background",
+        area="More menu",
+        title_source="localized",
+        purpose_source="localized",
+    )
     assert (
         "- ringcentral.video.more.settings: Ajustes [More menu] (title: localized)"
     ) in more_menu_result.stdout
@@ -800,13 +846,19 @@ def test_entrypoints_language_inspects_ringcentral_localized_and_fallback_copy()
         "Translation, Join preferences y General sin cambiar configuraciones ni leer "
         "datos privados. (localized)"
     ) in more_menu_result.stdout
-    assert (
-        "- ringcentral.video.more.recording: Start recording "
-        "[More menu] (title: fallback)"
-    ) in more_menu_result.stdout
+    _assert_entrypoint_display_marker(
+        more_menu_result.stdout,
+        entrypoint_id="ringcentral.video.more.recording",
+        area="More menu",
+        title_source="fallback",
+        purpose_source="fallback",
+    )
 
 
-def test_entrypoints_language_normalizes_spanish_alias_for_display_metadata() -> None:
+@pytest.mark.parametrize("language_alias", ["Spanish", "es-MX"])
+def test_entrypoints_language_normalizes_spanish_alias_for_display_metadata(
+    language_alias: str,
+) -> None:
     result = CliRunner().invoke(
         app,
         [
@@ -814,30 +866,65 @@ def test_entrypoints_language_normalizes_spanish_alias_for_display_metadata() ->
             "--package",
             "ringcentral-video",
             "--area",
-            "Meeting top bar",
+            "Meeting toolbar",
             "--language",
-            "es-MX",
+            language_alias,
         ],
     )
 
     assert result.exit_code == 0
     assert "Language: es" in result.stdout
-    assert (
-        "- ringcentral.video.top.network-quality: Calidad de red "
-        "[Meeting top bar] (title: localized)"
-    ) in result.stdout
-    assert (
-        "- ringcentral.video.top.views: Diseño de vista "
-        "[Meeting top bar] (title: localized)"
-    ) in result.stdout
-    assert (
-        "- ringcentral.video.top.meeting-info: Meeting information "
-        "[Meeting top bar] (title: fallback)"
-    ) in result.stdout
-    assert (
-        "  purpose: Open meeting details including meeting title, host, meeting ID, "
-        "copy link, dial-in info, encryption, and end-to-end encryption option. (fallback)"
-    ) in result.stdout
+    _assert_entrypoint_display_marker(
+        result.stdout,
+        entrypoint_id="ringcentral.video.toolbar.audio-menu",
+        area="Meeting toolbar",
+        title_source="localized",
+        purpose_source="localized",
+    )
+    _assert_entrypoint_display_marker(
+        result.stdout,
+        entrypoint_id="ringcentral.video.toolbar.video-menu",
+        area="Meeting toolbar",
+        title_source="localized",
+        purpose_source="localized",
+    )
+    _assert_entrypoint_display_marker(
+        result.stdout,
+        entrypoint_id="ringcentral.video.toolbar.audio",
+        area="Meeting toolbar",
+        title_source="fallback",
+        purpose_source="fallback",
+    )
+
+    more_menu_result = CliRunner().invoke(
+        app,
+        [
+            "entrypoints",
+            "--package",
+            "ringcentral-video",
+            "--area",
+            "More menu",
+            "--language",
+            language_alias,
+        ],
+    )
+
+    assert more_menu_result.exit_code == 0
+    assert "Language: es" in more_menu_result.stdout
+    _assert_entrypoint_display_marker(
+        more_menu_result.stdout,
+        entrypoint_id="ringcentral.video.more.background",
+        area="More menu",
+        title_source="localized",
+        purpose_source="localized",
+    )
+    _assert_entrypoint_display_marker(
+        more_menu_result.stdout,
+        entrypoint_id="ringcentral.video.more.recording",
+        area="More menu",
+        title_source="fallback",
+        purpose_source="fallback",
+    )
 
 
 def test_entrypoints_language_uses_package_local_metadata_without_runtime_voice_validation(

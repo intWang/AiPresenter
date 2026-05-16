@@ -945,6 +945,7 @@ demoFlows:
       text: Views controls how the meeting is arranged on your screen. It changes layout, like gallery or full
         screen, without changing anyone's audio, video, or membership.
       localizedText:
+        ja: Views は、会議を画面上でどう表示するかを確認する View layout メニューです。Gallery view や Full screen などの見え方を説明できる場所ですが、ここでは音声、ビデオ、共有、参加者の状態は扱いません。
         zh: 这里是视图布局。它只改变你看到会议的方式，比如宫格视图或全屏，不会影响别人的音频、视频，也不会改成员状态。
       placement: during
       actionOffsetMs: 350

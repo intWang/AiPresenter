@@ -698,6 +698,7 @@ demoFlows:
       text: The Invite button in the toolbar opens the same invite flow. It is the regular place to bring someone
         into an active meeting.
       localizedText:
+        ja: ツールバーの Invite は、進行中の会議で参加者を招待する通常の入口です。Add coworkers と同じ Invite ダイアログを開き、同僚の検索、会議情報のコピー、招待の準備に使えます。名前、メールアドレス、候補、非公開の招待リンクは、ユーザーが明示的に求め、表示内容が確認されるまで読み上げません。説明したら、このダイアログを閉じます。
         zh: 工具栏里的 Invite 是活跃会议中邀请他人的常规入口，可以继续添加同事或复制会议详情。
       placement: during
       actionOffsetMs: 350

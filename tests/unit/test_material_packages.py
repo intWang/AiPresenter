@@ -123,7 +123,7 @@ def test_ringcentral_localization_status_reports_japanese_demo_and_qa_coverage()
 
     assert report.package_id == "ringcentral-video"
     assert report.language == "ja"
-    assert report.demo_localized_steps == 13
+    assert report.demo_localized_steps == 14
     assert report.demo_total_steps == 51
     assert report.qa_localized_questions == 12
     assert report.qa_localized_answers == 12
@@ -136,7 +136,7 @@ def test_ringcentral_localization_status_reports_japanese_demo_and_qa_coverage()
     assert report.flow_by_id["vbg-blur-demo"].total_steps == 4
     assert report.flow_by_id["meeting-basics-demo"].localized_steps == 3
     assert report.flow_by_id["meeting-basics-demo"].total_steps == 3
-    assert report.flow_by_id["meeting-controls-tour"].localized_steps == 6
+    assert report.flow_by_id["meeting-controls-tour"].localized_steps == 7
     assert report.flow_by_id["meeting-controls-tour"].total_steps == 22
 
 
@@ -905,6 +905,23 @@ def test_meeting_controls_tour_has_japanese_add_coworkers_narration() -> None:
     assert "Invite" in ja_text
     assert "リンク" in ja_text
     assert "メール" in ja_text
+    assert "読み上げません" in ja_text
+    assert "閉じます" in ja_text
+    assert "送信" not in ja_text
+
+
+def test_meeting_controls_tour_has_japanese_invite_narration() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    flow = package.demo_flow_by_id("meeting-controls-tour")
+    step = next(step for step in flow.steps if step.id == "explain-invite")
+
+    ja_text = step.narration.localized_text["ja"]
+    assert ja_text.strip()
+    assert has_cjk(ja_text)
+    assert "Invite" in ja_text
+    assert "ツールバー" in ja_text
+    assert "進行中の会議" in ja_text
+    assert "会議情報" in ja_text
     assert "読み上げません" in ja_text
     assert "閉じます" in ja_text
     assert "送信" not in ja_text

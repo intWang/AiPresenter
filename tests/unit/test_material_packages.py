@@ -325,14 +325,14 @@ def test_ringcentral_spanish_seed_qa_and_aliases_are_present() -> None:
     }
 
 
-def test_ringcentral_localization_status_reports_spanish_vbg_demo_wedge() -> None:
+def test_ringcentral_localization_status_reports_spanish_short_demo_wedges() -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
 
     report = build_localization_status(package, language="es")
 
     assert report.package_id == "ringcentral-video"
     assert report.language == "es"
-    assert report.demo_localized_steps == 4
+    assert report.demo_localized_steps == 7
     assert report.demo_total_steps == 51
     assert report.qa_localized_questions == 12
     assert report.qa_localized_answers == 12
@@ -344,7 +344,9 @@ def test_ringcentral_localization_status_reports_spanish_vbg_demo_wedge() -> Non
     assert report.flow_by_id["vbg-blur-demo"].localized_steps == 4
     assert report.flow_by_id["vbg-blur-demo"].total_steps == 4
     assert report.flow_by_id["vbg-blur-demo"].missing_step_ids == ()
-    assert report.flow_by_id["meeting-basics-demo"].localized_steps == 0
+    assert report.flow_by_id["meeting-basics-demo"].localized_steps == 3
+    assert report.flow_by_id["meeting-basics-demo"].total_steps == 3
+    assert report.flow_by_id["meeting-basics-demo"].missing_step_ids == ()
     assert report.flow_by_id["meeting-controls-tour"].localized_steps == 0
     assert report.flow_by_id["meeting-control-map-demo"].localized_steps == 0
 
@@ -950,13 +952,16 @@ def test_all_ringcentral_demo_flow_steps_have_chinese_localized_narration() -> N
             assert has_cjk(zh_text), f"{flow.id}:{step.id}"
 
 
-def test_ringcentral_spanish_qas_and_vbg_demo_are_localized() -> None:
+def test_ringcentral_spanish_qas_and_short_demo_wedges_are_localized() -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
-    vbg_step_ids = [
-        "open-video-settings",
-        "open-background-panel",
-        "select-blur",
-        "verify-meeting-video",
+    expected_spanish_demo_steps = [
+        "vbg-blur-demo:open-video-settings",
+        "vbg-blur-demo:open-background-panel",
+        "vbg-blur-demo:select-blur",
+        "vbg-blur-demo:verify-meeting-video",
+        "meeting-basics-demo:show-mic",
+        "meeting-basics-demo:show-participants",
+        "meeting-basics-demo:show-chat",
     ]
 
     missing_questions = [
@@ -976,16 +981,24 @@ def test_ringcentral_spanish_qas_and_vbg_demo_are_localized() -> None:
 
     assert missing_questions == []
     assert missing_answers == []
-    assert spanish_demo_steps == [f"vbg-blur-demo:{step_id}" for step_id in vbg_step_ids]
+    assert spanish_demo_steps == expected_spanish_demo_steps
 
-    flow = package.demo_flow_by_id("vbg-blur-demo")
-    spanish_text_by_step = {
-        step.id: step.narration.localized_text["es"] for step in flow.steps
+    vbg_flow = package.demo_flow_by_id("vbg-blur-demo")
+    vbg_text_by_step = {
+        step.id: step.narration.localized_text["es"] for step in vbg_flow.steps
     }
-    assert "Settings" in spanish_text_by_step["open-video-settings"]
-    assert "Background" in spanish_text_by_step["open-background-panel"]
-    assert "Blur" in spanish_text_by_step["select-blur"]
-    assert "Stop video" in spanish_text_by_step["verify-meeting-video"]
+    assert "Settings" in vbg_text_by_step["open-video-settings"]
+    assert "Background" in vbg_text_by_step["open-background-panel"]
+    assert "Blur" in vbg_text_by_step["select-blur"]
+    assert "Stop video" in vbg_text_by_step["verify-meeting-video"]
+
+    basics_flow = package.demo_flow_by_id("meeting-basics-demo")
+    basics_text_by_step = {
+        step.id: step.narration.localized_text["es"] for step in basics_flow.steps
+    }
+    assert "Participants" in basics_text_by_step["show-participants"]
+    assert "Chat" in basics_text_by_step["show-chat"]
+    assert "privado" in basics_text_by_step["show-chat"]
 
 
 def test_meeting_controls_tour_renders_chinese_narration_text() -> None:

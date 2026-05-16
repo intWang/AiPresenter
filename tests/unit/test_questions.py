@@ -807,6 +807,7 @@ def test_ringcentral_localized_host_controls_question_returns_chinese_guidance()
         "Can I use live transcription?",
         "How do I translate captions?",
         "Where are translated captions?",
+        "Turn on captions",
     ],
 )
 def test_ringcentral_captions_and_translation_questions_are_answer_only(
@@ -822,6 +823,7 @@ def test_ringcentral_captions_and_translation_questions_are_answer_only(
 
     assert response.entrypoint_id is None
     assert response.can_operate is False
+    assert create_question_interrupt_step(package, response) is None
     assert "Notes and Transcript" in response.answer_text
     assert "Settings" in response.answer_text
     assert "explicitly asks" in response.answer_text
@@ -1191,6 +1193,8 @@ def test_ringcentral_japanese_transcript_content_requests_stay_answer_only(
     [
         "Start notes",
         "Click Start notes",
+        "Start meeting notes",
+        "Summarize meeting notes",
     ],
 )
 def test_ringcentral_english_notes_action_requests_do_not_match_start_meeting(

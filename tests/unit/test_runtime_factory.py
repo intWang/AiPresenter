@@ -9,6 +9,7 @@ from ai_presenter.domain.state import RawObservation, WindowMetadata
 from ai_presenter.desktop.base import WindowHandle
 from ai_presenter.packages.loader import load_material_package
 from ai_presenter.packages.models import MaterialPackage
+from ai_presenter.providers.base import SpeechAudio
 from ai_presenter.runtime import factory as factory_module
 from ai_presenter.runtime.factory import create_adapter
 from ai_presenter.runtime.factory import create_fake_provider_registry
@@ -633,6 +634,192 @@ def test_existing_window_material_demo_routes_piper_chinese_to_sapi_provider(
     )
 
     assert captured_speech_provider_classes == ["WindowsSapiSpeechProvider"]
+
+
+def test_existing_window_material_demo_routes_openai_spanish_and_uses_localized_text(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-openai.example.yaml"))
+    assert isinstance(profile, DesktopAppProfile)
+    profile.providers.narration = "fake"
+    handle = WindowHandle("Demo", 123, "DemoWindow", "Demo App")
+    captured_speech_provider_classes: list[str] = []
+    run_texts: list[str] = []
+    package = MaterialPackage.model_validate(
+        {
+            "appId": "temp.demo.123",
+            "appName": "Demo App",
+            "version": 1,
+            "profileIds": ["temp.demo.123.profile"],
+            "operationEntrypoints": [
+                {
+                    "id": "temp.demo.123.overview",
+                    "title": "Overview",
+                    "area": "Demo App",
+                    "purpose": "Introduce the app.",
+                    "openSteps": [],
+                }
+            ],
+            "demoFlows": [
+                {
+                    "id": "temp-demo",
+                    "title": "Temporary demo",
+                    "goal": "Introduce a running app.",
+                    "steps": [
+                        {
+                            "id": "overview",
+                            "title": "Overview",
+                            "action": {
+                                "entrypointId": "temp.demo.123.overview",
+                                "operation": "explain",
+                            },
+                            "narration": {
+                                "text": "Open settings. Then review options.",
+                                "localizedText": {
+                                    "es": (
+                                        "Abra configuracion. Revise las opciones "
+                                        "antes de continuar."
+                                    )
+                                },
+                                "placement": "before",
+                            },
+                        }
+                    ],
+                }
+            ],
+            "manualControls": [],
+        }
+    )
+
+    class FakeDesktop:
+        pass
+
+    class FakeOpenAISpeechProvider:
+        pass
+
+    class FakeTimelineRunner:
+        def __init__(self, **kwargs: object) -> None:
+            captured_speech_provider_classes.append(
+                kwargs["speech_provider"].__class__.__name__
+            )
+
+        def run_step(self, step: object) -> StepRunResult:
+            narration = getattr(step, "narration")
+            run_texts.append(getattr(narration, "text"))
+            return StepRunResult(step_id=getattr(step, "id"), skipped=False)
+
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.setattr(factory_module, "WindowsDesktopDriver", FakeDesktop)
+    monkeypatch.setattr(factory_module, "OpenAISpeechProvider", FakeOpenAISpeechProvider)
+    monkeypatch.setattr(factory_module, "SynchronizedTimelineRunner", FakeTimelineRunner)
+
+    run_existing_window_material_demo(
+        profile,
+        package,
+        "temp-demo",
+        handle=handle,
+        voice=PresenterVoiceSettings(language="es", tone="concise"),
+    )
+
+    assert captured_speech_provider_classes == ["FakeOpenAISpeechProvider"]
+    assert run_texts == ["Abra configuracion."]
+
+
+def test_existing_window_material_demo_uses_injected_openai_registry_for_spanish(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-openai.example.yaml"))
+    assert isinstance(profile, DesktopAppProfile)
+    profile.providers.narration = "fake"
+    handle = WindowHandle("Demo", 123, "DemoWindow", "Demo App")
+    captured_speech_provider_classes: list[str] = []
+    run_texts: list[str] = []
+    package = MaterialPackage.model_validate(
+        {
+            "appId": "temp.demo.123",
+            "appName": "Demo App",
+            "version": 1,
+            "profileIds": ["ringcentral-video-openai"],
+            "operationEntrypoints": [
+                {
+                    "id": "temp.demo.123.overview",
+                    "title": "Overview",
+                    "area": "Demo App",
+                    "purpose": "Introduce the app.",
+                    "openSteps": [],
+                }
+            ],
+            "demoFlows": [
+                {
+                    "id": "temp-demo",
+                    "title": "Temporary demo",
+                    "goal": "Introduce a running app.",
+                    "steps": [
+                        {
+                            "id": "overview",
+                            "title": "Overview",
+                            "action": {
+                                "entrypointId": "temp.demo.123.overview",
+                                "operation": "explain",
+                            },
+                            "narration": {
+                                "text": "Open settings. Then review options.",
+                                "localizedText": {
+                                    "es": (
+                                        "Abra configuracion. Revise las opciones "
+                                        "antes de continuar."
+                                    )
+                                },
+                                "placement": "before",
+                            },
+                        }
+                    ],
+                }
+            ],
+            "manualControls": [],
+        }
+    )
+
+    class FakeDesktop:
+        pass
+
+    class InjectedOpenAISpeechProvider:
+        def synthesize(self, text: str) -> SpeechAudio:
+            raise AssertionError("speech synthesis should not run in this test")
+
+    class FakeTimelineRunner:
+        def __init__(self, **kwargs: object) -> None:
+            captured_speech_provider_classes.append(
+                kwargs["speech_provider"].__class__.__name__
+            )
+
+        def run_step(self, step: object) -> StepRunResult:
+            narration = getattr(step, "narration")
+            run_texts.append(getattr(narration, "text"))
+            return StepRunResult(step_id=getattr(step, "id"), skipped=False)
+
+    def fail_provider_construction(*_args: object, **_kwargs: object) -> object:
+        raise AssertionError("OpenAISpeechProvider should not be constructed")
+
+    registry = create_fake_provider_registry()
+    registry.register_speech("openai", InjectedOpenAISpeechProvider())
+
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.setattr(factory_module, "WindowsDesktopDriver", FakeDesktop)
+    monkeypatch.setattr(factory_module, "OpenAISpeechProvider", fail_provider_construction)
+    monkeypatch.setattr(factory_module, "SynchronizedTimelineRunner", FakeTimelineRunner)
+
+    run_existing_window_material_demo(
+        profile,
+        package,
+        "temp-demo",
+        handle=handle,
+        registry=registry,
+        voice=PresenterVoiceSettings(language="es", tone="concise"),
+    )
+
+    assert captured_speech_provider_classes == ["InjectedOpenAISpeechProvider"]
+    assert run_texts == ["Abra configuracion."]
 
 
 def test_existing_window_material_demo_uses_tone_rate_when_creating_registry(

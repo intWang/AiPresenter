@@ -2197,6 +2197,21 @@ def test_chinese_no_match_fallback_is_localized_and_not_operable() -> None:
     assert "I could not find" not in response.answer_text
 
 
+def test_spanish_no_match_fallback_is_localized_and_not_operable() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question="quantum waffle",
+        voice=PresenterVoiceSettings(language="es", tone="professional"),
+    )
+
+    assert response.entrypoint_id is None
+    assert response.can_operate is False
+    assert "No encontre" in response.answer_text
+    assert "I could not find" not in response.answer_text
+
+
 def test_settings_prefers_settings_entrypoint() -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
 

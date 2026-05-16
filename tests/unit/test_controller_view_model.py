@@ -133,6 +133,42 @@ def test_missing_voice_assets_explain_start_and_submit_disabled() -> None:
     assert "Huihui" in view_model.disabled_reasons.submit
 
 
+def test_incompatible_spanish_local_voice_explains_start_and_submit_disabled() -> None:
+    view_model = build_controller_operator_view_model(
+        ControllerOperatorSnapshot(
+            source_mode="material_package",
+            material_package_id="ringcentral-video",
+            material_flow_id="meeting-control-map-demo",
+            running_app_label="",
+            has_running_app_selection=False,
+            has_scanned_running_app=False,
+            scanned_package_id="",
+            scanned_flow_id="",
+            voice=PresenterVoiceSettings(language="es"),
+            voice_readiness=ControllerVoiceReadiness(
+                status="FAIL",
+                label="FAIL",
+                detail=(
+                    "Profile ringcentral-video-bind-speaker with speech provider "
+                    "windows-sapi-en cannot use Spanish / Professional. Spanish "
+                    "voice output requires speech provider openai."
+                ),
+            ),
+            run_status="Ready",
+            is_running=False,
+            is_stopping=False,
+            question_text="chat",
+            last_question_outcome="",
+        )
+    )
+
+    assert view_model.voice_label == "Spanish / Professional"
+    assert view_model.buttons.start_enabled is False
+    assert view_model.buttons.submit_enabled is False
+    assert "requires speech provider openai" in view_model.disabled_reasons.start
+    assert "requires speech provider openai" in view_model.disabled_reasons.submit
+
+
 def test_material_package_ready_voice_assets_preserve_start_behavior() -> None:
     view_model = build_controller_operator_view_model(
         ControllerOperatorSnapshot(
@@ -161,6 +197,35 @@ def test_material_package_ready_voice_assets_preserve_start_behavior() -> None:
     assert view_model.voice_readiness_label == "OK"
     assert view_model.buttons.start_enabled is True
     assert view_model.buttons.submit_enabled is True
+
+
+def test_spanish_openai_view_model_is_startable_without_local_assets() -> None:
+    view_model = build_controller_operator_view_model(
+        ControllerOperatorSnapshot(
+            source_mode="material_package",
+            material_package_id="ringcentral-video",
+            material_flow_id="meeting-control-map-demo",
+            running_app_label="",
+            has_running_app_selection=False,
+            has_scanned_running_app=False,
+            scanned_package_id="",
+            scanned_flow_id="",
+            voice=PresenterVoiceSettings(language="es"),
+            voice_readiness=None,
+            run_status="Ready",
+            is_running=False,
+            is_stopping=False,
+            question_text="panel de participantes",
+            last_question_outcome="",
+        )
+    )
+
+    assert view_model.voice_label == "Spanish / Professional"
+    assert view_model.voice_readiness_label == "Not required"
+    assert view_model.buttons.start_enabled is True
+    assert view_model.buttons.submit_enabled is True
+    assert view_model.disabled_reasons.start == ""
+    assert view_model.disabled_reasons.submit == ""
 
 
 def test_not_applicable_voice_readiness_preserves_existing_start_behavior() -> None:

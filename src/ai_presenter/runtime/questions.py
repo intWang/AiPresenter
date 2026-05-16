@@ -137,6 +137,7 @@ _NO_MATCH_ANSWERS = {
         "\u73fe\u5728\u306e\u30a2\u30d7\u30ea\u306e\u72b6\u6cc1\u3067\u306f"
         "\u4e00\u81f4\u3059\u308b\u30b3\u30f3\u30c8\u30ed\u30fc\u30eb\u304c\u898b\u3064\u304b\u308a\u307e\u305b\u3093\u3002"
     ),
+    "es": "No encontre un control que coincida en el contexto activo de la app.",
 }
 _ENTRYPOINT_ALIASES: dict[str, tuple[str, ...]] = {
     "ringcentral.video.toolbar.chat": (

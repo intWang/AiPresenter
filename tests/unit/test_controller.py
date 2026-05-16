@@ -83,6 +83,34 @@ def test_controller_voice_readiness_converts_checker_exception_to_failure() -> N
     assert "SAPI unavailable" in failure
 
 
+def test_controller_voice_readiness_rejects_incompatible_voice_before_asset_check() -> None:
+    profile, _package = _controller_inputs()
+    calls: list[str] = []
+
+    def checker(
+        _profile: object,
+        _voice: PresenterVoiceSettings,
+    ) -> VoiceAssetAvailability | None:
+        calls.append("asset-check")
+        return VoiceAssetAvailability(
+            status="OK",
+            route="windows-sapi-en",
+            detail="speech=windows-sapi-en found installed SAPI voice matching Zira",
+        )
+
+    readiness = _check_controller_voice_readiness(
+        profile,
+        PresenterVoiceSettings(language="es"),
+        checker=checker,
+    )
+
+    assert readiness is not None
+    assert readiness.status == "FAIL"
+    assert "Spanish / Professional" in readiness.detail
+    assert "requires speech provider openai" in readiness.detail
+    assert calls == []
+
+
 def test_controller_voice_readiness_cache_reuses_selected_voice_until_it_changes() -> None:
     profile, _package = _controller_inputs()
     calls: list[PresenterVoiceSettings] = []
@@ -490,6 +518,58 @@ def test_presenter_controller_starts_safe_question_demo_when_idle() -> None:
             "question-answer-demo",
             control,
             PresenterVoiceSettings(language="en", tone="conversational"),
+        )
+    ]
+
+
+def test_presenter_controller_starts_spanish_openai_question_demo_when_idle() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-openai.example.yaml"))
+    assert isinstance(profile, DesktopAppProfile)
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    control = DemoControl()
+    calls: list[tuple[str, str, str, DemoControl, PresenterVoiceSettings | None]] = []
+
+    def runner(
+        captured_profile: DesktopAppProfile,
+        captured_package: MaterialPackage,
+        captured_flow_id: str,
+        *,
+        control: DemoControl,
+        voice: PresenterVoiceSettings | None = None,
+    ) -> None:
+        calls.append(
+            (
+                captured_profile.id,
+                captured_package.app_id,
+                captured_flow_id,
+                control,
+                voice,
+            )
+        )
+
+    controller = PresenterController(
+        profile=profile,
+        material_package=package,
+        flow_id="meeting-control-map-demo",
+        control=control,
+        runner=runner,
+        voice=PresenterVoiceSettings(language="es"),
+    )
+
+    result = controller.submit_question("panel de participantes")
+    controller.join(timeout=1)
+
+    assert result.demonstration_status == "started"
+    assert result.entrypoint_id == "ringcentral.video.toolbar.participants"
+    assert result.can_operate is True
+    assert "Participants" in result.answer_text
+    assert calls == [
+        (
+            "ringcentral-video-openai",
+            "ringcentral-video",
+            "question-answer-demo",
+            control,
+            PresenterVoiceSettings(language="es"),
         )
     ]
 

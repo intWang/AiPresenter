@@ -178,6 +178,14 @@ def _check_controller_voice_readiness(
     checker: VoiceAssetChecker = check_voice_asset_availability,
 ) -> ControllerVoiceReadiness | None:
     try:
+        validate_profile_voice(profile, voice)
+    except ValueError as exc:
+        return ControllerVoiceReadiness(
+            status="FAIL",
+            label="FAIL",
+            detail=str(exc),
+        )
+    try:
         availability = checker(profile, voice)
     except Exception as exc:
         return ControllerVoiceReadiness(

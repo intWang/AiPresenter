@@ -18,8 +18,10 @@ from ai_presenter.runtime.controller import ControllerStatusSnapshot
 from ai_presenter.runtime.controller import ControllerStatusUpdate
 from ai_presenter.runtime.controller import PresenterController
 from ai_presenter.runtime.controller import _RunningAppScanState
+from ai_presenter.runtime.controller import _apply_operator_summary_wraplength
 from ai_presenter.runtime.controller import _apply_button_state
 from ai_presenter.runtime.controller import _check_controller_voice_readiness
+from ai_presenter.runtime.controller import _configure_operator_summary_label
 from ai_presenter.runtime.controller import _ControllerVoiceReadinessCache
 from ai_presenter.runtime.controller import _voice_readiness_failure_message
 from ai_presenter.runtime.controller import describe_question_result
@@ -740,6 +742,55 @@ class _FakeButton:
     def configure(self, *, state: str) -> None:
         self.configure_calls.append(state)
         self.state = state
+
+
+class _FakeLabel:
+    def __init__(self, **options: object) -> None:
+        self.options = dict(options)
+        self.configure_calls: list[dict[str, object]] = []
+        self.bindings: dict[str, object] = {}
+
+    def cget(self, key: str) -> object:
+        return self.options.get(key, "")
+
+    def configure(self, **kwargs: object) -> None:
+        self.configure_calls.append(kwargs)
+        self.options.update(kwargs)
+
+    def bind(self, sequence: str, callback: object) -> None:
+        self.bindings[sequence] = callback
+
+
+def test_configure_operator_summary_label_sets_multiline_alignment_and_resize_binding() -> None:
+    label = _FakeLabel()
+
+    _configure_operator_summary_label(label)
+
+    assert label.options["anchor"] == "nw"
+    assert label.options["justify"] == "left"
+    callback = label.bindings["<Configure>"]
+    assert callable(callback)
+    callback(type("Event", (), {"width": 640})())
+    assert label.options["wraplength"] == 640
+
+
+def test_apply_operator_summary_wraplength_skips_unchanged_width() -> None:
+    label = _FakeLabel(wraplength=640)
+
+    changed = _apply_operator_summary_wraplength(label, 640)
+
+    assert changed is False
+    assert label.configure_calls == []
+
+
+@pytest.mark.parametrize("width", [0, -12])
+def test_apply_operator_summary_wraplength_clamps_non_positive_width(width: int) -> None:
+    label = _FakeLabel()
+
+    changed = _apply_operator_summary_wraplength(label, width)
+
+    assert changed is True
+    assert label.options["wraplength"] == 1
 
 
 def test_apply_button_state_skips_configure_when_state_matches() -> None:

@@ -522,6 +522,27 @@ def _apply_button_state(button: Any, enabled: bool) -> bool:
     return True
 
 
+def _apply_operator_summary_wraplength(label: Any, width: int) -> bool:
+    wraplength = max(1, int(width))
+    try:
+        current = int(label.cget("wraplength"))
+    except (TypeError, ValueError):
+        current = 0
+    if current == wraplength:
+        return False
+    label.configure(wraplength=wraplength)
+    return True
+
+
+def _configure_operator_summary_label(label: Any) -> None:
+    label.configure(anchor="nw", justify="left")
+
+    def sync_wraplength(event: Any) -> None:
+        _apply_operator_summary_wraplength(label, int(getattr(event, "width", 1)))
+
+    label.bind("<Configure>", sync_wraplength)
+
+
 def run_controller(
     profile: DesktopAppProfile,
     material_package: MaterialPackage,
@@ -866,12 +887,9 @@ def run_controller(
     frame = tk.Frame(root, padx=16, pady=16)
     frame.pack(fill="both", expand=True)
     tk.Label(frame, textvariable=status, anchor="w").pack(fill="x", pady=(0, 12))
-    tk.Label(
-        frame,
-        textvariable=operator_summary,
-        anchor="w",
-        justify="left",
-    ).pack(fill="x", pady=(0, 12))
+    operator_summary_label = tk.Label(frame, textvariable=operator_summary)
+    _configure_operator_summary_label(operator_summary_label)
+    operator_summary_label.pack(fill="x", pady=(0, 12))
 
     target_frame = tk.LabelFrame(frame, text="Target", padx=8, pady=8)
     target_frame.pack(fill="x", pady=(0, 12))

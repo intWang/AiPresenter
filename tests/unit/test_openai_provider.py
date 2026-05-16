@@ -1,12 +1,15 @@
+from pathlib import Path
 from typing import Any
 
 import pytest
 
+from ai_presenter.config.loader import load_profile
 from ai_presenter.domain.state import MeetingState, PresenterEvent
 from ai_presenter.providers.base import ProviderLookupError, ProviderRegistrationError, ProviderRegistry
 from ai_presenter.providers.openai_provider import OpenAINarrationProvider, OpenAISpeechProvider
 from ai_presenter.runtime.presenter_context import PresenterContext
 from ai_presenter.runtime.presenter_context import PresenterSkill
+from ai_presenter.runtime.presenter_context import load_presenter_context
 
 
 class FakeResponsesClient:
@@ -122,6 +125,10 @@ def test_narration_instructions_include_presenter_soul_and_memory(
             memory="Memory marker: speak in English with tighter transitions.",
             skills=(
                 PresenterSkill(name="app-director", content="Skill marker: plan app slices."),
+                PresenterSkill(
+                    name="ringcentral-safety",
+                    content="Skill marker: recording and leave/end stay explain-only.",
+                ),
             ),
         ),
     )
@@ -132,6 +139,27 @@ def test_narration_instructions_include_presenter_soul_and_memory(
     assert "Soul marker: professional presenter identity." in instructions
     assert "Memory marker: speak in English with tighter transitions." in instructions
     assert "Skill marker: plan app slices." in instructions
+    assert "Presenter skill - ringcentral-safety:" in instructions
+    assert "Skill marker: recording and leave/end stay explain-only." in instructions
+
+
+def test_narration_instructions_include_loaded_ringcentral_safety_skill(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    responses = FakeResponsesClient()
+    profile = load_profile(Path("profiles/ringcentral-video.yaml"))
+    provider = OpenAINarrationProvider(
+        client=FakeOpenAIClient(responses=responses),
+        model="gpt-4.1",
+        presenter_context=load_presenter_context(profile.narration),
+    )
+
+    provider.narrate(MeetingState(confidence=0.9), [PresenterEvent("meeting_joined", {}, 0.9)])
+
+    instructions = responses.calls[0]["instructions"]
+    assert "Presenter skill - ringcentral-safety:" in instructions
+    assert "RingCentral Video safety guardian" in instructions
 
 
 def test_narration_uses_env_model_with_fake_client_without_api_key(

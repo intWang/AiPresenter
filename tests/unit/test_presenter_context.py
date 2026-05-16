@@ -14,9 +14,15 @@ def test_load_presenter_context_reads_configured_soul_and_memory() -> None:
 
     assert "professional live software presenter" in context.soul.lower()
     assert "Use English for RingCentral Video demos." in context.memory
-    assert [skill.name for skill in context.skills] == ["app-director", "live-explainer"]
+    assert [skill.name for skill in context.skills] == [
+        "app-director",
+        "live-explainer",
+        "ringcentral-safety",
+    ]
     assert "professional app demonstration director" in context.skills[0].content.lower()
     assert "professional live explainer" in context.skills[1].content.lower()
+    assert "ringcentral video safety guardian" in context.skills[2].content.lower()
+    assert "recording and leave/end stay explain-only" in context.skills[2].content.lower()
 
 
 def test_format_presenter_context_includes_named_skills() -> None:
@@ -26,6 +32,10 @@ def test_format_presenter_context_includes_named_skills() -> None:
         skills=(
             PresenterSkill(name="app-director", content="Plan clear app slices."),
             PresenterSkill(name="live-explainer", content="Recover from interruptions."),
+            PresenterSkill(
+                name="ringcentral-safety",
+                content="Keep recording and leave/end explain-only by default.",
+            ),
         ),
     )
 
@@ -35,3 +45,5 @@ def test_format_presenter_context_includes_named_skills() -> None:
     assert "Plan clear app slices." in formatted
     assert "Presenter skill - live-explainer:" in formatted
     assert "Recover from interruptions." in formatted
+    assert "Presenter skill - ringcentral-safety:" in formatted
+    assert "Keep recording and leave/end explain-only by default." in formatted

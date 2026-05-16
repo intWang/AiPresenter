@@ -7,6 +7,15 @@ from ai_presenter.config.loader import load_profile, profile_to_public_dict
 from ai_presenter.config.models import AudioOutputMode, DesktopAppProfile, ProfileType
 
 
+RINGCENTRAL_ROOT_PROFILE_PATHS = [
+    Path("profiles/ringcentral-video.yaml"),
+    Path("profiles/ringcentral-video-bind-speaker.yaml"),
+    Path("profiles/ringcentral-video-codex-cli-speaker.yaml"),
+    Path("profiles/ringcentral-video-openai.example.yaml"),
+    Path("profiles/ringcentral-video-piper-speaker.yaml"),
+]
+
+
 def test_load_ringcentral_profile() -> None:
     profile = load_profile(Path("profiles/ringcentral-video.yaml"))
 
@@ -49,7 +58,34 @@ def test_load_ringcentral_bind_speaker_profile() -> None:
     assert profile.narration.skill_paths == [
         Path("presenter/skills/app-director.md").resolve(),
         Path("presenter/skills/live-explainer.md").resolve(),
+        Path("presenter/skills/ringcentral-safety.md").resolve(),
     ]
+
+
+@pytest.mark.parametrize("profile_path", RINGCENTRAL_ROOT_PROFILE_PATHS)
+def test_all_ringcentral_profiles_include_ringcentral_safety_skill(
+    profile_path: Path,
+) -> None:
+    profile = load_profile(profile_path)
+
+    assert [path.stem for path in profile.narration.skill_paths] == [
+        "app-director",
+        "live-explainer",
+        "ringcentral-safety",
+    ]
+
+
+def test_packaged_ringcentral_profile_resolves_packaged_safety_skill() -> None:
+    profile = load_profile(Path("src/ai_presenter/profiles/ringcentral-video.yaml"))
+
+    assert [path.stem for path in profile.narration.skill_paths] == [
+        "app-director",
+        "live-explainer",
+        "ringcentral-safety",
+    ]
+    assert profile.narration.skill_paths[-1] == Path(
+        "src/ai_presenter/presenter/skills/ringcentral-safety.md"
+    ).resolve()
 
 
 def test_rejects_missing_presenter_skill_file(tmp_path: Path) -> None:

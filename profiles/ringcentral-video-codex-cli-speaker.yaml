@@ -45,6 +45,7 @@ narration:
   skillPaths:
     - ../presenter/skills/app-director.md
     - ../presenter/skills/live-explainer.md
+    - ../presenter/skills/ringcentral-safety.md
 
 audio:
   output: speaker

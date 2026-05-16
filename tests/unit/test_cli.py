@@ -755,6 +755,27 @@ def test_validation_targets_include_blocked_lists_do_not_execute_routes() -> Non
     assert "Do not execute" in result.stdout
 
 
+def test_validation_targets_blocked_target_omits_draft_command() -> None:
+    result = CliRunner().invoke(
+        app,
+        [
+            "validation-targets",
+            "--package",
+            "ringcentral-video",
+            "--include-blocked",
+            "--target",
+            "rcv-recording",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "rcv-recording" in result.stdout
+    assert "blocked:" in result.stdout
+    assert "Do not execute" in result.stdout
+    assert "draft:" not in result.stdout
+    assert "acceptance-draft" not in result.stdout
+
+
 def test_voices_lists_language_tone_choices() -> None:
     result = CliRunner().invoke(app, ["voices"])
 

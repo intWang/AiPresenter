@@ -194,7 +194,7 @@ def _render_target_block(
         lines.append(f"  privacy: {target.privacy_boundary}")
     if target.blocked_reason is not None:
         lines.append(f"  blocked: {target.blocked_reason}")
-    if include_draft_command:
+    if include_draft_command and target.blocked_reason is None:
         lines.append(f"  draft: {acceptance_draft_command(package_id, target)}")
     return lines
 

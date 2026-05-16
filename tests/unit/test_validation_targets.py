@@ -309,6 +309,29 @@ def test_discover_validation_targets_can_include_blocked_rows() -> None:
     assert "destructive" in leave.blocked_reason
 
 
+def test_render_validation_target_lines_suppresses_blocked_draft_command() -> None:
+    catalog = discover_catalog(include_blocked=True)
+
+    text = "\n".join(render_validation_target_lines(catalog, target_id="rcv-recording"))
+
+    assert "blocked:" in text
+    assert "Do not execute" in text
+    assert "draft:" not in text
+    assert "acceptance-draft" not in text
+
+
+def test_render_validation_target_lines_keeps_normal_draft_command() -> None:
+    catalog = discover_catalog()
+
+    text = "\n".join(render_validation_target_lines(catalog, target_id="rcv-add-coworkers-modal"))
+
+    assert "draft:" in text
+    assert (
+        "ai-presenter acceptance-draft --package ringcentral-video "
+        "--entrypoint ringcentral.video.main.add-coworkers"
+    ) in text
+
+
 def test_acceptance_draft_command_uses_entrypoint_only_for_single_entrypoint_target() -> None:
     catalog = discover_catalog()
     target = target_by_id(catalog, "rcv-add-coworkers-modal")

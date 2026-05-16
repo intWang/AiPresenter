@@ -825,6 +825,7 @@ demoFlows:
       text: Finally, More is the expansion menu for deeper meeting tools. In this build, Notes is already on the
         toolbar, while More keeps Start recording, Background, and Settings.
       localizedText:
+        ja: 最後に More を開くと、より深い会議ツールへ進むための拡張メニューを確認できます。このビルドでは Notes はすでにツールバー上にあり、More には Start recording、Background、Settings がまとまっています。ここではメニューの場所を説明するだけで、録画の開始や背景・設定の変更は、ユーザーが明確に求めるまで実行しません。
         zh: 最后是 More，它是更深层会议工具的扩展菜单。当前版本里 Notes 已在工具栏上，More 主要保留 Start recording、Background 和 Settings。
       placement: during
       actionOffsetMs: 350

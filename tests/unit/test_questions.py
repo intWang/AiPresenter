@@ -813,6 +813,20 @@ def test_ringcentral_japanese_meeting_control_questions_match_package_aliases_wi
     monkeypatch.setattr(questions_module, "_ENTRYPOINT_ALIASES", {})
 
     expected = {
+        "会議情報の場所はどこですか": (
+            "ringcentral.video.top.meeting-info",
+            False,
+        ),
+        "Meeting information の場所はどこですか": (
+            "ringcentral.video.top.meeting-info",
+            False,
+        ),
+        "会議詳細の入口はどこですか": (
+            "ringcentral.video.top.meeting-info",
+            False,
+        ),
+        "会議画面の概要を教えて": ("ringcentral.video.overview", False),
+        "会議画面の見取り図はありますか": ("ringcentral.video.overview", False),
         "ネットワーク品質を確認したい": (
             "ringcentral.video.top.network-quality",
             True,
@@ -901,17 +915,25 @@ def test_ringcentral_japanese_audio_troubleshooting_question_stays_qa_with_alias
         "meeting information",
         "where is the meeting ID",
         "where is the meeting link",
+        "会議情報の場所はどこですか",
+        "Meeting information の場所はどこですか",
+        "会議詳細の入口はどこですか",
         "\u4f1a\u8bae\u53f7\u5728\u54ea\u91cc",
         "\u4f1a\u8bae\u94fe\u63a5",
     ],
 )
 def test_meeting_info_privacy_questions_are_answer_only(question: str) -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    language = "en"
+    if any("\u3040" <= char <= "\u30ff" for char in question):
+        language = "ja"
+    elif "\u4f1a\u8bae" in question:
+        language = "zh"
 
     response = answer_question(
         package=package,
         question=question,
-        voice=PresenterVoiceSettings(language="zh" if "\u4f1a\u8bae" in question else "en"),
+        voice=PresenterVoiceSettings(language=language),
     )
 
     assert response.entrypoint_id == "ringcentral.video.top.meeting-info"
@@ -919,6 +941,56 @@ def test_meeting_info_privacy_questions_are_answer_only(question: str) -> None:
     assert "Meeting information:" in response.answer_text
     assert "meeting ID" in response.answer_text
     assert "copy link" in response.answer_text
+    assert "https://" not in response.answer_text
+    assert "ringcentral.com" not in response.answer_text
+    assert "123456789" not in response.answer_text
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "会議IDを読んで",
+        "会議リンクをコピーして",
+        "招待リンクをコピーして",
+    ],
+)
+def test_ringcentral_japanese_meeting_info_value_or_copy_requests_stay_non_operable(
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(language="ja"),
+    )
+
+    assert response.can_operate is False
+    assert response.entrypoint_id not in {
+        "ringcentral.video.toolbar.add-coworkers",
+        "ringcentral.video.toolbar.invite",
+    }
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "UIを全部制御できますか",
+        "全コントロールを操作して",
+    ],
+)
+def test_ringcentral_japanese_overview_control_overclaims_stay_non_operable(
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(language="ja"),
+    )
+
+    assert response.can_operate is False
 
 
 def test_meeting_info_privacy_gate_does_not_depend_on_risky_words(

@@ -35,6 +35,10 @@ operationEntrypoints:
   title: Meeting overview
   area: Meeting window
   purpose: Introduce the RingCentral Video meeting surface before opening individual controls.
+  questionAliases:
+    ja:
+    - 会議画面の概要
+    - 会議画面の見取り図
   openSteps: []
   presenterNotes:
   - Use this as the narrative bridge before walking through specific controls.
@@ -47,6 +51,10 @@ operationEntrypoints:
   purpose: Open meeting details including meeting title, host, meeting ID, copy link, dial-in info, encryption,
     and end-to-end encryption option.
   questionAliases:
+    ja:
+    - 会議情報の場所
+    - Meeting information の場所
+    - 会議詳細の入口
     en:
     - meeting information
     - meeting details

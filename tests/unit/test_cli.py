@@ -764,6 +764,9 @@ def test_voices_lists_language_tone_choices() -> None:
     assert "Chinese aliases:" in result.stdout
     assert "Tones:" in result.stdout
     assert "Coach aliases:" in result.stdout
+    assert "Support aliases:" in result.stdout
+    assert "calm" in result.stdout
+    assert "recovery-focused" in result.stdout
 
 
 def test_voices_catalog_output_is_ascii_safe_for_legacy_windows_console() -> None:

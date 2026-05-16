@@ -5,7 +5,15 @@ from ai_presenter.config.models import AppProfile
 from ai_presenter.packages.models import DemoStepNarration
 
 PresenterLanguage = Literal["en", "zh"]
-PresenterTone = Literal["professional", "conversational", "concise", "friendly", "coach", "formal"]
+PresenterTone = Literal[
+    "professional",
+    "conversational",
+    "concise",
+    "friendly",
+    "coach",
+    "formal",
+    "support",
+]
 PRESENTER_LANGUAGE_CHOICES: tuple[tuple[str, PresenterLanguage], ...] = (
     ("English", "en"),
     ("Chinese", "zh"),
@@ -17,6 +25,7 @@ PRESENTER_TONE_CHOICES: tuple[tuple[str, PresenterTone], ...] = (
     ("Friendly", "friendly"),
     ("Coach", "coach"),
     ("Formal", "formal"),
+    ("Support", "support"),
 )
 
 _TONE_DESCRIPTIONS: dict[PresenterTone, str] = {
@@ -26,6 +35,7 @@ _TONE_DESCRIPTIONS: dict[PresenterTone, str] = {
     "friendly": "friendly, warm, reassuring, and approachable",
     "coach": "coach-like, step-by-step, and encouraging",
     "formal": "formal, polished, and restrained",
+    "support": "calm, diagnostic, recovery-focused, and reassuring",
 }
 _LANGUAGE_LABELS: dict[PresenterLanguage, str] = {
     "en": "English",
@@ -38,6 +48,7 @@ _TONE_LABELS: dict[PresenterTone, str] = {
     "friendly": "Friendly",
     "coach": "Coach",
     "formal": "Formal",
+    "support": "Support",
 }
 _LANGUAGE_ALIASES: dict[str, PresenterLanguage] = {
     "en": "en",
@@ -67,6 +78,14 @@ _TONE_ALIASES: dict[str, PresenterTone] = {
     "mentor": "coach",
     "formal": "formal",
     "structured": "formal",
+    "support": "support",
+    "supportive": "support",
+    "helpdesk": "support",
+    "troubleshooting": "support",
+    "recovery": "support",
+    "calm": "support",
+    "steady": "support",
+    "reassuring": "support",
 }
 _CHINESE_REPLACEMENTS = {
     "Chat": "聊天",
@@ -153,6 +172,8 @@ def render_presenter_text(text: str, settings: PresenterVoiceSettings) -> str:
         return f"Let's walk through it. {text}"
     if settings.tone == "formal":
         return f"Certainly. {text}"
+    if settings.tone == "support":
+        return f"Let's troubleshoot this. {text}"
     return text
 
 
@@ -188,7 +209,7 @@ def resolve_speech_provider_name(profile: AppProfile, settings: PresenterVoiceSe
 
 def sapi_rate_for_voice(settings: PresenterVoiceSettings) -> int:
     if settings.language == "zh":
-        if settings.tone in {"conversational", "friendly"}:
+        if settings.tone in {"conversational", "friendly", "support"}:
             return -1
         if settings.tone == "concise":
             return 1

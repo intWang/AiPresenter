@@ -179,6 +179,95 @@ def test_session_does_not_create_interrupt_for_presenter_meta_answer(
     assert session.create_interrupt_step(response) is None
 
 
+@pytest.mark.parametrize(
+    ("question", "voice", "expected_entrypoint_id", "expected_answer"),
+    [
+        (
+            "Please be brief and open chat",
+            PresenterVoiceSettings(language="en"),
+            "ringcentral.video.toolbar.chat",
+            "Chat panel:",
+        ),
+        (
+            "\u8bf7\u7528\u4e2d\u6587\u56de\u7b54\uff0c\u804a\u5929\u5728\u54ea\u91cc",
+            PresenterVoiceSettings(language="zh"),
+            "ringcentral.video.toolbar.chat",
+            "\u804a\u5929",
+        ),
+    ],
+)
+def test_session_creates_interrupt_for_safe_mixed_presenter_meta_answer(
+    question: str,
+    voice: PresenterVoiceSettings,
+    expected_entrypoint_id: str,
+    expected_answer: str,
+) -> None:
+    session = ControllerSession()
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    session.select_target(
+        MaterialPackageTarget(
+            profile=load_desktop_profile(),
+            package=package,
+            flow_id="meeting-control-map-demo",
+        )
+    )
+    session.set_voice(voice)
+
+    response = session.answer_question(question)
+    interrupt = session.create_interrupt_step(response)
+
+    assert response.entrypoint_id == expected_entrypoint_id
+    assert response.can_operate is True
+    assert expected_answer in response.answer_text
+    assert not response.answer_text.startswith("Presenter settings:")
+    assert interrupt is not None
+    assert interrupt.action.entrypoint_id == expected_entrypoint_id
+    assert interrupt.narration.text == response.answer_text
+
+
+@pytest.mark.parametrize(
+    ("question", "voice", "expected_entrypoint_id", "expected_answer"),
+    [
+        (
+            "Please be brief and read meeting information aloud",
+            PresenterVoiceSettings(language="en"),
+            "ringcentral.video.top.meeting-info",
+            "Meeting IDs and links are private meeting details",
+        ),
+        (
+            "\u8bf7\u7b80\u6d01\u4e00\u70b9\uff0c\u590d\u5236\u4f1a\u8bae\u94fe\u63a5",
+            PresenterVoiceSettings(language="zh"),
+            "ringcentral.video.top.meeting-info",
+            "\u79c1\u4eba\u4f1a\u8bae\u8be6\u60c5",
+        ),
+    ],
+)
+def test_session_does_not_create_interrupt_for_sensitive_mixed_presenter_meta_answer(
+    question: str,
+    voice: PresenterVoiceSettings,
+    expected_entrypoint_id: str,
+    expected_answer: str,
+) -> None:
+    session = ControllerSession()
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    session.select_target(
+        MaterialPackageTarget(
+            profile=load_desktop_profile(),
+            package=package,
+            flow_id="meeting-control-map-demo",
+        )
+    )
+    session.set_voice(voice)
+
+    response = session.answer_question(question)
+
+    assert response.entrypoint_id == expected_entrypoint_id
+    assert response.can_operate is False
+    assert expected_answer in response.answer_text
+    assert not response.answer_text.startswith("Presenter settings:")
+    assert session.create_interrupt_step(response) is None
+
+
 def test_session_does_not_create_interrupt_for_notes_question_policy() -> None:
     session = ControllerSession()
     package = load_material_package(Path("packages/ringcentral-video.yaml"))

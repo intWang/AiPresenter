@@ -816,6 +816,13 @@ def test_chinese_presenter_meta_requests_do_not_route_to_ringcentral_controls(
             True,
             "View layout menu:",
         ),
+        (
+            "Please be brief and open chat",
+            "ringcentral.video.toolbar.chat",
+            True,
+            True,
+            "Chat panel:",
+        ),
     ],
 )
 def test_presenter_meta_modifiers_do_not_steal_ringcentral_intents(
@@ -1459,7 +1466,11 @@ def test_ringcentral_localized_host_controls_question_returns_chinese_guidance()
     "question",
     [
         "Can you read chat messages?",
+        "Can you show chat messages?",
         "Read chat aloud",
+        "Open chat messages",
+        "Please be brief and show chat messages",
+        "Please be brief and open chat messages",
         "Summarize the chat",
         "What did John say in chat?",
     ],

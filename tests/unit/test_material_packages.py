@@ -942,9 +942,17 @@ def test_ringcentral_package_owns_japanese_aliases_for_meeting_control_routes() 
 def test_operation_entrypoints_support_package_owned_question_aliases() -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
     chat = package.entrypoint_by_id("ringcentral.video.toolbar.chat")
+    develop_video = package.entrypoint_by_id("ringcentral.develop.video.tab")
 
     assert "zh" in chat.question_aliases
     assert "聊天在哪里" in chat.question_aliases["zh"]
+    assert set(chat.question_aliases["en"]) == {
+        "open chat",
+        "show chat",
+        "where is chat",
+        "chat button",
+    }
+    assert "en" not in develop_video.question_aliases
 
 
 def test_material_package_exposes_read_only_entrypoint_index() -> None:

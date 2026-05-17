@@ -119,18 +119,19 @@ Repo tests prove local routing boundaries only. They are not live RingCentral ac
 
 Runtime-only safety hardening should not change package counts. Treat count drift as a review trigger unless the cycle explicitly changes YAML.
 
-Current expected package signals as of 2026-05-16:
+Current expected package signals as of 2026-05-17:
 
 - Operation entrypoints: 27.
 - Demo flows: 4, with 51 total demo steps.
 - Explainers: 21, covering 27/27 entrypoints.
-- Q&A items: 12.
-- Q&A question prompts: 84.
-- Package-owned aliases: 156.
+- Q&A items: 16.
+- Q&A question prompts: 220.
+- Package-owned aliases: 169.
+- English aliases: 4/27 entrypoints, 17 aliases.
 - Chinese aliases: 15/27 entrypoints, 49 aliases.
 - Japanese aliases: 13/27 entrypoints, 34 aliases.
 - Spanish aliases: 26/27 entrypoints, 69 aliases.
-- Chinese, Japanese, and Spanish required package localization coverage: 51/51 demo steps, 12/12 Q&A questions, 12/12 Q&A answers.
+- Chinese, Japanese, and Spanish required package localization coverage: 51/51 demo steps, 16/16 Q&A questions, 16/16 Q&A answers.
 - Spanish is runtime-selectable only with OpenAI-backed speech. Its localization
   is complete, but local SAPI/Piper routes and live RingCentral acceptance are
   still out of scope.

@@ -123,6 +123,32 @@ _RECORDING_SAFETY_ENTRYPOINT_ID = "ringcentral.video.more.recording"
 _NOTES_TRANSCRIPT_SAFETY_QUESTION = (
     "Where are captions, live transcription, and translation controls?"
 )
+_CHAT_CONTENT_PRIVACY_QUESTION = (
+    "Can the presenter read meeting messages or participant names?"
+)
+_CHAT_CONTENT_TERMS = (
+    "chat content",
+    "chat message",
+    "chat messages",
+    "chat text",
+    "meeting message",
+    "meeting messages",
+    "messages in chat",
+    "private chat",
+)
+_CHAT_CONTENT_ACTION_TERMS = (
+    "copy",
+    "display",
+    "export",
+    "open",
+    "quote",
+    "read",
+    "show",
+    "summarize",
+    "summary",
+    "tell me",
+    "what did",
+)
 _JAPANESE_RECORDING_TERMS = ("録画",)
 _JAPANESE_RECORDING_ACTION_TERMS = (
     "して",
@@ -499,6 +525,12 @@ def _match_qa(package: MaterialPackage, normalized_question: str) -> QuestionAns
     )
     if meeting_info_privacy_match is not None:
         return meeting_info_privacy_match
+    chat_content_privacy_match = _match_chat_content_privacy_qa(
+        package,
+        normalized_question,
+    )
+    if chat_content_privacy_match is not None:
+        return chat_content_privacy_match
     contained_match = _match_contained_qa_question(package, normalized_question)
     if contained_match is not None:
         return contained_match
@@ -578,6 +610,19 @@ def _match_notes_transcript_safety_qa(
         return None
     return package.qa_questions_by_normalized.get(
         normalize_question_prompt(_NOTES_TRANSCRIPT_SAFETY_QUESTION)
+    )
+
+
+def _match_chat_content_privacy_qa(
+    package: MaterialPackage,
+    normalized_question: str,
+) -> QuestionAnswer | None:
+    if not any(term in normalized_question for term in _CHAT_CONTENT_TERMS):
+        return None
+    if not any(term in normalized_question for term in _CHAT_CONTENT_ACTION_TERMS):
+        return None
+    return package.qa_questions_by_normalized.get(
+        normalize_question_prompt(_CHAT_CONTENT_PRIVACY_QUESTION)
     )
 
 

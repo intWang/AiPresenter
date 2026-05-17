@@ -478,6 +478,11 @@ operationEntrypoints:
   area: Meeting toolbar
   purpose: Open in-meeting chat.
   questionAliases:
+    en:
+    - open chat
+    - show chat
+    - where is chat
+    - chat button
     es:
     - panel de chat de la reunión
     - entrada del chat en la reunión

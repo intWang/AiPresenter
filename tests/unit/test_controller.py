@@ -680,6 +680,146 @@ def test_presenter_controller_answers_meta_prompt_without_queuing_running_demo(
     assert "question-answer-demo" not in calls
 
 
+@pytest.mark.parametrize(
+    ("question", "voice", "expected_entrypoint_id", "expected_answer"),
+    [
+        (
+            "Please be brief and open chat",
+            PresenterVoiceSettings(language="en"),
+            "ringcentral.video.toolbar.chat",
+            "Chat panel:",
+        ),
+        (
+            "\u8bf7\u7528\u4e2d\u6587\u56de\u7b54\uff0c\u804a\u5929\u5728\u54ea\u91cc",
+            PresenterVoiceSettings(language="zh"),
+            "ringcentral.video.toolbar.chat",
+            "\u804a\u5929",
+        ),
+    ],
+)
+def test_presenter_controller_queues_safe_mixed_meta_question_for_running_demo(
+    question: str,
+    voice: PresenterVoiceSettings,
+    expected_entrypoint_id: str,
+    expected_answer: str,
+) -> None:
+    profile, package = _controller_inputs()
+    control = DemoControl()
+    started = threading.Event()
+    release = threading.Event()
+    calls: list[str] = []
+
+    def runner(
+        _profile: DesktopAppProfile,
+        _package: MaterialPackage,
+        captured_flow_id: str,
+        *,
+        control: DemoControl,
+        voice: PresenterVoiceSettings | None = None,
+    ) -> None:
+        calls.append(captured_flow_id)
+        started.set()
+        release.wait(timeout=1)
+
+    controller = PresenterController(
+        profile=profile,
+        material_package=package,
+        flow_id="meeting-control-map-demo",
+        control=control,
+        runner=runner,
+    )
+
+    controller.start()
+    assert started.wait(timeout=1)
+    controller.set_voice(voice)
+
+    result = controller.submit_question(question)
+    interrupt = control.pop_interrupt()
+    release.set()
+    controller.join(timeout=1)
+
+    assert result.demonstration_status == "queued"
+    assert result.demonstration_message == "I queued that for the next safe step."
+    assert result.entrypoint_id == expected_entrypoint_id
+    assert result.can_operate is True
+    assert expected_answer in result.answer_text
+    assert not result.answer_text.startswith("Presenter settings:")
+    assert interrupt is not None
+    assert interrupt.action.entrypoint_id == expected_entrypoint_id
+    assert control.is_stop_requested is False
+    assert calls == ["meeting-control-map-demo"]
+    assert "question-answer-demo" not in calls
+
+
+@pytest.mark.parametrize(
+    ("question", "voice", "expected_entrypoint_id", "expected_answer"),
+    [
+        (
+            "Please be brief and read meeting information aloud",
+            PresenterVoiceSettings(language="en"),
+            "ringcentral.video.top.meeting-info",
+            "Meeting IDs and links are private meeting details",
+        ),
+        (
+            "\u8bf7\u7b80\u6d01\u4e00\u70b9\uff0c\u590d\u5236\u4f1a\u8bae\u94fe\u63a5",
+            PresenterVoiceSettings(language="zh"),
+            "ringcentral.video.top.meeting-info",
+            "\u79c1\u4eba\u4f1a\u8bae\u8be6\u60c5",
+        ),
+    ],
+)
+def test_presenter_controller_keeps_sensitive_mixed_meta_question_text_only_while_running(
+    question: str,
+    voice: PresenterVoiceSettings,
+    expected_entrypoint_id: str,
+    expected_answer: str,
+) -> None:
+    profile, package = _controller_inputs()
+    control = DemoControl()
+    started = threading.Event()
+    release = threading.Event()
+    calls: list[str] = []
+
+    def runner(
+        _profile: DesktopAppProfile,
+        _package: MaterialPackage,
+        captured_flow_id: str,
+        *,
+        control: DemoControl,
+        voice: PresenterVoiceSettings | None = None,
+    ) -> None:
+        calls.append(captured_flow_id)
+        started.set()
+        release.wait(timeout=1)
+
+    controller = PresenterController(
+        profile=profile,
+        material_package=package,
+        flow_id="meeting-control-map-demo",
+        control=control,
+        runner=runner,
+    )
+
+    controller.start()
+    assert started.wait(timeout=1)
+    controller.set_voice(voice)
+
+    result = controller.submit_question(question)
+    release.set()
+    controller.join(timeout=1)
+
+    assert result.demonstration_status == "text_only"
+    assert result.demonstration_message == ""
+    assert result.entrypoint_id == expected_entrypoint_id
+    assert result.can_operate is False
+    assert expected_answer in result.answer_text
+    assert not result.answer_text.startswith("Presenter settings:")
+    assert control.pop_interrupt() is None
+    assert control.is_stop_requested is False
+    assert calls == ["meeting-control-map-demo"]
+    assert "question-answer-demo" not in calls
+
+
 def test_presenter_controller_starts_safe_question_demo_with_indexed_flow_lookup() -> None:
     profile, package = _controller_inputs()
     calls: list[str] = []
@@ -736,6 +876,121 @@ def test_presenter_controller_answers_risky_question_without_demo() -> None:
     assert result.can_operate is False
     assert result.answer_text
     assert calls == []
+
+
+@pytest.mark.parametrize(
+    ("question", "voice", "expected_entrypoint_id", "expected_answer"),
+    [
+        (
+            "Please be brief and open chat",
+            PresenterVoiceSettings(language="en"),
+            "ringcentral.video.toolbar.chat",
+            "Chat panel:",
+        ),
+        (
+            "\u8bf7\u7528\u4e2d\u6587\u56de\u7b54\uff0c\u804a\u5929\u5728\u54ea\u91cc",
+            PresenterVoiceSettings(language="zh"),
+            "ringcentral.video.toolbar.chat",
+            "\u804a\u5929",
+        ),
+    ],
+)
+def test_presenter_controller_starts_safe_mixed_meta_question_demo_when_idle(
+    question: str,
+    voice: PresenterVoiceSettings,
+    expected_entrypoint_id: str,
+    expected_answer: str,
+) -> None:
+    profile, package = _controller_inputs()
+    calls: list[str] = []
+
+    def runner(
+        _profile: DesktopAppProfile,
+        _package: MaterialPackage,
+        captured_flow_id: str,
+        *,
+        control: DemoControl,
+        voice: PresenterVoiceSettings | None = None,
+    ) -> None:
+        calls.append(captured_flow_id)
+
+    controller = PresenterController(
+        profile=profile,
+        material_package=package,
+        flow_id="meeting-control-map-demo",
+        runner=runner,
+        voice=voice,
+    )
+
+    result = controller.submit_question(question)
+    controller.join(timeout=1)
+
+    assert result.demonstration_status == "started"
+    assert result.demonstration_message == "Demonstrating it now."
+    assert result.entrypoint_id == expected_entrypoint_id
+    assert result.can_operate is True
+    assert expected_answer in result.answer_text
+    assert not result.answer_text.startswith("Presenter settings:")
+    assert calls == ["question-answer-demo"]
+
+
+@pytest.mark.parametrize(
+    ("question", "voice", "expected_entrypoint_id", "expected_answer"),
+    [
+        (
+            "Please be brief and read meeting information aloud",
+            PresenterVoiceSettings(language="en"),
+            "ringcentral.video.top.meeting-info",
+            "Meeting IDs and links are private meeting details",
+        ),
+        (
+            "\u8bf7\u7b80\u6d01\u4e00\u70b9\uff0c\u590d\u5236\u4f1a\u8bae\u94fe\u63a5",
+            PresenterVoiceSettings(language="zh"),
+            "ringcentral.video.top.meeting-info",
+            "\u79c1\u4eba\u4f1a\u8bae\u8be6\u60c5",
+        ),
+    ],
+)
+def test_presenter_controller_keeps_sensitive_mixed_meta_question_text_only_when_idle(
+    question: str,
+    voice: PresenterVoiceSettings,
+    expected_entrypoint_id: str,
+    expected_answer: str,
+) -> None:
+    profile, package = _controller_inputs()
+    control = DemoControl()
+    calls: list[str] = []
+
+    def runner(
+        _profile: DesktopAppProfile,
+        _package: MaterialPackage,
+        captured_flow_id: str,
+        *,
+        control: DemoControl,
+        voice: PresenterVoiceSettings | None = None,
+    ) -> None:
+        calls.append(captured_flow_id)
+
+    controller = PresenterController(
+        profile=profile,
+        material_package=package,
+        flow_id="meeting-control-map-demo",
+        control=control,
+        runner=runner,
+        voice=voice,
+    )
+
+    result = controller.submit_question(question)
+    controller.join(timeout=1)
+
+    assert result.demonstration_status == "text_only"
+    assert result.demonstration_message == ""
+    assert result.entrypoint_id == expected_entrypoint_id
+    assert result.can_operate is False
+    assert expected_answer in result.answer_text
+    assert not result.answer_text.startswith("Presenter settings:")
+    assert calls == []
+    assert control.pop_interrupt() is None
 
 
 def test_controller_session_answers_question_text() -> None:

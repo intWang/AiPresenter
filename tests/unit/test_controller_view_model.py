@@ -379,9 +379,10 @@ def test_running_app_scanned_selection_is_ready() -> None:
             has_scanned_running_app=True,
             scanned_package_id="temp.demo.10",
             scanned_flow_id="temp-demo",
+            scan_summary="Scanned temp.demo.10: 2 controls, 3 entrypoints, 50 ms",
             voice=PresenterVoiceSettings(tone="conversational"),
             voice_readiness=None,
-            run_status="Ready",
+            run_status="Ready after question",
             is_running=False,
             is_stopping=False,
             question_text="chat",
@@ -391,11 +392,43 @@ def test_running_app_scanned_selection_is_ready() -> None:
 
     assert view_model.target_label == "temp.demo.10"
     assert view_model.flow_label == "temp-demo"
-    assert view_model.scan_label == "Scanned temp.demo.10"
+    assert view_model.scan_label == "Scanned temp.demo.10: 2 controls, 3 entrypoints, 50 ms"
     assert view_model.question_label == "Queued safe demo: temp.demo.chat"
     assert view_model.buttons.start_enabled is True
     assert view_model.buttons.scan_enabled is True
     assert view_model.buttons.submit_enabled is True
+
+    summary = render_controller_operator_summary(view_model)
+
+    assert "State: Ready after question | scan: Scanned temp.demo.10: 2 controls, 3 entrypoints, 50 ms" in summary
+    assert "Demo App" not in summary
+    assert "Secret Launch" not in summary
+
+
+def test_running_app_scan_summary_requires_scanned_selection() -> None:
+    view_model = build_controller_operator_view_model(
+        ControllerOperatorSnapshot(
+            source_mode="running_desktop_app",
+            material_package_id="ringcentral-video",
+            material_flow_id="meeting-control-map-demo",
+            running_app_label="Private Window (Demo:10)",
+            has_running_app_selection=True,
+            has_scanned_running_app=False,
+            scanned_package_id="temp.demo.10",
+            scanned_flow_id="temp-demo",
+            scan_summary="Scanned temp.demo.10: 2 controls, 3 entrypoints, 50 ms",
+            voice=PresenterVoiceSettings(),
+            voice_readiness=None,
+            run_status="Selected running app needs scanning",
+            is_running=False,
+            is_stopping=False,
+            question_text="chat",
+            last_question_outcome="",
+        )
+    )
+
+    assert view_model.scan_label == "Scan required"
+    assert "2 controls" not in render_controller_operator_summary(view_model)
 
 
 def test_operator_summary_uses_privacy_safe_question_outcome() -> None:

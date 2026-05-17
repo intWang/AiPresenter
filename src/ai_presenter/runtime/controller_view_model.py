@@ -35,6 +35,7 @@ class ControllerOperatorSnapshot:
     is_stopping: bool
     question_text: str
     last_question_outcome: str
+    scan_summary: str = ""
 
 
 @dataclass(frozen=True)
@@ -273,6 +274,8 @@ def _scan_label(snapshot: ControllerOperatorSnapshot) -> str:
         return "Package target ready"
     if not snapshot.has_running_app_selection:
         return "No running app selected"
+    if snapshot.has_scanned_running_app and snapshot.scan_summary:
+        return snapshot.scan_summary
     if snapshot.has_scanned_running_app and snapshot.scanned_package_id:
         return f"Scanned {snapshot.scanned_package_id}"
     return "Scan required"

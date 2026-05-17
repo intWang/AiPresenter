@@ -716,6 +716,7 @@ def run_controller(
     scan_state = _RunningAppScanState()
     scanned_package_id = ""
     scanned_flow_id = ""
+    scanned_scan_summary = ""
     scanned_package: MaterialPackage | None = None
     scanned_handle: WindowHandle | None = None
 
@@ -780,6 +781,7 @@ def run_controller(
                 has_scanned_running_app=scan_state.has_scanned_selection,
                 scanned_package_id=scanned_package_id,
                 scanned_flow_id=scanned_flow_id,
+                scan_summary=scanned_scan_summary,
                 voice=voice,
                 voice_readiness=voice_readiness,
                 run_status=status.get(),
@@ -872,6 +874,7 @@ def run_controller(
 
     def scan_selected_app() -> None:
         nonlocal scanned_flow_id, scanned_package_id, scanned_handle, scanned_package
+        nonlocal scanned_scan_summary
         selected = selected_running_window()
         if selected is None:
             status.set("Scan error: select a running app first")
@@ -889,6 +892,7 @@ def run_controller(
             scanned_handle = scan_result.handle
             scanned_package_id = scan_result.package.app_id
             scanned_flow_id = scan_result.flow_id
+            scanned_scan_summary = scan_result.status_message
             controller.set_target(
                 material_package=scan_result.package,
                 flow_id=scanned_flow_id,

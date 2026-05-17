@@ -357,6 +357,9 @@ operationEntrypoints:
     - configuración de fondo
     - fondo virtual
     - desenfocar fondo
+    fr:
+    - parametres d'arriere-plan
+    - flouter l'arriere-plan
     zh:
     - 背景
     - 虚拟背景
@@ -779,6 +782,8 @@ demoFlows:
       localizedText:
         es: El control del micrófono muestra si el audio local está silenciado y permite recuperarlo rápidamente
           antes de hablar, sin cambiar el estado de otras personas.
+        fr: Le controle du microphone indique si l'audio local est coupe et aide le presenter a se retablir avant
+          de parler, sans changer l'etat des autres participants.
         ja: マイクコントロールは、ローカル音声がミュートされているかを示し、話し始める前にすばやく復旧できるようにします。
         zh: 麦克风按钮显示当前是否静音。发言前先看这里，可以快速确认自己是否会被听到。
       placement: before
@@ -793,6 +798,8 @@ demoFlows:
       localizedText:
         es: El panel Participants permite confirmar rápidamente si hay personas en la sala o si la reunión sigue
           vacía, sin leer nombres ni detalles privados por defecto.
+        fr: Le panneau Participants permet de verifier rapidement si des personnes sont dans la salle ou si la
+          reunion est encore vide, sans lire les noms ni les details prives par defaut.
         ja: Participants パネルでは、会議室に誰がいるか、まだ空の会議かをすばやく確認できます。
         zh: Participants 面板用来确认谁在会议里，也能判断会议是否还处于空房间状态。
       placement: during
@@ -807,6 +814,8 @@ demoFlows:
       localizedText:
         es: Chat ofrece un canal paralelo para colaborar mientras continúa la demo hablada; el contenido del chat
           se mantiene privado salvo que el usuario pida leerlo explícitamente.
+        fr: Chat offre un canal parallele de collaboration pendant que la demonstration orale continue; le contenu
+          du chat reste prive sauf si l'utilisateur demande explicitement de le lire.
         ja: Chat は、音声でのデモを続けながらリンクや補足情報を共有できる文字の協力チャネルです。チャット内容は、ユーザーが明示的に求めるまで既定で非公開として扱います。
         zh: Chat 是文字协作通道，适合发送链接和补充信息；聊天内容默认保持隐私，除非用户明确要求读取。
       placement: during
@@ -1648,6 +1657,9 @@ qa:
     es:
     - ¿Cómo protejo mi fondo real?
     - ¿Cómo oculto el fondo de mi habitación en la reunión?
+    fr:
+    - Comment proteger mon arriere-plan reel ?
+    - Comment flouter l'arriere-plan de ma piece dans la reunion ?
     ja:
     - 実際の背景を保護するにはどうすればいいですか
     zh:
@@ -1658,6 +1670,8 @@ qa:
   localizedAnswers:
     es: Abre Settings, elige Background y selecciona Blur o un fondo virtual. Blur es la opción predeterminada
       más segura para la privacidad porque oculta los detalles de la habitación y mantiene visible a la persona.
+    fr: Ouvre Settings, choisis Background, puis selectionne Blur ou un arriere-plan virtuel. Blur est l'option par
+      defaut la plus sure pour la confidentialite, car elle masque les details de la piece tout en gardant la personne visible.
     ja: Settings を開き、Background を選んで Blur または仮想背景を選択します。Blur は部屋の詳細を隠しながら人物を表示できるため、プライバシー保護の安全な既定候補です。
     zh: 打开 Settings，选择 Background，然后选择 Blur 或虚拟背景。Blur 是最稳妥的隐私默认项，因为它会隐藏房间细节，同时保留人物可见。
   relatedEntrypointIds:

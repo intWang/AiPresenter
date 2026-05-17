@@ -457,18 +457,20 @@ def test_entrypoint_title_and_purpose_counts_do_not_gate_required_localization()
     assert report.required_localization_complete is True
 
 
-def test_localization_status_reports_zero_for_explicit_uncovered_language() -> None:
+def test_localization_status_reports_french_package_seed() -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
 
     report = build_localization_status(package, language="fr")
 
     assert report.language == "fr"
-    assert report.demo_localized_steps == 0
+    assert report.demo_localized_steps == 3
     assert report.demo_total_steps == 51
-    assert report.qa_localized_questions == 0
-    assert report.qa_localized_answers == 0
-    assert report.entrypoints_with_aliases == 0
-    assert report.alias_total == 0
+    assert report.flow_by_id["meeting-basics-demo"].localized_steps == 3
+    assert report.flow_by_id["meeting-basics-demo"].missing_step_ids == ()
+    assert report.qa_localized_questions == 1
+    assert report.qa_localized_answers == 1
+    assert report.entrypoints_with_aliases == 1
+    assert report.alias_total == 2
 
 
 def test_localization_status_marks_french_coverage_incomplete() -> None:
@@ -477,6 +479,35 @@ def test_localization_status_marks_french_coverage_incomplete() -> None:
     report = build_localization_status(package, language="fr")
 
     assert report.required_localization_complete is False
+
+
+def test_ringcentral_french_seed_qa_aliases_and_lifecycle_boundary_are_present() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    item = next(qa for qa in package.qa if qa.question == "How do I protect my real background?")
+    aliases = package.entrypoint_by_id(
+        "ringcentral.video.settings.background"
+    ).question_aliases.get("fr", [])
+    questions = item.localized_questions.get("fr", [])
+    answer = item.localized_answers.get("fr", "")
+    lifecycle_text = Path("docs/knowledge/language-lifecycle.md").read_text(
+        encoding="utf-8"
+    )
+    normalized_lifecycle_text = " ".join(lifecycle_text.split())
+
+    assert len(questions) == 2
+    assert any("arriere-plan" in question for question in questions)
+    assert any("flouter" in question for question in questions)
+    assert "Settings" in answer
+    assert "Background" in answer
+    assert "Blur" in answer
+    assert "confidentialite" in answer
+    assert set(aliases) == {
+        "parametres d'arriere-plan",
+        "flouter l'arriere-plan",
+    }
+    assert "French package-local seed" in normalized_lifecycle_text
+    assert "French remains package-only" in normalized_lifecycle_text
+    assert "presenter runtime does not support `--language fr`" in normalized_lifecycle_text
 
 
 def test_ringcentral_spanish_seed_qa_and_aliases_are_present() -> None:
@@ -1335,6 +1366,9 @@ def test_ringcentral_knowledge_docs_preserve_evidence_boundaries() -> None:
         encoding="utf-8"
     )
     source_text = (knowledge_dir / "source-index.md").read_text(encoding="utf-8")
+    observation_text = (knowledge_dir / "observation-log.md").read_text(
+        encoding="utf-8"
+    )
     runtime_text = (knowledge_dir / "runtime-safety-routing.md").read_text(
         encoding="utf-8"
     )
@@ -1427,6 +1461,11 @@ def test_ringcentral_knowledge_docs_preserve_evidence_boundaries() -> None:
         "`validation-targets --acceptance-runs` is a guard input, not an "
         "evidence-generation command."
     ) in source_text
+    for doc_text in (source_text, observation_text, runtime_text):
+        assert "222 Q&A question prompts" in doc_text
+        assert "171 package-owned" in doc_text
+        assert "French" in doc_text
+        assert "not runtime `--language fr` support" in doc_text
     assert (
         "executable live confidence also needs privacy, side-effect, cleanup, and "
         "dated acceptance evidence."

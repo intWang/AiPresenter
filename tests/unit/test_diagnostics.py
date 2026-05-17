@@ -384,6 +384,33 @@ def test_diagnostics_require_localization_accepts_spanish_runtime_language() -> 
     assert "Spanish" in runtime_language_check.detail
 
 
+def test_diagnostics_french_seed_stays_package_only_runtime_unsupported() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    report = diagnostics.diagnose_configuration(
+        profile=profile,
+        material_package=package,
+        require_localization=True,
+        localization_language="fr",
+    )
+
+    localization_check = next(
+        check for check in report.checks if check.name == "localization"
+    )
+    assert localization_check.status == "FAIL"
+    assert "required fr localization incomplete" in localization_check.detail
+    assert "3/51 demo steps" in localization_check.detail
+    assert "1/16 Q&A questions" in localization_check.detail
+    assert "1/16 Q&A answers" in localization_check.detail
+    runtime_language_check = next(
+        check for check in report.checks if check.name == "runtime language support"
+    )
+    assert runtime_language_check.status == "FAIL"
+    assert "localization language fr" in runtime_language_check.detail
+    assert "presenter runtime does not support --language fr" in runtime_language_check.detail
+
+
 def test_diagnostics_runtime_language_support_stays_separate_after_package_localization_complete() -> None:
     profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
     package = MaterialPackage.model_validate(
@@ -639,7 +666,7 @@ def test_diagnostics_reports_question_aliases_ok_for_ringcentral_package() -> No
     alias_check = next(check for check in report.checks if check.name == "question aliases")
     assert alias_check.status == "OK"
     assert alias_check.detail == (
-        "169 package-owned aliases have no cross-entrypoint duplicates"
+        "171 package-owned aliases have no cross-entrypoint duplicates"
     )
 
 
@@ -654,7 +681,7 @@ def test_diagnostics_reports_qa_questions_ok_for_ringcentral_package() -> None:
 
     qa_check = next(check for check in report.checks if check.name == "qa questions")
     assert qa_check.status == "OK"
-    assert qa_check.detail == "220 Q&A question prompts have no cross-item duplicates"
+    assert qa_check.detail == "222 Q&A question prompts have no cross-item duplicates"
 
 
 def test_diagnostics_reports_qa_alias_overlap_ok_for_ringcentral_package() -> None:
@@ -671,7 +698,7 @@ def test_diagnostics_reports_qa_alias_overlap_ok_for_ringcentral_package() -> No
     )
     assert overlap_check.status == "OK"
     assert overlap_check.detail == (
-        "220 Q&A question prompts have no unsafe package-owned alias overlaps"
+        "222 Q&A question prompts have no unsafe package-owned alias overlaps"
     )
 
 

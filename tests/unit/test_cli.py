@@ -21,6 +21,12 @@ from ai_presenter.runtime.voice_assets import VoiceAssetAvailability
 VALIDATION_TARGETS_NON_EVIDENCE_NOTE = (
     "Note: repo-derived planning list only; not live acceptance evidence."
 )
+VALIDATION_TARGETS_EVIDENCE_REMINDER = (
+    "Evidence reminder: P0/P1 manual evidence is metadata-first. "
+    "Prefer UIA/window metadata and sanitized product-control labels; screenshots require "
+    "a clear verification need and privacy review path; redact or omit private meeting "
+    "content before recording results."
+)
 VALIDATION_TARGETS_CHECKLIST_SOURCE = (
     "Checklist: "
     + str(Path("docs/knowledge/ringcentral-video/validation-checklist-index.md"))
@@ -1239,6 +1245,7 @@ def test_validation_targets_lists_ringcentral_targets() -> None:
     assert VALIDATION_TARGETS_CHECKLIST_SOURCE in result.stdout
     assert VALIDATION_TARGETS_EVIDENCE_SOURCE in result.stdout
     assert VALIDATION_TARGETS_NON_EVIDENCE_NOTE in result.stdout
+    assert result.stdout.count(VALIDATION_TARGETS_EVIDENCE_REMINDER) == 1
     assert "rcv-add-coworkers-modal" in result.stdout
     assert "rcv-controller-chat-question" in result.stdout
     assert "Loaded profile" not in result.stdout
@@ -1261,6 +1268,9 @@ def test_validation_targets_detail_outputs_draft_command() -> None:
     assert VALIDATION_TARGETS_EVIDENCE_SOURCE in result.stdout
     assert "ringcentral.video.main.add-coworkers" in result.stdout
     assert VALIDATION_TARGETS_NON_EVIDENCE_NOTE in result.stdout
+    assert result.stdout.index(VALIDATION_TARGETS_EVIDENCE_REMINDER) < result.stdout.index(
+        "draft:"
+    )
     assert "Modal close" in result.stdout
     assert "invite links" in result.stdout
     assert (

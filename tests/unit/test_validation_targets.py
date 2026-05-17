@@ -12,6 +12,13 @@ from ai_presenter.acceptance.validation_targets import ValidationTargetCatalog
 from ai_presenter.packages.loader import load_material_package
 from ai_presenter.packages.models import MaterialPackage
 
+VALIDATION_TARGETS_EVIDENCE_REMINDER = (
+    "Evidence reminder: P0/P1 manual evidence is metadata-first. "
+    "Prefer UIA/window metadata and sanitized product-control labels; screenshots require "
+    "a clear verification need and privacy review path; redact or omit private meeting "
+    "content before recording results."
+)
+
 
 def load_ringcentral_package() -> MaterialPackage:
     return load_material_package(Path("packages/ringcentral-video.yaml"))
@@ -329,6 +336,7 @@ def test_render_validation_target_lines_suppresses_blocked_draft_command() -> No
 
     assert "blocked:" in text
     assert "Do not execute" in text
+    assert VALIDATION_TARGETS_EVIDENCE_REMINDER not in text
     assert "draft:" not in text
     assert "acceptance-draft" not in text
 
@@ -343,11 +351,48 @@ def test_render_validation_target_lines_keeps_normal_draft_command() -> None:
     assert f"Checklist: {checklist_path}" in text
     assert f"Evidence: {evidence_path}" in text
     assert "repo-derived planning list only; not live acceptance evidence" in text
+    assert text.count(VALIDATION_TARGETS_EVIDENCE_REMINDER) == 1
+    assert text.index(VALIDATION_TARGETS_EVIDENCE_REMINDER) < text.index("draft:")
     assert "draft:" in text
     assert (
         "ai-presenter acceptance-draft --package ringcentral-video "
         "--entrypoint ringcentral.video.main.add-coworkers"
     ) in text
+
+
+def test_render_validation_target_lines_shows_evidence_reminder_for_p1_targets() -> None:
+    catalog = discover_catalog()
+
+    text = "\n".join(render_validation_target_lines(catalog, priority="P1"))
+
+    assert VALIDATION_TARGETS_EVIDENCE_REMINDER in text
+    assert "rcv-top-bar-routes" in text
+
+
+def test_render_validation_target_lines_suppresses_evidence_reminder_for_p2_targets() -> None:
+    catalog = discover_catalog()
+
+    text = "\n".join(render_validation_target_lines(catalog, priority="P2"))
+
+    assert VALIDATION_TARGETS_EVIDENCE_REMINDER not in text
+    assert "rcv-media-controls" in text
+
+
+def test_render_validation_target_lines_suppresses_evidence_reminder_for_other_packages() -> None:
+    ringcentral_catalog = discover_catalog()
+    target = target_by_id(ringcentral_catalog, "rcv-add-coworkers-modal")
+    catalog = ValidationTargetCatalog(
+        package_id="demo",
+        checklist_path=Path("docs/demo-checklist.md"),
+        evidence_path=None,
+        targets=(target,),
+        targets_by_id={target.id: target},
+    )
+
+    text = "\n".join(render_validation_target_lines(catalog))
+
+    assert VALIDATION_TARGETS_EVIDENCE_REMINDER not in text
+    assert "Package: demo" in text
 
 
 def test_render_validation_target_lines_marks_missing_evidence_source_as_none() -> None:

@@ -26,6 +26,12 @@ _REQUIRED_BLOCKED_HEADERS = ("Route", "Entrypoint", "Reason")
 _TARGET_ID_HEADER = "Target ID"
 _OPTIONAL_TARGET_ID_HEADERS = (_TARGET_ID_HEADER,)
 _NON_EVIDENCE_NOTE = "repo-derived planning list only; not live acceptance evidence."
+_EVIDENCE_CAPTURE_NOTE = (
+    "Evidence reminder: P0/P1 manual evidence is metadata-first. "
+    "Prefer UIA/window metadata and sanitized product-control labels; screenshots require "
+    "a clear verification need and privacy review path; redact or omit private meeting "
+    "content before recording results."
+)
 _ALLOWED_EVIDENCE_LEVELS = ("Accepted", "Observed", "Repo-tested", "Backlog", "Blocked")
 
 
@@ -157,13 +163,27 @@ def render_validation_target_lines(
         f"Checklist: {_display_path(catalog.checklist_path)}",
         f"Evidence: {_display_path(catalog.evidence_path) if catalog.evidence_path else 'none'}",
         f"Note: {_NON_EVIDENCE_NOTE}",
-        "",
     ]
+    if _should_render_evidence_capture_note(catalog, selected_targets):
+        lines.append(_EVIDENCE_CAPTURE_NOTE)
+    lines.append("")
     for index, target in enumerate(selected_targets):
         if index:
             lines.append("")
         lines.extend(_render_target_block(catalog.package_id, target, include_draft_command))
     return lines
+
+
+def _should_render_evidence_capture_note(
+    catalog: ValidationTargetCatalog,
+    selected_targets: list[ValidationTarget],
+) -> bool:
+    if catalog.package_id != "ringcentral-video":
+        return False
+    return any(
+        target.blocked_reason is None and target.priority.casefold() in {"p0", "p1"}
+        for target in selected_targets
+    )
 
 
 def _filter_targets(

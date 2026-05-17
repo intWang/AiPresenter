@@ -641,6 +641,36 @@ def test_ringcentral_localized_shared_screen_qa_returns_chinese_answer() -> None
     assert "approved observation" not in response.answer_text
 
 
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Share my screen",
+        "Start sharing",
+        "Stop sharing",
+        "Read the shared screen",
+        "Can you describe what's on screen?",
+        "Show my screen",
+    ],
+)
+def test_ringcentral_english_screen_sharing_questions_stay_qa_first(
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(),
+    )
+
+    assert response.entrypoint_id == "ringcentral.video.toolbar.share"
+    assert response.can_operate is False
+    assert "Screen sharing can expose private content" in response.answer_text
+    assert "Screen sharing:" not in response.answer_text
+    assert "Start meeting:" not in response.answer_text
+    assert create_question_interrupt_step(package, response) is None
+
+
 def test_ringcentral_localized_invite_qa_returns_chinese_answer_and_stays_non_operable() -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
 

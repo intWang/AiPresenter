@@ -213,9 +213,9 @@ def test_ringcentral_localization_status_reports_chinese_coverage() -> None:
     assert report.language == "zh"
     assert report.demo_localized_steps == 51
     assert report.demo_total_steps == 51
-    assert report.qa_localized_questions == 13
-    assert report.qa_localized_answers == 13
-    assert report.qa_total == 13
+    assert report.qa_localized_questions == 14
+    assert report.qa_localized_answers == 14
+    assert report.qa_total == 14
     assert report.entrypoints_with_aliases == 15
     assert report.entrypoint_total == 27
     assert report.alias_total == 49
@@ -232,9 +232,9 @@ def test_ringcentral_localization_status_reports_japanese_demo_and_qa_coverage()
     assert report.language == "ja"
     assert report.demo_localized_steps == 51
     assert report.demo_total_steps == 51
-    assert report.qa_localized_questions == 13
-    assert report.qa_localized_answers == 13
-    assert report.qa_total == 13
+    assert report.qa_localized_questions == 14
+    assert report.qa_localized_answers == 14
+    assert report.qa_total == 14
     assert report.entrypoints_with_aliases == 13
     assert report.entrypoint_total == 27
     assert report.alias_total == 34
@@ -719,9 +719,9 @@ def test_ringcentral_localization_status_reports_complete_spanish_package() -> N
     assert report.language == "es"
     assert report.demo_localized_steps == 51
     assert report.demo_total_steps == 51
-    assert report.qa_localized_questions == 13
-    assert report.qa_localized_answers == 13
-    assert report.qa_total == 13
+    assert report.qa_localized_questions == 14
+    assert report.qa_localized_answers == 14
+    assert report.qa_total == 14
     assert report.entrypoints_with_aliases == 26
     assert report.entrypoint_total == 27
     assert report.alias_total == 69

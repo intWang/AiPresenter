@@ -347,8 +347,8 @@ def test_diagnostics_require_localization_passes_for_ringcentral_chinese() -> No
     assert localization_check.status == "OK"
     assert "required zh localization complete" in localization_check.detail
     assert "51/51 demo steps" in localization_check.detail
-    assert "13/13 Q&A questions" in localization_check.detail
-    assert "13/13 Q&A answers" in localization_check.detail
+    assert "14/14 Q&A questions" in localization_check.detail
+    assert "14/14 Q&A answers" in localization_check.detail
     runtime_language_check = next(
         check for check in report.checks if check.name == "runtime language support"
     )
@@ -374,8 +374,8 @@ def test_diagnostics_require_localization_accepts_spanish_runtime_language() -> 
     assert localization_check.status == "OK"
     assert "required es localization complete" in localization_check.detail
     assert "51/51 demo steps" in localization_check.detail
-    assert "13/13 Q&A questions" in localization_check.detail
-    assert "13/13 Q&A answers" in localization_check.detail
+    assert "14/14 Q&A questions" in localization_check.detail
+    assert "14/14 Q&A answers" in localization_check.detail
     runtime_language_check = next(
         check for check in report.checks if check.name == "runtime language support"
     )
@@ -480,8 +480,8 @@ def test_diagnostics_require_localization_passes_for_ringcentral_japanese() -> N
     assert localization_check.status == "OK"
     assert "required ja localization complete" in localization_check.detail
     assert "51/51 demo steps" in localization_check.detail
-    assert "13/13 Q&A questions" in localization_check.detail
-    assert "13/13 Q&A answers" in localization_check.detail
+    assert "14/14 Q&A questions" in localization_check.detail
+    assert "14/14 Q&A answers" in localization_check.detail
 
 
 def test_diagnostics_require_localization_fails_for_incomplete_package() -> None:
@@ -654,7 +654,7 @@ def test_diagnostics_reports_qa_questions_ok_for_ringcentral_package() -> None:
 
     qa_check = next(check for check in report.checks if check.name == "qa questions")
     assert qa_check.status == "OK"
-    assert qa_check.detail == "109 Q&A question prompts have no cross-item duplicates"
+    assert qa_check.detail == "119 Q&A question prompts have no cross-item duplicates"
 
 
 def test_diagnostics_reports_qa_alias_overlap_ok_for_ringcentral_package() -> None:
@@ -671,7 +671,7 @@ def test_diagnostics_reports_qa_alias_overlap_ok_for_ringcentral_package() -> No
     )
     assert overlap_check.status == "OK"
     assert overlap_check.detail == (
-        "109 Q&A question prompts have no unsafe package-owned alias overlaps"
+        "119 Q&A question prompts have no unsafe package-owned alias overlaps"
     )
 
 

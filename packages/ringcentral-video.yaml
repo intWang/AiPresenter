@@ -1649,6 +1649,32 @@ qa:
   relatedEntrypointIds:
   - ringcentral.video.settings.background
   - ringcentral.video.settings.background.blur
+- question: How should AiPresenter handle screen sharing safely?
+  localizedQuestions:
+    en:
+    - Share my screen
+    - Start sharing
+    - Stop sharing
+    - Read the shared screen
+    - Can you describe what's on screen?
+    - Show my screen
+    es:
+    - ¿Cómo debe manejar AiPresenter compartir pantalla de forma segura?
+    ja:
+    - 画面共有を安全に扱うにはどうすればいいですか
+    zh:
+    - 怎么安全处理屏幕共享
+  answer: Screen sharing can expose private content and changes what other people see. Treat sharing controls as
+    explain-only until the user explicitly confirms what should be shared or stopped, and only describe visible shared
+    content after an approved observation source has captured it and the user allows it.
+  localizedAnswers:
+    es: Compartir pantalla puede exponer contenido privado y cambia lo que ven otras personas. Trata los controles de
+      compartir como solo explicación hasta que el usuario confirme explícitamente qué debe compartirse o detenerse, y
+      describe contenido compartido visible solo después de que una fuente aprobada lo haya capturado y el usuario lo permita.
+    ja: 画面共有は非公開の内容を見せる可能性があり、ほかの参加者に表示される内容を変えます。共有または停止する対象をユーザーが明示的に確認するまで、共有コントロールは説明のみに留めます。表示中の共有内容を説明するのは、承認済みの観察ソースで取得され、ユーザーが許可した場合だけです。
+    zh: 屏幕共享可能暴露私人内容，也会改变其他人看到的画面。除非用户明确确认要共享或停止共享的内容，否则只解释共享控制；只有在批准的观察来源已捕获内容且用户允许时，才描述可见的共享内容。
+  relatedEntrypointIds:
+  - ringcentral.video.toolbar.share
 - question: Can the presenter describe shared-screen content?
   localizedQuestions:
     es:

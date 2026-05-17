@@ -695,6 +695,7 @@ def test_ringcentral_localized_invite_qa_returns_chinese_answer_and_stays_non_op
     "question",
     [
         "Read the invite link",
+        "Copy the invite link",
         "Invite John",
         "Send the invite",
         "Who can I invite?",
@@ -723,6 +724,10 @@ def test_ringcentral_english_invite_privacy_questions_stay_qa_first(
     "question",
     [
         "Copy meeting link",
+        "Can you copy the meeting link?",
+        "Copy the meeting URL",
+        "Can you paste the meeting link?",
+        "Read the meeting link aloud",
         "Can you read the meeting ID?",
     ],
 )

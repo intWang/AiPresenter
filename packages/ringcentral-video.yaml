@@ -1703,6 +1703,7 @@ qa:
   localizedQuestions:
     en:
     - Read the invite link
+    - Copy the invite link
     - Invite John
     - Send the invite
     - Who can I invite?
@@ -1728,6 +1729,10 @@ qa:
   localizedQuestions:
     en:
     - Copy meeting link
+    - Can you copy the meeting link?
+    - Copy the meeting URL
+    - Can you paste the meeting link?
+    - Read the meeting link aloud
     - Can you read the meeting ID?
     es:
     - ¿Cómo debe manejar AiPresenter los ID y enlaces de reunión?

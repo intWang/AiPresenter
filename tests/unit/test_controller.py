@@ -1315,6 +1315,7 @@ def test_render_voice_label_uses_controller_labels() -> None:
         == "Chinese / Friendly"
     )
     assert render_voice_label(PresenterVoiceSettings(tone="calm")) == "English / Support"
+    assert render_voice_label(PresenterVoiceSettings(tone="executive")) == "English / Executive"
     assert render_voice_label(PresenterVoiceSettings(tone="safety")) == "English / Careful"
 
 

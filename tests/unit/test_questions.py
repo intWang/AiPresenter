@@ -716,6 +716,7 @@ def test_ringcentral_full_screen_questions_route_to_view_layout(
         "Explain more slowly",
         "Switch to careful tone",
         "Use coach tone",
+        "Use executive tone",
         "Answer in Chinese",
         "Can you speak Spanish?",
         "Change language to Japanese",
@@ -808,6 +809,20 @@ def test_chinese_presenter_meta_requests_do_not_route_to_ringcentral_controls(
             False,
             False,
             "Do not mute others",
+        ),
+        (
+            "Use executive tone and read meeting information aloud",
+            "ringcentral.video.top.meeting-info",
+            False,
+            False,
+            "Meeting IDs and links are private meeting details",
+        ),
+        (
+            "Use executive tone and open chat",
+            "ringcentral.video.toolbar.chat",
+            True,
+            True,
+            "Chat panel:",
         ),
         (
             "Please be brief and go full screen",
@@ -1445,7 +1460,7 @@ def test_ringcentral_sensitive_prompt_routing_is_tone_invariant(
     assert baseline.can_operate is expected_can_operate
     assert baseline_interrupt is expected_interrupt
 
-    for tone in ("friendly", "coach", "support", "empathetic", "privacy"):
+    for tone in ("friendly", "coach", "executive", "support", "empathetic", "privacy"):
         response = answer_question(
             package=package,
             question=question,

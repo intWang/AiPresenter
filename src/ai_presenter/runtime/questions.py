@@ -370,6 +370,7 @@ _PRESENTER_META_REQUEST_FRAGMENTS = (
     "change language",
     "coach tone",
     "conversational tone",
+    "executive tone",
     "explain more slowly",
     "formal tone",
     "friendly tone",

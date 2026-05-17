@@ -113,9 +113,9 @@ def test_voice_settings_normalize_expanded_tones() -> None:
     assert PresenterVoiceSettings(tone="warm").tone == "friendly"
     assert PresenterVoiceSettings(tone="mentor").tone == "coach"
     assert PresenterVoiceSettings(tone="structured").tone == "formal"
-    assert PresenterVoiceSettings(tone="executive").tone == "formal"
-    assert PresenterVoiceSettings(tone="briefing").tone == "formal"
-    assert PresenterVoiceSettings(tone="boardroom").tone == "formal"
+    assert PresenterVoiceSettings(tone="executive").tone == "executive"
+    assert PresenterVoiceSettings(tone="briefing").tone == "executive"
+    assert PresenterVoiceSettings(tone="boardroom").tone == "executive"
     assert PresenterVoiceSettings(tone="support").tone == "support"
     assert PresenterVoiceSettings(tone="calm").tone == "support"
     assert PresenterVoiceSettings(tone="steady").tone == "support"
@@ -133,13 +133,12 @@ def test_presenter_tone_aliases_and_description_are_public() -> None:
     assert voice.presenter_tone_aliases("mentor") == ("coach", "coaching", "mentor")
     assert "step-by-step" in voice.presenter_tone_description("coach")
     assert voice.presenter_tone_aliases("executive") == (
-        "formal",
-        "structured",
         "executive",
         "briefing",
         "boardroom",
     )
-    assert "polished" in voice.presenter_tone_description("executive")
+    assert voice.tone_label("executive") == "Executive"
+    assert "decision-oriented" in voice.presenter_tone_description("executive")
     assert voice.presenter_tone_aliases("calm") == (
         "support",
         "supportive",
@@ -176,6 +175,7 @@ def test_voice_instruction_describes_expanded_tones() -> None:
     assert "warm" in render_voice_instruction(PresenterVoiceSettings(tone="friendly"))
     assert "step-by-step" in render_voice_instruction(PresenterVoiceSettings(tone="coach"))
     assert "formal" in render_voice_instruction(PresenterVoiceSettings(tone="formal"))
+    assert "decision-oriented" in render_voice_instruction(PresenterVoiceSettings(tone="executive"))
     assert "recovery-focused" in render_voice_instruction(PresenterVoiceSettings(tone="support"))
     assert "boundary-focused" in render_voice_instruction(PresenterVoiceSettings(tone="privacy"))
 
@@ -193,6 +193,10 @@ def test_render_presenter_text_applies_expanded_english_tones() -> None:
         "Open Chat.",
         PresenterVoiceSettings(tone="formal"),
     ).startswith("Certainly.")
+    assert render_presenter_text(
+        "Open Chat.",
+        PresenterVoiceSettings(tone="executive"),
+    ).startswith("Executive brief.")
     assert render_presenter_text(
         "Open audio settings.",
         PresenterVoiceSettings(tone="support"),
@@ -439,5 +443,6 @@ def test_sapi_rate_for_voice_maps_chinese_tones_to_practical_rates() -> None:
     assert sapi_rate_for_voice(PresenterVoiceSettings(language="zh", tone="friendly")) == -1
     assert sapi_rate_for_voice(PresenterVoiceSettings(language="zh", tone="coach")) == 0
     assert sapi_rate_for_voice(PresenterVoiceSettings(language="zh", tone="formal")) == 0
+    assert sapi_rate_for_voice(PresenterVoiceSettings(language="zh", tone="executive")) == 0
     assert sapi_rate_for_voice(PresenterVoiceSettings(language="zh", tone="support")) == -1
     assert sapi_rate_for_voice(PresenterVoiceSettings(language="zh", tone="careful")) == 0

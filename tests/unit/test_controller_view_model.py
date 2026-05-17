@@ -368,6 +368,30 @@ def test_operator_view_model_labels_expanded_tone() -> None:
     assert view_model.voice_label == "English / Coach"
 
 
+def test_operator_view_model_labels_executive_tone() -> None:
+    view_model = build_controller_operator_view_model(
+        ControllerOperatorSnapshot(
+            source_mode="material_package",
+            material_package_id="ringcentral-video",
+            material_flow_id="meeting-control-map-demo",
+            running_app_label="",
+            has_running_app_selection=False,
+            has_scanned_running_app=False,
+            scanned_package_id="",
+            scanned_flow_id="",
+            voice=PresenterVoiceSettings(tone="executive"),
+            voice_readiness=None,
+            run_status="Ready",
+            is_running=False,
+            is_stopping=False,
+            question_text="",
+            last_question_outcome="",
+        )
+    )
+
+    assert view_model.voice_label == "English / Executive"
+
+
 def test_running_app_scanned_selection_is_ready() -> None:
     view_model = build_controller_operator_view_model(
         ControllerOperatorSnapshot(

@@ -12,6 +12,7 @@ PresenterTone = Literal[
     "friendly",
     "coach",
     "formal",
+    "executive",
     "support",
     "careful",
 ]
@@ -28,6 +29,7 @@ PRESENTER_TONE_CHOICES: tuple[tuple[str, PresenterTone], ...] = (
     ("Friendly", "friendly"),
     ("Coach", "coach"),
     ("Formal", "formal"),
+    ("Executive", "executive"),
     ("Support", "support"),
     ("Careful", "careful"),
 )
@@ -39,6 +41,7 @@ _TONE_DESCRIPTIONS: dict[PresenterTone, str] = {
     "friendly": "friendly, warm, reassuring, and approachable",
     "coach": "coach-like, step-by-step, and encouraging",
     "formal": "formal, polished, and restrained",
+    "executive": "executive, decision-oriented, polished, and outcome-focused",
     "support": "calm, diagnostic, recovery-focused, and reassuring",
     "careful": "careful, privacy-aware, concise, and boundary-focused",
 }
@@ -55,6 +58,7 @@ _TONE_LABELS: dict[PresenterTone, str] = {
     "friendly": "Friendly",
     "coach": "Coach",
     "formal": "Formal",
+    "executive": "Executive",
     "support": "Support",
     "careful": "Careful",
 }
@@ -100,9 +104,9 @@ _TONE_ALIASES: dict[str, PresenterTone] = {
     "mentor": "coach",
     "formal": "formal",
     "structured": "formal",
-    "executive": "formal",
-    "briefing": "formal",
-    "boardroom": "formal",
+    "executive": "executive",
+    "briefing": "executive",
+    "boardroom": "executive",
     "support": "support",
     "supportive": "support",
     "helpdesk": "support",
@@ -206,6 +210,8 @@ def render_presenter_text(text: str, settings: PresenterVoiceSettings) -> str:
         return f"Let's walk through it. {text}"
     if settings.tone == "formal":
         return f"Certainly. {text}"
+    if settings.tone == "executive":
+        return f"Executive brief. {text}"
     if settings.tone == "support":
         return f"Let's troubleshoot this. {text}"
     if settings.tone == "careful":
@@ -274,6 +280,7 @@ def _render_chinese(text: str, settings: PresenterVoiceSettings) -> str:
         "friendly": "可以的，我来说明一下。",
         "coach": "我们一步步来看。",
         "formal": "请允许我说明。",
+        "executive": "我简要说明关键点。",
         "careful": "我会谨慎说明。",
     }
     prefix = prefixes.get(settings.tone, "")

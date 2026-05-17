@@ -1437,11 +1437,14 @@ def test_voices_lists_language_tone_choices() -> None:
     assert "espa\\xf1ol" in result.stdout
     assert "Tones:" in result.stdout
     assert "Coach aliases:" in result.stdout
+    assert "Executive aliases:" in result.stdout
     assert "Support aliases:" in result.stdout
     assert "Careful aliases:" in result.stdout
     assert "calm" in result.stdout
     assert "empathetic" in result.stdout
     assert "executive" in result.stdout
+    assert "boardroom" in result.stdout
+    assert "decision-oriented" in result.stdout
     assert "recovery-focused" in result.stdout
     assert "privacy-aware" in result.stdout
 
@@ -1451,6 +1454,13 @@ def test_voices_catalog_output_is_ascii_safe_for_legacy_windows_console() -> Non
 
     assert result.exit_code == 0
     assert result.stdout.isascii()
+
+
+def test_voices_targeted_executive_alias_reports_canonical_tone() -> None:
+    result = CliRunner().invoke(app, ["voices", "--tone", "briefing"])
+
+    assert result.exit_code == 0
+    assert "Selected voice: English / Executive" in result.stdout
 
 
 def test_voices_profile_reports_supported_and_unsupported_languages() -> None:

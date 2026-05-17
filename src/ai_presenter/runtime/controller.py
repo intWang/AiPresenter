@@ -156,19 +156,23 @@ def _exception_message(exc: Exception) -> str:
     return str(exc)
 
 
+def describe_question_error(_exc: Exception) -> str:
+    return "Question error: question could not be answered safely."
+
+
 def describe_question_result(result: QuestionSubmitResult) -> str:
     if result.demonstration_status == "queued" and result.entrypoint_id is not None:
         return f"Queued safe demo: {result.entrypoint_id}"
     if result.demonstration_status == "started" and result.entrypoint_id is not None:
         return f"Demonstrating: {result.entrypoint_id}"
-    if result.entrypoint_id is not None and not result.can_operate:
-        return f"Answered only: {result.entrypoint_id} is not safe to operate automatically"
-    if result.answer_source == "qa":
-        return "Answered only: matched text guidance; no demo was started"
     if result.answer_source == "presenter_meta":
         return "Answered only: presenter settings response; no demo was started"
-    if result.entrypoint_id is None:
+    if result.answer_source == "qa":
+        return "Answered only: matched text guidance; no demo was started"
+    if result.answer_source == "no_match" or result.entrypoint_id is None:
         return "Answered only: no matching safe control"
+    if result.entrypoint_id is not None and not result.can_operate:
+        return f"Answered only: {result.entrypoint_id} is not safe to operate automatically"
     return f"Answered only: {result.entrypoint_id}"
 
 
@@ -881,8 +885,8 @@ def run_controller(
             if result.demonstration_status == "started":
                 session.mark_running()
         except Exception as exc:
-            append_chat("AiPresenter", f"Question error: {exc}")
-            last_question_outcome = f"Question error: {exc}"
+            last_question_outcome = describe_question_error(exc)
+            append_chat("AiPresenter", last_question_outcome)
         refresh_operator_view()
 
     def refresh_status() -> None:

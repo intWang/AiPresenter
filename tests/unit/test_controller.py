@@ -24,6 +24,7 @@ from ai_presenter.runtime.controller import _check_controller_voice_readiness
 from ai_presenter.runtime.controller import _configure_operator_summary_label
 from ai_presenter.runtime.controller import _ControllerVoiceReadinessCache
 from ai_presenter.runtime.controller import _voice_readiness_failure_message
+from ai_presenter.runtime.controller import describe_question_error
 from ai_presenter.runtime.controller import describe_question_result
 from ai_presenter.runtime.controller import format_chat_turns
 from ai_presenter.runtime.controller import plan_controller_status_application
@@ -616,7 +617,12 @@ def test_presenter_controller_answers_meta_prompt_without_question_demo_when_idl
     assert result.demonstration_message == ""
     assert result.entrypoint_id is None
     assert result.can_operate is False
+    assert result.answer_source == "presenter_meta"
     assert result.answer_text.startswith("Presenter settings:")
+    assert (
+        describe_question_result(result)
+        == "Answered only: presenter settings response; no demo was started"
+    )
     assert controller.is_running is False
     assert controller.last_error is None
     assert calls == []
@@ -673,7 +679,12 @@ def test_presenter_controller_answers_meta_prompt_without_queuing_running_demo(
     assert result.demonstration_message == ""
     assert result.entrypoint_id is None
     assert result.can_operate is False
+    assert result.answer_source == "presenter_meta"
     assert result.answer_text.startswith("Presenter settings:")
+    assert (
+        describe_question_result(result)
+        == "Answered only: presenter settings response; no demo was started"
+    )
     assert control.pop_interrupt() is None
     assert control.is_stop_requested is False
     assert calls == ["meeting-control-map-demo"]
@@ -854,14 +865,13 @@ def test_presenter_controller_keeps_sensitive_mixed_meta_question_text_only_whil
     assert result.demonstration_message == ""
     assert result.entrypoint_id == expected_entrypoint_id
     assert result.can_operate is False
+    assert result.answer_source == "qa"
     assert expected_answer in result.answer_text
     assert not result.answer_text.startswith("Presenter settings:")
-    expected_outcome = (
-        "Answered only: matched text guidance; no demo was started"
-        if expected_entrypoint_id is None
-        else f"Answered only: {expected_entrypoint_id} is not safe to operate automatically"
+    assert (
+        describe_question_result(result)
+        == "Answered only: matched text guidance; no demo was started"
     )
-    assert describe_question_result(result) == expected_outcome
     assert control.pop_interrupt() is None
     assert control.is_stop_requested is False
     assert calls == ["meeting-control-map-demo"]
@@ -917,13 +927,53 @@ def test_presenter_controller_answers_risky_question_without_demo() -> None:
         runner=runner,
     )
 
-    result = controller.submit_question("leave meeting")
+    result = controller.submit_question("invite people")
 
     assert result.demonstration_status == "text_only"
-    assert result.entrypoint_id == "ringcentral.video.toolbar.leave"
+    assert result.entrypoint_id == "ringcentral.video.toolbar.invite"
     assert result.can_operate is False
+    assert result.answer_source == "entrypoint"
+    assert (
+        describe_question_result(result)
+        == "Answered only: ringcentral.video.toolbar.invite is not safe to operate automatically"
+    )
     assert result.answer_text
     assert calls == []
+
+
+def test_presenter_controller_answers_no_match_without_demo() -> None:
+    profile, package = _controller_inputs()
+    control = DemoControl()
+    calls: list[str] = []
+
+    def runner(
+        _profile: DesktopAppProfile,
+        _package: MaterialPackage,
+        captured_flow_id: str,
+        *,
+        control: DemoControl,
+        voice: PresenterVoiceSettings | None = None,
+    ) -> None:
+        calls.append(captured_flow_id)
+
+    controller = PresenterController(
+        profile=profile,
+        material_package=package,
+        flow_id="meeting-control-map-demo",
+        control=control,
+        runner=runner,
+    )
+
+    result = controller.submit_question("definitely unknown control")
+
+    assert result.demonstration_status == "text_only"
+    assert result.demonstration_message == ""
+    assert result.entrypoint_id is None
+    assert result.can_operate is False
+    assert result.answer_source == "no_match"
+    assert describe_question_result(result) == "Answered only: no matching safe control"
+    assert calls == []
+    assert control.pop_interrupt() is None
 
 
 @pytest.mark.parametrize(
@@ -1077,14 +1127,13 @@ def test_presenter_controller_keeps_sensitive_mixed_meta_question_text_only_when
     assert result.demonstration_message == ""
     assert result.entrypoint_id == expected_entrypoint_id
     assert result.can_operate is False
+    assert result.answer_source == "qa"
     assert expected_answer in result.answer_text
     assert not result.answer_text.startswith("Presenter settings:")
-    expected_outcome = (
-        "Answered only: matched text guidance; no demo was started"
-        if expected_entrypoint_id is None
-        else f"Answered only: {expected_entrypoint_id} is not safe to operate automatically"
+    assert (
+        describe_question_result(result)
+        == "Answered only: matched text guidance; no demo was started"
     )
-    assert describe_question_result(result) == expected_outcome
     assert calls == []
     assert control.pop_interrupt() is None
 
@@ -1174,9 +1223,19 @@ def test_describe_question_result_distinguishes_queued_started_and_risky() -> No
         answer_text="Participant privacy guidance.",
         answer_source="qa",
     )
+    policy_guidance = QuestionSubmitResult(
+        answer_text="Meeting information privacy guidance.",
+        entrypoint_id="ringcentral.video.top.meeting-info",
+        can_operate=False,
+        answer_source="qa",
+    )
     no_match = QuestionSubmitResult(
         answer_text="I could not find a matching control.",
         answer_source="no_match",
+    )
+    presenter_meta = QuestionSubmitResult(
+        answer_text="Presenter settings: I will keep the answer brief.",
+        answer_source="presenter_meta",
     )
 
     assert describe_question_result(queued) == "Queued safe demo: ringcentral.video.toolbar.chat"
@@ -1189,7 +1248,22 @@ def test_describe_question_result_distinguishes_queued_started_and_risky() -> No
         describe_question_result(privacy_guidance)
         == "Answered only: matched text guidance; no demo was started"
     )
+    assert (
+        describe_question_result(policy_guidance)
+        == "Answered only: matched text guidance; no demo was started"
+    )
+    assert (
+        describe_question_result(presenter_meta)
+        == "Answered only: presenter settings response; no demo was started"
+    )
     assert describe_question_result(no_match) == "Answered only: no matching safe control"
+
+
+def test_describe_question_error_hides_exception_text() -> None:
+    message = describe_question_error(RuntimeError("private board agenda"))
+
+    assert message == "Question error: question could not be answered safely."
+    assert "private board agenda" not in message
 
 
 def test_render_voice_label_uses_controller_labels() -> None:

@@ -86,6 +86,7 @@ Choose the smallest artifact that makes the next cycle safer or more useful.
 - Treat `answer_source` as a routing outcome token: `qa`, `entrypoint`, `presenter_meta`, or `no_match`.
 - Use `qa` for matched package Q&A guidance, including answer-only privacy guidance; use `entrypoint` for matched package controls; use `presenter_meta` for presenter settings questions; use `no_match` when no safe control or text guidance matched.
 - Leave failure logs minimal. Do not invent an answer source for exceptions, and do not log exception text that could contain private question or answer content.
+- Keep operator status and summary rows privacy-safe too. They may display bounded outcome labels from `describe_question_result()` or `describe_question_error()`, but should not include raw prompts, answer text, exception text, participant names, meeting links, chat content, or transcript content.
 
 ## Verification And Staging Checklist
 

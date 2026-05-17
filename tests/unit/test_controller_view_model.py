@@ -398,6 +398,37 @@ def test_running_app_scanned_selection_is_ready() -> None:
     assert view_model.buttons.submit_enabled is True
 
 
+def test_operator_summary_uses_privacy_safe_question_outcome() -> None:
+    outcome = "Answered only: matched text guidance; no demo was started"
+    raw_question = "private board agenda"
+    answer_text = "Participant privacy guidance with private board agenda."
+    view_model = build_controller_operator_view_model(
+        ControllerOperatorSnapshot(
+            source_mode="material_package",
+            material_package_id="ringcentral-video",
+            material_flow_id="meeting-control-map-demo",
+            running_app_label="",
+            has_running_app_selection=False,
+            has_scanned_running_app=False,
+            scanned_package_id="",
+            scanned_flow_id="",
+            voice=PresenterVoiceSettings(),
+            voice_readiness=None,
+            run_status="Ready",
+            is_running=False,
+            is_stopping=False,
+            question_text=raw_question,
+            last_question_outcome=outcome,
+        )
+    )
+
+    summary = render_controller_operator_summary(view_model)
+
+    assert f"Question: {outcome}" in summary
+    assert raw_question not in summary
+    assert answer_text not in summary
+
+
 def test_running_state_disables_target_churn_and_enables_controls() -> None:
     view_model = build_controller_operator_view_model(
         ControllerOperatorSnapshot(

@@ -676,6 +676,39 @@ def test_ringcentral_english_screen_sharing_questions_stay_qa_first(
     assert create_question_interrupt_step(package, response) is None
 
 
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Show full screen",
+        "Switch to full screen",
+        "Where is full screen?",
+        "Full screen view",
+        "Go full screen",
+        "Enter full screen mode",
+        "Exit full screen",
+        "Leave full screen mode",
+    ],
+)
+def test_ringcentral_full_screen_questions_route_to_view_layout(
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(),
+    )
+
+    assert response.entrypoint_id == "ringcentral.video.top.views"
+    assert response.entrypoint_id != "ringcentral.video.toolbar.share"
+    assert response.entrypoint_id != "ringcentral.video.toolbar.leave"
+    assert response.can_operate is True
+    assert create_question_interrupt_step(package, response) is not None
+    assert response.answer_text.startswith("View layout menu:")
+    assert "Screen sharing:" not in response.answer_text
+
+
 def test_ringcentral_localized_invite_qa_returns_chinese_answer_and_stays_non_operable() -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
 

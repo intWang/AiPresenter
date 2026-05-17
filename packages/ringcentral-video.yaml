@@ -138,6 +138,15 @@ operationEntrypoints:
   localizedPurposes:
     es: Abre Views para revisar Gallery view o Full screen en tu vista local sin cambiar audio, video ni participantes.
   questionAliases:
+    en:
+    - Full screen view
+    - Show full screen
+    - Switch to full screen
+    - Where is full screen?
+    - Go full screen
+    - Enter full screen mode
+    - Exit full screen
+    - Leave full screen mode
     es:
     - menú de vista de reunión
     - selector de diseño de vista

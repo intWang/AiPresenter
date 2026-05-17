@@ -212,6 +212,46 @@ _NO_MATCH_ANSWERS = {
     ),
     "es": "No encontre un control que coincida en el contexto activo de la app.",
 }
+_PRESENTER_META_REQUEST_ANSWER = (
+    "Presenter settings: I can adjust language, tone, pacing, and guidance depth "
+    "through AiPresenter voice settings. This is separate from RingCentral Video "
+    "controls, so I will not open or operate the meeting UI for it."
+)
+_PRESENTER_META_REQUEST_FRAGMENTS = (
+    "answer in chinese",
+    "answer in english",
+    "answer in japanese",
+    "answer in spanish",
+    "be brief",
+    "be concise",
+    "beginner guidance",
+    "can you speak chinese",
+    "can you speak english",
+    "can you speak japanese",
+    "can you speak spanish",
+    "careful tone",
+    "change language",
+    "coach tone",
+    "conversational tone",
+    "explain more slowly",
+    "formal tone",
+    "friendly tone",
+    "guidance depth",
+    "language to",
+    "make the presenter friendlier",
+    "more concise",
+    "more slowly",
+    "new to ringcentral",
+    "new to ringcentral video",
+    "please be brief",
+    "presenter friendlier",
+    "privacy tone",
+    "speak chinese",
+    "speak english",
+    "speak japanese",
+    "speak spanish",
+    "support tone",
+)
 _ENTRYPOINT_ALIASES: dict[str, tuple[str, ...]] = {
     "ringcentral.video.toolbar.chat": (
         "聊天",
@@ -357,8 +397,17 @@ def _answer_question(
             can_operate=_can_operate(package, entrypoint_id),
         )
 
-    entrypoint = _match_entrypoint(package, normalized)
+    is_presenter_meta_request = _is_presenter_meta_request(normalized)
+    entrypoint = (
+        _match_explicit_entrypoint(package, normalized)
+        if is_presenter_meta_request
+        else _match_entrypoint(package, normalized)
+    )
     if entrypoint is None:
+        if is_presenter_meta_request:
+            return QuestionResponse(
+                answer_text=_render_text(_PRESENTER_META_REQUEST_ANSWER, voice),
+            )
         return QuestionResponse(
             answer_text=_render_text(_NO_MATCH_ANSWERS[voice.language], voice)
         )
@@ -366,6 +415,38 @@ def _answer_question(
         answer_text=_render_entrypoint_answer(entrypoint, voice),
         entrypoint_id=entrypoint.id,
         can_operate=_can_operate(package, entrypoint.id),
+    )
+
+
+def _match_explicit_entrypoint(
+    package: MaterialPackage,
+    normalized_question: str,
+) -> OperationEntrypoint | None:
+    alias_match = _match_entrypoint_alias(package, normalized_question)
+    if alias_match is not None:
+        return alias_match
+    location_match = _match_meeting_info_location_entrypoint(package, normalized_question)
+    if location_match is not None:
+        return location_match
+
+    for entrypoint in package.operation_entrypoints:
+        titles = (entrypoint.title, *entrypoint.localized_titles.values())
+        if any(
+            normalized_title
+            and normalized_title in normalized_question
+            for title in titles
+            if (normalized_title := normalize_question_prompt(title))
+        ):
+            return entrypoint
+    return None
+
+
+def _is_presenter_meta_request(normalized_question: str) -> bool:
+    if not normalized_question:
+        return False
+    return any(
+        fragment in normalized_question
+        for fragment in _PRESENTER_META_REQUEST_FRAGMENTS
     )
 
 

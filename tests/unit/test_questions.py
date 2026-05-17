@@ -709,6 +709,109 @@ def test_ringcentral_full_screen_questions_route_to_view_layout(
     assert "Screen sharing:" not in response.answer_text
 
 
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Be more concise",
+        "Explain more slowly",
+        "Switch to careful tone",
+        "Use coach tone",
+        "Answer in Chinese",
+        "Can you speak Spanish?",
+        "Change language to Japanese",
+        "I am new to RingCentral Video",
+        "I need beginner guidance",
+        "Make the presenter friendlier",
+    ],
+)
+def test_presenter_meta_requests_do_not_route_to_ringcentral_controls(
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(),
+    )
+
+    assert response.entrypoint_id is None
+    assert response.can_operate is False
+    assert create_question_interrupt_step(package, response) is None
+    assert response.answer_text.startswith("Presenter settings:")
+    assert "matching control" not in response.answer_text
+
+
+@pytest.mark.parametrize(
+    (
+        "question",
+        "expected_entrypoint_id",
+        "expected_can_operate",
+        "expected_interrupt",
+        "expected_answer",
+    ),
+    [
+        (
+            "Please be brief and read meeting information aloud",
+            "ringcentral.video.top.meeting-info",
+            False,
+            False,
+            "Meeting IDs and links are private meeting details",
+        ),
+        (
+            "Use privacy tone and read meeting information aloud",
+            "ringcentral.video.top.meeting-info",
+            False,
+            False,
+            "Meeting IDs and links are private meeting details",
+        ),
+        (
+            "Be concise: is this meeting encrypted?",
+            "ringcentral.video.top.meeting-info",
+            False,
+            False,
+            "Encryption status:",
+        ),
+        (
+            "Use coach tone and mute all participants",
+            None,
+            False,
+            False,
+            "Do not mute others",
+        ),
+        (
+            "Please be brief and go full screen",
+            "ringcentral.video.top.views",
+            True,
+            True,
+            "View layout menu:",
+        ),
+    ],
+)
+def test_presenter_meta_modifiers_do_not_steal_ringcentral_intents(
+    question: str,
+    expected_entrypoint_id: str | None,
+    expected_can_operate: bool,
+    expected_interrupt: bool,
+    expected_answer: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(),
+    )
+
+    assert response.entrypoint_id == expected_entrypoint_id
+    assert response.can_operate is expected_can_operate
+    assert (create_question_interrupt_step(package, response) is not None) is (
+        expected_interrupt
+    )
+    assert expected_answer in response.answer_text
+    assert not response.answer_text.startswith("Presenter settings:")
+
+
 def test_ringcentral_localized_invite_qa_returns_chinese_answer_and_stays_non_operable() -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
 

@@ -358,7 +358,10 @@ def validation_targets(
     acceptance_runs: Path | None = typer.Option(
         None,
         "--acceptance-runs",
-        help="Optional acceptance-runs markdown path for Accepted evidence guard.",
+        help=(
+            "Accepted evidence guard source; validates evidence rows against the "
+            "selected acceptance-runs source, but is not live evidence."
+        ),
     ),
     include_blocked: bool = typer.Option(
         False,

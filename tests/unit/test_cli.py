@@ -70,6 +70,18 @@ def test_cli_help_renders() -> None:
     assert "AI presenter" in result.stdout
 
 
+def test_validation_targets_help_explains_acceptance_runs_guard_source() -> None:
+    result = CliRunner().invoke(app, ["validation-targets", "--help"])
+
+    assert result.exit_code == 0
+    assert "--acceptance-runs" in result.stdout
+    assert "Accepted evidence guard source" in result.stdout
+    assert "selected" in result.stdout
+    assert "acceptance-runs source" in result.stdout
+    assert "not live" in result.stdout
+    assert "evidence." in result.stdout
+
+
 def test_cli_import_does_not_load_desktop_runtime_modules() -> None:
     code = (
         "import json, sys; "

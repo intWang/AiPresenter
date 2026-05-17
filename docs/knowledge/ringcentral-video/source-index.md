@@ -49,6 +49,7 @@ This index separates product-scope sources from executable automation evidence f
 - A feature should not become executable until it has a local observation record and a locator entry; executable live confidence also needs privacy, side-effect, cleanup, and dated acceptance evidence.
 - Sensitive surfaces require privacy policy entries before they are exposed in demos or Q&A.
 - Layout variants should be recorded as observations before changing YAML routes.
+- `validation-targets --acceptance-runs` is a guard input, not an evidence-generation command.
 
 ## Coverage Implications
 

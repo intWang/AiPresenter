@@ -1396,10 +1396,25 @@ def test_ringcentral_knowledge_docs_preserve_evidence_boundaries() -> None:
         "state what was redacted or intentionally not captured",
     ):
         assert phrase in acceptance_text
+    assert (
+        "`--acceptance-runs` only points the guard at this file or an override "
+        "file; it does not create, collect, or promote live evidence."
+    ) in acceptance_text
     assert "Evidence Redaction Checklist" in runbook_text
     assert "validation-targets --package ringcentral-video --priority P0" in runbook_text
     assert "metadata-first evidence reminder" in runbook_text
     assert "--target <target-id>" in runbook_text
+    assert "--acceptance-runs <path>" in runbook_text
+    assert (
+        "The `Acceptance runs:` line reports the guard source only; it is not "
+        "live evidence."
+    ) in runbook_text
+    assert (
+        "`(explicit)` means `--acceptance-runs <path>` was supplied, "
+        "`(auto-discovered)` means sibling `acceptance-runs.md` beside the "
+        "evidence index was loaded, and `none (absent)` means no guard source "
+        "was available."
+    ) in runbook_text
     assert "per-entrypoint draft examples" in runbook_text
     assert "generated draft or `acceptance-runs.md` template" in runbook_text
     assert "Prefer UIA/window metadata first" in runbook_text
@@ -1407,6 +1422,10 @@ def test_ringcentral_knowledge_docs_preserve_evidence_boundaries() -> None:
     assert (
         "Live manual observations are required before a locator or flow is treated "
         "as current-build evidence."
+    ) in source_text
+    assert (
+        "`validation-targets --acceptance-runs` is a guard input, not an "
+        "evidence-generation command."
     ) in source_text
     assert (
         "executable live confidence also needs privacy, side-effect, cleanup, and "

@@ -24,6 +24,11 @@ AiPresenter now has several "skill-like" layers. Keep them separate.
 | Specs and plans | `docs/superpowers/specs/`, `docs/superpowers/plans/` | Designed implementation work and task breakdowns. | Planning artifact. Do not use as proof that code or docs already changed. |
 | Codex home skills | `C:\Users\rcadmin\.codex\...` | Cross-repo agent behavior installed outside this project. | Global behavior change. Do not edit for normal AiPresenter cycles. Draft candidates in repo docs first. |
 
+Current RingCentral runtime presenter skills load in this order: `app-director`,
+`live-explainer`, `ringcentral-onboarding`, and `ringcentral-safety`. Keep
+`ringcentral-safety` last so privacy, destructive action, and meeting-visible
+side-effect boundaries remain the final active guidance.
+
 ## Artifact Chooser
 
 Choose the smallest artifact that makes the next cycle safer or more useful.

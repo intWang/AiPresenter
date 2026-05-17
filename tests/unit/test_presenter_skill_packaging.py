@@ -9,6 +9,7 @@ def test_packaged_presenter_skill_copies_match_repo_skills() -> None:
     packaged_skills = sorted(path.name for path in packaged_skill_dir.glob("*.md"))
 
     assert "ringcentral-safety.md" in repo_skills
+    assert "ringcentral-onboarding.md" in repo_skills
     assert packaged_skills == repo_skills
     for name in repo_skills:
         assert (packaged_skill_dir / name).read_text(encoding="utf-8") == (

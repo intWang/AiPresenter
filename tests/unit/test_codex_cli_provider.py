@@ -91,8 +91,13 @@ def test_codex_cli_prompt_includes_loaded_ringcentral_safety_skill() -> None:
 
     provider.narrate(MeetingState(confidence=0.9), [PresenterEvent("meeting_joined", {}, 0.9)])
 
+    assert "Presenter skill - ringcentral-onboarding:" in calls[0]["input"]
+    assert "RingCentral onboarding trainer" in calls[0]["input"]
     assert "Presenter skill - ringcentral-safety:" in calls[0]["input"]
     assert "RingCentral Video safety guardian" in calls[0]["input"]
+    assert calls[0]["input"].index("Presenter skill - ringcentral-onboarding:") < calls[0][
+        "input"
+    ].index("Presenter skill - ringcentral-safety:")
 
 
 def test_codex_cli_narration_raises_on_failure() -> None:

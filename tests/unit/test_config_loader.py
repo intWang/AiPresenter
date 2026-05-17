@@ -58,12 +58,13 @@ def test_load_ringcentral_bind_speaker_profile() -> None:
     assert profile.narration.skill_paths == [
         Path("presenter/skills/app-director.md").resolve(),
         Path("presenter/skills/live-explainer.md").resolve(),
+        Path("presenter/skills/ringcentral-onboarding.md").resolve(),
         Path("presenter/skills/ringcentral-safety.md").resolve(),
     ]
 
 
 @pytest.mark.parametrize("profile_path", RINGCENTRAL_ROOT_PROFILE_PATHS)
-def test_all_ringcentral_profiles_include_ringcentral_safety_skill(
+def test_all_ringcentral_profiles_include_runtime_ringcentral_skills(
     profile_path: Path,
 ) -> None:
     profile = load_profile(profile_path)
@@ -71,18 +72,23 @@ def test_all_ringcentral_profiles_include_ringcentral_safety_skill(
     assert [path.stem for path in profile.narration.skill_paths] == [
         "app-director",
         "live-explainer",
+        "ringcentral-onboarding",
         "ringcentral-safety",
     ]
 
 
-def test_packaged_ringcentral_profile_resolves_packaged_safety_skill() -> None:
+def test_packaged_ringcentral_profile_resolves_packaged_runtime_skills() -> None:
     profile = load_profile(Path("src/ai_presenter/profiles/ringcentral-video.yaml"))
 
     assert [path.stem for path in profile.narration.skill_paths] == [
         "app-director",
         "live-explainer",
+        "ringcentral-onboarding",
         "ringcentral-safety",
     ]
+    assert profile.narration.skill_paths[2] == Path(
+        "src/ai_presenter/presenter/skills/ringcentral-onboarding.md"
+    ).resolve()
     assert profile.narration.skill_paths[-1] == Path(
         "src/ai_presenter/presenter/skills/ringcentral-safety.md"
     ).resolve()

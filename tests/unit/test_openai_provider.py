@@ -158,8 +158,13 @@ def test_narration_instructions_include_loaded_ringcentral_safety_skill(
     provider.narrate(MeetingState(confidence=0.9), [PresenterEvent("meeting_joined", {}, 0.9)])
 
     instructions = responses.calls[0]["instructions"]
+    assert "Presenter skill - ringcentral-onboarding:" in instructions
+    assert "RingCentral onboarding trainer" in instructions
     assert "Presenter skill - ringcentral-safety:" in instructions
     assert "RingCentral Video safety guardian" in instructions
+    assert instructions.index("Presenter skill - ringcentral-onboarding:") < instructions.index(
+        "Presenter skill - ringcentral-safety:"
+    )
 
 
 def test_narration_uses_env_model_with_fake_client_without_api_key(

@@ -148,8 +148,9 @@ Presenter identity and durable coaching live under `presenter/`:
 - `presenter/soul.md` defines the professional presenter role, voice, and safety boundaries.
 - `presenter/memory.md` records durable user feedback, such as English RingCentral Video narration,
   tighter transitions, synchronized action timing, and complete Meeting coverage.
-- `presenter/skills/` extends professional capabilities. The initial skills cover app-demo
-  direction and live explanation behavior.
+- `presenter/skills/` extends professional capabilities. The active skills cover app-demo
+  direction, live explanation behavior, RingCentral onboarding, and RingCentral safety
+  boundaries.
 
 Profiles load these files through `narration.soulPath`, `narration.memoryPath`, and
 `narration.skillPaths`.

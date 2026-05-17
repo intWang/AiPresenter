@@ -1769,6 +1769,10 @@ qa:
     - Who is in the meeting?
     - List participants
     - Read participant names
+    - Show participant roles
+    - Read participant roles
+    - List participant roles
+    - Who is host or moderator?
     es:
     - ¿Puede leer los mensajes del chat o los nombres de participantes?
     ja:

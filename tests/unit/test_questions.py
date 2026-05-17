@@ -1015,6 +1015,10 @@ def test_ringcentral_chat_content_requests_stay_answer_only(question: str) -> No
         "Who is in the meeting?",
         "List participants",
         "Read participant names",
+        "Show participant roles",
+        "Read participant roles",
+        "List participant roles",
+        "Who is host or moderator?",
     ],
 )
 def test_ringcentral_participant_identity_requests_stay_answer_only(
@@ -1033,6 +1037,9 @@ def test_ringcentral_participant_identity_requests_stay_answer_only(
     assert response.can_operate is False
     assert create_question_interrupt_step(package, response) is None
     assert "participant names" in response.answer_text
+    assert "roles" in response.answer_text
+    assert "private tabs" in response.answer_text
+    assert "explicitly asks" in response.answer_text
     assert "verified" in response.answer_text
     assert "Participants panel:" not in response.answer_text
     assert "I could not find a matching control" not in response.answer_text

@@ -701,6 +701,12 @@ def test_presenter_controller_answers_meta_prompt_without_queuing_running_demo(
             "ringcentral.video.top.network-quality",
             "Network quality:",
         ),
+        (
+            "Please be brief and open participants panel",
+            PresenterVoiceSettings(language="en"),
+            "ringcentral.video.toolbar.participants",
+            "Participants panel:",
+        ),
     ],
 )
 def test_presenter_controller_queues_safe_mixed_meta_question_for_running_demo(
@@ -777,6 +783,12 @@ def test_presenter_controller_queues_safe_mixed_meta_question_for_running_demo(
             PresenterVoiceSettings(language="en"),
             "ringcentral.video.more.notes",
             "Starting notes can change",
+        ),
+        (
+            "Please be brief and show participants",
+            PresenterVoiceSettings(language="en"),
+            None,
+            "participant names",
         ),
     ],
 )
@@ -911,6 +923,12 @@ def test_presenter_controller_answers_risky_question_without_demo() -> None:
             "ringcentral.video.top.network-quality",
             "Network quality:",
         ),
+        (
+            "Please be brief and open participants panel",
+            PresenterVoiceSettings(language="en"),
+            "ringcentral.video.toolbar.participants",
+            "Participants panel:",
+        ),
     ],
 )
 def test_presenter_controller_starts_safe_mixed_meta_question_demo_when_idle(
@@ -972,6 +990,12 @@ def test_presenter_controller_starts_safe_mixed_meta_question_demo_when_idle(
             PresenterVoiceSettings(language="en"),
             "ringcentral.video.more.notes",
             "Starting notes can change",
+        ),
+        (
+            "Please be brief and show participants",
+            PresenterVoiceSettings(language="en"),
+            None,
+            "participant names",
         ),
     ],
 )

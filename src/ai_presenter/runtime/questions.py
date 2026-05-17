@@ -149,6 +149,34 @@ _CHAT_CONTENT_ACTION_TERMS = (
     "tell me",
     "what did",
 )
+_PARTICIPANT_PRIVACY_QUESTION = (
+    "Can the presenter read meeting messages or participant names?"
+)
+_PARTICIPANT_PANEL_LOCATION_TERMS = (
+    "participant panel",
+    "participant button",
+    "participants panel",
+    "participants button",
+)
+_PARTICIPANT_DISCLOSURE_TERMS = (
+    "show participants",
+    "list participants",
+    "participant names",
+    "participant roles",
+    "which participants",
+    "who is host",
+    "who is in",
+    "host or moderator",
+    "who is in the meeting",
+    "who joined the meeting",
+)
+_PARTICIPANT_IDENTITY_TERMS = (
+    "names",
+    "roles",
+    "which participants",
+    "who is",
+    "who joined",
+)
 _JAPANESE_RECORDING_TERMS = ("録画",)
 _JAPANESE_RECORDING_ACTION_TERMS = (
     "して",
@@ -531,6 +559,12 @@ def _match_qa(package: MaterialPackage, normalized_question: str) -> QuestionAns
     )
     if chat_content_privacy_match is not None:
         return chat_content_privacy_match
+    participant_privacy_match = _match_participant_privacy_qa(
+        package,
+        normalized_question,
+    )
+    if participant_privacy_match is not None:
+        return participant_privacy_match
     contained_match = _match_contained_qa_question(package, normalized_question)
     if contained_match is not None:
         return contained_match
@@ -623,6 +657,29 @@ def _match_chat_content_privacy_qa(
         return None
     return package.qa_questions_by_normalized.get(
         normalize_question_prompt(_CHAT_CONTENT_PRIVACY_QUESTION)
+    )
+
+
+def _match_participant_privacy_qa(
+    package: MaterialPackage,
+    normalized_question: str,
+) -> QuestionAnswer | None:
+    if not any(term in normalized_question for term in _PARTICIPANT_DISCLOSURE_TERMS):
+        return None
+    has_panel_location = any(
+        term in normalized_question for term in _PARTICIPANT_PANEL_LOCATION_TERMS
+    )
+    has_identity_intent = any(
+        term in normalized_question for term in _PARTICIPANT_IDENTITY_TERMS
+    )
+    if has_panel_location and not has_identity_intent:
+        return None
+    return _participant_privacy_qa(package)
+
+
+def _participant_privacy_qa(package: MaterialPackage) -> QuestionAnswer | None:
+    return package.qa_questions_by_normalized.get(
+        normalize_question_prompt(_PARTICIPANT_PRIVACY_QUESTION)
     )
 
 

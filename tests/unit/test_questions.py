@@ -1511,13 +1511,24 @@ def test_ringcentral_chat_content_requests_stay_answer_only(question: str) -> No
 @pytest.mark.parametrize(
     "question",
     [
+        "Show participants",
         "Who is in the meeting?",
         "List participants",
         "Read participant names",
         "Show participant roles",
+        "Show participants panel names",
+        "Show who is in participants panel",
+        "Which participants are here?",
+        "Who joined the meeting?",
         "Read participant roles",
         "List participant roles",
         "Who is host or moderator?",
+        "Please be brief and show participants",
+        "Please be brief and list participants",
+        "Please be brief and read participant names",
+        "Please be brief and show participant roles",
+        "Please be brief and who is host or moderator?",
+        "Please be brief and who joined the meeting?",
     ],
 )
 def test_ringcentral_participant_identity_requests_stay_answer_only(
@@ -1542,6 +1553,40 @@ def test_ringcentral_participant_identity_requests_stay_answer_only(
     assert "verified" in response.answer_text
     assert "Participants panel:" not in response.answer_text
     assert "I could not find a matching control" not in response.answer_text
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Please be brief and show participants panel",
+        "Please be brief and open participants panel",
+        "Please be brief and where is participants panel",
+        "\u8bf7\u7b80\u6d01\u4e00\u70b9\uff0c\u53c2\u4f1a\u8005\u5728\u54ea\u91cc",
+    ],
+)
+def test_participants_panel_location_requests_stay_operable_with_meta(
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    voice = (
+        PresenterVoiceSettings(language="zh")
+        if any(ord(char) > 127 for char in question)
+        else PresenterVoiceSettings()
+    )
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=voice,
+    )
+
+    assert response.entrypoint_id == "ringcentral.video.toolbar.participants"
+    assert response.can_operate is True
+    assert create_question_interrupt_step(package, response) is not None
+    assert "Participants panel:" in response.answer_text
+    assert not response.answer_text.startswith("Presenter settings:")
+    assert "participant names" not in response.answer_text
+    assert "private tabs" not in response.answer_text
 
 
 @pytest.mark.parametrize(

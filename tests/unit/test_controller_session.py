@@ -200,6 +200,12 @@ def test_session_does_not_create_interrupt_for_presenter_meta_answer(
             "ringcentral.video.top.network-quality",
             "Network quality:",
         ),
+        (
+            "Please be brief and open participants panel",
+            PresenterVoiceSettings(language="en"),
+            "ringcentral.video.toolbar.participants",
+            "Participants panel:",
+        ),
     ],
 )
 def test_session_creates_interrupt_for_safe_mixed_presenter_meta_answer(
@@ -251,6 +257,12 @@ def test_session_creates_interrupt_for_safe_mixed_presenter_meta_answer(
             PresenterVoiceSettings(language="en"),
             "ringcentral.video.more.notes",
             "Starting notes can change",
+        ),
+        (
+            "Please be brief and show participants",
+            PresenterVoiceSettings(language="en"),
+            None,
+            "participant names",
         ),
     ],
 )

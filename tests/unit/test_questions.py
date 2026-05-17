@@ -650,6 +650,11 @@ def test_ringcentral_localized_shared_screen_qa_returns_chinese_answer() -> None
         "Read the shared screen",
         "Can you describe what's on screen?",
         "Show my screen",
+        "Share system audio",
+        "Turn on share system audio",
+        "Include system audio",
+        "Share computer audio",
+        "Can you share system audio?",
     ],
 )
 def test_ringcentral_english_screen_sharing_questions_stay_qa_first(

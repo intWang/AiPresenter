@@ -1642,13 +1642,18 @@ def test_voices_lists_language_tone_choices() -> None:
     assert "Tones:" in result.stdout
     assert "Coach aliases:" in result.stdout
     assert "Executive aliases:" in result.stdout
+    assert "Instructor aliases:" in result.stdout
     assert "Support aliases:" in result.stdout
     assert "Careful aliases:" in result.stdout
     assert "calm" in result.stdout
     assert "empathetic" in result.stdout
     assert "executive" in result.stdout
     assert "boardroom" in result.stdout
+    assert "trainer" in result.stdout
+    assert "tutorial" in result.stdout
     assert "decision-oriented" in result.stdout
+    assert "instructional" in result.stdout
+    assert "context-setting" in result.stdout
     assert "recovery-focused" in result.stdout
     assert "privacy-aware" in result.stdout
 
@@ -1679,6 +1684,13 @@ def test_voices_targeted_executive_alias_reports_canonical_tone() -> None:
 
     assert result.exit_code == 0
     assert "Selected voice: English / Executive" in result.stdout
+
+
+def test_voices_targeted_instructor_alias_reports_canonical_tone() -> None:
+    result = CliRunner().invoke(app, ["voices", "--tone", "tutorial"])
+
+    assert result.exit_code == 0
+    assert "Selected voice: English / Instructor" in result.stdout
 
 
 def test_voices_profile_reports_supported_and_unsupported_languages() -> None:

@@ -717,6 +717,10 @@ def test_ringcentral_full_screen_questions_route_to_view_layout(
         "Switch to careful tone",
         "Use coach tone",
         "Use executive tone",
+        "Use instructor tone",
+        "Use trainer tone",
+        "Use training tone",
+        "Use teacher tone",
         "Answer in Chinese",
         "Can you speak Spanish?",
         "Change language to Japanese",
@@ -1460,7 +1464,16 @@ def test_ringcentral_sensitive_prompt_routing_is_tone_invariant(
     assert baseline.can_operate is expected_can_operate
     assert baseline_interrupt is expected_interrupt
 
-    for tone in ("friendly", "coach", "executive", "support", "empathetic", "privacy"):
+    for tone in (
+        "friendly",
+        "coach",
+        "executive",
+        "instructor",
+        "tutorial",
+        "support",
+        "empathetic",
+        "privacy",
+    ):
         response = answer_question(
             package=package,
             question=question,

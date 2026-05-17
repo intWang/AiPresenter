@@ -116,6 +116,11 @@ def test_voice_settings_normalize_expanded_tones() -> None:
     assert PresenterVoiceSettings(tone="executive").tone == "executive"
     assert PresenterVoiceSettings(tone="briefing").tone == "executive"
     assert PresenterVoiceSettings(tone="boardroom").tone == "executive"
+    assert PresenterVoiceSettings(tone="instructor").tone == "instructor"
+    assert PresenterVoiceSettings(tone="trainer").tone == "instructor"
+    assert PresenterVoiceSettings(tone="training").tone == "instructor"
+    assert PresenterVoiceSettings(tone="teacher").tone == "instructor"
+    assert PresenterVoiceSettings(tone="tutorial").tone == "instructor"
     assert PresenterVoiceSettings(tone="support").tone == "support"
     assert PresenterVoiceSettings(tone="calm").tone == "support"
     assert PresenterVoiceSettings(tone="steady").tone == "support"
@@ -139,6 +144,16 @@ def test_presenter_tone_aliases_and_description_are_public() -> None:
     )
     assert voice.tone_label("executive") == "Executive"
     assert "decision-oriented" in voice.presenter_tone_description("executive")
+    assert voice.presenter_tone_aliases("tutorial") == (
+        "instructor",
+        "trainer",
+        "training",
+        "teacher",
+        "tutorial",
+    )
+    assert voice.tone_label("training") == "Instructor"
+    assert "instructional" in voice.presenter_tone_description("instructor")
+    assert "paced" in voice.presenter_tone_description("tutorial")
     assert voice.presenter_tone_aliases("calm") == (
         "support",
         "supportive",
@@ -196,8 +211,10 @@ def test_presenter_tone_behavior_matrix_matches_runtime_contract() -> None:
         "`Let's walk through it.`",
         "`Certainly.`",
         "`Executive brief.`",
+        "`Training note.`",
         "`Let's troubleshoot this.`",
         "`Safety note.`",
+        "`instructor`, `trainer`, `training`, `teacher`, and `tutorial` are aliases for `instructor`",
         "`privacy`, `safety`, and `compliance` are aliases for `careful`",
     )
     for phrase in required_contract_phrases:
@@ -216,6 +233,8 @@ def test_voice_instruction_describes_expanded_tones() -> None:
     assert "step-by-step" in render_voice_instruction(PresenterVoiceSettings(tone="coach"))
     assert "formal" in render_voice_instruction(PresenterVoiceSettings(tone="formal"))
     assert "decision-oriented" in render_voice_instruction(PresenterVoiceSettings(tone="executive"))
+    assert "instructional" in render_voice_instruction(PresenterVoiceSettings(tone="tutorial"))
+    assert "paced" in render_voice_instruction(PresenterVoiceSettings(tone="instructor"))
     assert "recovery-focused" in render_voice_instruction(PresenterVoiceSettings(tone="support"))
     assert "boundary-focused" in render_voice_instruction(PresenterVoiceSettings(tone="privacy"))
 
@@ -242,6 +261,10 @@ def test_render_presenter_text_applies_expanded_english_tones() -> None:
         PresenterVoiceSettings(tone="support"),
     ).startswith("Let's troubleshoot this.")
     assert render_presenter_text(
+        "Open Chat.",
+        PresenterVoiceSettings(tone="training"),
+    ).startswith("Training note.")
+    assert render_presenter_text(
         "Recording requires consent.",
         PresenterVoiceSettings(tone="privacy"),
     ).startswith("Safety note.")
@@ -255,6 +278,16 @@ def test_render_presenter_text_applies_chinese_careful_tone_without_english_pref
 
     assert rendered.startswith("\u6211\u4f1a\u8c28\u614e\u8bf4\u660e\u3002")
     assert "Safety note" not in rendered
+
+
+def test_render_presenter_text_applies_chinese_instructor_tone_without_english_prefix() -> None:
+    rendered = render_presenter_text(
+        "Open Chat.",
+        PresenterVoiceSettings(language="zh", tone="training"),
+    )
+
+    assert rendered.startswith("\u6211\u4f1a\u7528\u6559\u5b66\u8bed\u6c14\u8bf4\u660e\u3002")
+    assert "Training note" not in rendered
 
 
 def test_render_presenter_text_keeps_japanese_text_without_english_prefix() -> None:
@@ -275,6 +308,16 @@ def test_render_presenter_text_keeps_spanish_text_without_english_prefix() -> No
 
     assert rendered.startswith("Abra el panel")
     assert "Happy to help" not in rendered
+
+
+def test_render_presenter_text_keeps_spanish_instructor_text_without_english_prefix() -> None:
+    rendered = render_presenter_text(
+        "Abra el panel de chat. Revise los controles.",
+        PresenterVoiceSettings(language="es", tone="tutorial"),
+    )
+
+    assert rendered.startswith("Abra el panel")
+    assert "Training note" not in rendered
 
 
 def test_render_presenter_text_keeps_existing_chinese_concise_behavior() -> None:
@@ -484,5 +527,6 @@ def test_sapi_rate_for_voice_maps_chinese_tones_to_practical_rates() -> None:
     assert sapi_rate_for_voice(PresenterVoiceSettings(language="zh", tone="coach")) == 0
     assert sapi_rate_for_voice(PresenterVoiceSettings(language="zh", tone="formal")) == 0
     assert sapi_rate_for_voice(PresenterVoiceSettings(language="zh", tone="executive")) == 0
+    assert sapi_rate_for_voice(PresenterVoiceSettings(language="zh", tone="instructor")) == 0
     assert sapi_rate_for_voice(PresenterVoiceSettings(language="zh", tone="support")) == -1
     assert sapi_rate_for_voice(PresenterVoiceSettings(language="zh", tone="careful")) == 0

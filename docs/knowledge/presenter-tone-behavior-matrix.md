@@ -26,6 +26,7 @@ package YAML, locators, demo flows, or live acceptance evidence.
 | `coach` | Coach | `coach`, `coaching`, `mentor` | coach-like, step-by-step, and encouraging | Adds `Let's walk through it.` before generated English text. | Adds `我们一步步来看。` before dynamic Chinese text. | Keeps localized text unchanged. | `0` |
 | `formal` | Formal | `formal`, `structured` | formal, polished, and restrained | Adds `Certainly.` before generated English text. | Adds `请允许我说明。` before dynamic Chinese text. | Keeps localized text unchanged. | `0` |
 | `executive` | Executive | `executive`, `briefing`, `boardroom` | executive, decision-oriented, polished, and outcome-focused | Adds `Executive brief.` before generated English text. | Adds `我简要说明关键点。` before dynamic Chinese text. | Keeps localized text unchanged. | `0` |
+| `instructor` | Instructor | `instructor`, `trainer`, `training`, `teacher`, `tutorial` | instructional, clear, paced, and context-setting | Adds `Training note.` before generated English text. | Adds `我会用教学语气说明。` before dynamic Chinese text. | Keeps localized text unchanged. | `0` |
 | `support` | Support | `support`, `supportive`, `helpdesk`, `troubleshooting`, `recovery`, `calm`, `steady`, `reassuring`, `empathetic` | calm, diagnostic, recovery-focused, and reassuring | Adds `Let's troubleshoot this.` before generated English text. | Replaces known English UI terms; adds no tone prefix. | Keeps localized text unchanged. | `-1` |
 | `careful` | Careful | `careful`, `safety`, `safe`, `privacy`, `guarded`, `compliance` | careful, privacy-aware, concise, and boundary-focused | Adds `Safety note.` before generated English text. | Adds `我会谨慎说明。` before dynamic Chinese text. | Keeps localized text unchanged. | `0` |
 
@@ -33,7 +34,7 @@ package YAML, locators, demo flows, or live acceptance evidence.
 
 Localized package narration is already authored in the target language. For
 Japanese and Spanish, the runtime does not add English prefixes for friendly,
-coach, formal, executive, support, careful, conversational, or professional
+coach, formal, executive, instructor, support, careful, conversational, or professional
 tones. It only applies first-sentence shortening for `concise`.
 
 Chinese dynamic text has a small deterministic replacement layer for common
@@ -60,6 +61,7 @@ policy engines. `empathetic`, `calm`, and `reassuring` are aliases for
 `support`; they are recovery/helpdesk style hints, not permission changes.
 `briefing` and `boardroom` are aliases for `executive`; they are decision-style
 hints, not meeting-control shortcuts.
+`instructor`, `trainer`, `training`, `teacher`, and `tutorial` are aliases for `instructor`; they are onboarding and walkthrough style hints, not product tutorial routes or permission changes.
 
 Tone must not:
 

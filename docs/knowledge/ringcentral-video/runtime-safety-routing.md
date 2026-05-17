@@ -91,7 +91,7 @@ These examples document existing routing boundaries only. They do not add produc
 
 ## Tone Is Style-Only
 
-Cycle 109 added canonical tone `careful`, with aliases including `privacy`, `safety`, `safe`, `guarded`, and `compliance`. Cycle 195 added canonical tone `executive`, with aliases including `briefing` and `boardroom`.
+Cycle 109 added canonical tone `careful`, with aliases including `privacy`, `safety`, `safe`, `guarded`, and `compliance`. Cycle 195 added canonical tone `executive`, with aliases including `briefing` and `boardroom`. Cycle 207 added canonical tone `instructor`, with aliases including `trainer`, `training`, `teacher`, and `tutorial`; it is phrasing only and does not create product tutorial routes or meeting-control permission.
 For the full repo-wide tone catalog, use `docs/knowledge/presenter-tone-behavior-matrix.md`.
 
 Tone may:
@@ -109,7 +109,7 @@ Tone must not:
 - Change whether `create_question_interrupt_step(...)` returns a step.
 - Add or remove package aliases, Q&A, demo flow steps, or locator routes.
 
-Cycle 110 added a route-parity regression matrix for sensitive RingCentral prompts across `professional`, `friendly`, `coach`, `executive`, `support`, and the user-facing `privacy` alias. If a future tone changes routing, authorization, or interrupt creation, the test should fail.
+Cycle 110 added a route-parity regression matrix for sensitive RingCentral prompts across `professional`, `friendly`, `coach`, `executive`, `instructor`, `support`, and the user-facing `tutorial` and `privacy` aliases. If a future tone changes routing, authorization, or interrupt creation, the test should fail.
 
 ## Presenter Meta Requests Are Runtime Answer-Only
 

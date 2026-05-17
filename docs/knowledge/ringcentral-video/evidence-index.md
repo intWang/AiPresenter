@@ -29,6 +29,21 @@ Primary sources:
 | `Backlog` | Product/package knowledge exists, but the route is explain-only or future scope. |
 | `Blocked` | Privacy, role, confirmation, missing locator, or unsafe side effect prevents execution. |
 
+## Status Vocabulary Map
+
+Use these terms consistently across this index, the validation checklist, and
+acceptance runs:
+
+- `Do Not Execute Yet` is a validation-checklist state, not an evidence level.
+- `Backlog` means explain-only or future package scope; it does not permit execution.
+- `Blocked` means the route must stay non-executable until privacy, role, confirmation, locator, or side-effect risk is resolved.
+- `Observed` requires dated environment context such as build, locale, DPI, window bounds, and scenario.
+- `Repo-tested` is local repository evidence only; it must not promote live confidence.
+- `Accepted` can only be assigned after `acceptance-runs.md` records a dated live/manual passing acceptance record with cleanup/privacy notes.
+- Failed live/manual runs can be recorded in `acceptance-runs.md`, but they must not promote an evidence level to `Accepted`.
+
+Update `acceptance-runs.md` before raising an evidence level.
+
 Current overall state: no executable RingCentral Video route is fully `Accepted` for live operation yet. Cycle 003 produced a read-only empty-room UIA observation for RingCentral Video `26.2.20.355`, `en-US`, 100% DPI, window bounds `(500, 196, 1420, 836)`. Cycle 004 updated `ringcentral.video.main.add-coworkers` to the observed UIA button route but did not perform a live click or modal cleanup acceptance run.
 
 ## Evidence Records

@@ -1435,6 +1435,50 @@ def test_ringcentral_knowledge_docs_preserve_evidence_boundaries() -> None:
         assert "dry run proves live acceptance" not in normalized
 
 
+def test_ringcentral_evidence_status_taxonomy_maps_checklist_terms() -> None:
+    knowledge_dir = Path("docs/knowledge/ringcentral-video")
+    evidence_text = (knowledge_dir / "evidence-index.md").read_text(encoding="utf-8")
+    checklist_text = (knowledge_dir / "validation-checklist-index.md").read_text(
+        encoding="utf-8"
+    )
+
+    for phrase in (
+        "## Status Vocabulary Map",
+        (
+            "`Do Not Execute Yet` is a validation-checklist state, not an "
+            "evidence level."
+        ),
+        (
+            "`Backlog` means explain-only or future package scope; it does not "
+            "permit execution."
+        ),
+        (
+            "`Blocked` means the route must stay non-executable until privacy, "
+            "role, confirmation, locator, or side-effect risk is resolved."
+        ),
+        (
+            "`Observed` requires dated environment context such as build, locale, "
+            "DPI, window bounds, and scenario."
+        ),
+        (
+            "`Repo-tested` is local repository evidence only; it must not promote "
+            "live confidence."
+        ),
+        (
+            "`Accepted` can only be assigned after `acceptance-runs.md` records a "
+            "dated live/manual passing acceptance record with cleanup/privacy notes."
+        ),
+        (
+            "Failed live/manual runs can be recorded in `acceptance-runs.md`, but "
+            "they must not promote an evidence level to `Accepted`."
+        ),
+        "Update `acceptance-runs.md` before raising an evidence level.",
+    ):
+        assert phrase in evidence_text
+
+    assert "## Do Not Execute Yet" in checklist_text
+
+
 def test_ai_presenter_maintenance_playbook_preserves_optimization_protocol() -> None:
     playbook_text = Path("docs/knowledge/ai-presenter-maintenance.md").read_text(
         encoding="utf-8"

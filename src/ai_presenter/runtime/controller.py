@@ -707,6 +707,13 @@ def _apply_button_state(button: Any, enabled: bool) -> bool:
     return True
 
 
+def _apply_string_var_value(variable: Any, value: str) -> bool:
+    if variable.get() == value:
+        return False
+    variable.set(value)
+    return True
+
+
 def _apply_operator_summary_wraplength(label: Any, width: int) -> bool:
     wraplength = max(1, int(width))
     try:
@@ -822,7 +829,7 @@ def run_controller(
                 last_question_outcome=last_question_outcome,
             )
         )
-        operator_summary.set(render_operator_summary_text(view_model))
+        _apply_string_var_value(operator_summary, render_operator_summary_text(view_model))
         _apply_button_state(start_button, view_model.buttons.start_enabled)
         _apply_button_state(pause_button, view_model.buttons.pause_enabled)
         _apply_button_state(end_button, view_model.buttons.end_enabled)

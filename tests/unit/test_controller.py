@@ -23,6 +23,7 @@ from ai_presenter.runtime.controller import _ScannedRunningAppMetadata
 from ai_presenter.runtime.controller import _RunningAppScanState
 from ai_presenter.runtime.controller import _apply_operator_summary_wraplength
 from ai_presenter.runtime.controller import _apply_button_state
+from ai_presenter.runtime.controller import _apply_string_var_value
 from ai_presenter.runtime.controller import _check_controller_voice_readiness
 from ai_presenter.runtime.controller import _configure_operator_summary_label
 from ai_presenter.runtime.controller import _ControllerVoiceReadinessCache
@@ -1526,6 +1527,19 @@ class _FakeLabel:
         self.bindings[sequence] = callback
 
 
+class _FakeStringVar:
+    def __init__(self, value: str) -> None:
+        self.value = value
+        self.set_calls: list[str] = []
+
+    def get(self) -> str:
+        return self.value
+
+    def set(self, value: str) -> None:
+        self.set_calls.append(value)
+        self.value = value
+
+
 def test_configure_operator_summary_label_sets_multiline_alignment_and_resize_binding() -> None:
     label = _FakeLabel()
 
@@ -1556,6 +1570,25 @@ def test_apply_operator_summary_wraplength_clamps_non_positive_width(width: int)
 
     assert changed is True
     assert label.options["wraplength"] == 1
+
+
+def test_apply_string_var_value_skips_unchanged_value() -> None:
+    variable = _FakeStringVar("Ready")
+
+    changed = _apply_string_var_value(variable, "Ready")
+
+    assert changed is False
+    assert variable.set_calls == []
+
+
+def test_apply_string_var_value_sets_changed_value() -> None:
+    variable = _FakeStringVar("Ready")
+
+    changed = _apply_string_var_value(variable, "Running")
+
+    assert changed is True
+    assert variable.value == "Running"
+    assert variable.set_calls == ["Running"]
 
 
 def test_apply_button_state_skips_configure_when_state_matches() -> None:

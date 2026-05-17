@@ -704,6 +704,34 @@ def test_ringcentral_localized_recording_question_returns_chinese_safety_answer(
     assert "Start recording:" not in response.answer_text
 
 
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Record this meeting",
+        "Start recording",
+        "Stop recording",
+        "Are we recording?",
+        "Recording status",
+    ],
+)
+def test_ringcentral_english_recording_action_questions_stay_qa_first(
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(),
+    )
+
+    assert response.entrypoint_id == "ringcentral.video.more.recording"
+    assert response.can_operate is False
+    assert "Recording changes the meeting state" in response.answer_text
+    assert "Start recording:" not in response.answer_text
+    assert create_question_interrupt_step(package, response) is None
+
+
 def test_ringcentral_host_controls_question_returns_participants_guidance() -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
 

@@ -1867,6 +1867,12 @@ qa:
     zh: RingCentral 的会后资料（例如录制、转录、摘要和洞察）通常只有在会议后生成、功能已启用，并且当前用户有权限时才可能可用。AiPresenter 可以说明会后去哪里查看，但不要承诺资料一定存在，不要打开或朗读资料内容，也不要总结内容；只有在用户明确要求并且可见上下文已验证时才继续。
 - question: How do I handle meeting recording safely?
   localizedQuestions:
+    en:
+    - Record this meeting
+    - Start recording
+    - Stop recording
+    - Are we recording?
+    - Recording status
     es:
     - ¿Cómo manejo la grabación de la reunión de forma segura?
     ja:

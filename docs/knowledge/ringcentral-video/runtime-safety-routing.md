@@ -99,6 +99,22 @@ Tone must not:
 
 Cycle 110 added a route-parity regression matrix for sensitive RingCentral prompts across `professional`, `friendly`, `coach`, `support`, and the user-facing `privacy` alias. If a future tone changes routing, authorization, or interrupt creation, the test should fail.
 
+## Presenter Meta Requests Are Runtime Answer-Only
+
+Presenter expression requests are runtime answer-only guards, not RingCentralVideo package aliases or Q&A. These prompts ask AiPresenter to change how it answers, such as language, tone, pacing, detail, guidance depth, or user familiarity; they are not RingCentral Video control requests.
+
+The runtime handles high-confidence Presenter meta phrases in `src/ai_presenter/runtime/questions.py`. Q&A safety matching still runs first, and contained authored Q&A must still win before package aliases when a style prefix is added to a sensitive RingCentral prompt. Pure meta requests are answer-only: they should not produce a RingCentralVideo entrypoint, operation permission, or `create_question_interrupt_step(...)`.
+
+Mixed prompts can still preserve explicit RingCentralVideo intent through authored Q&A, package aliases, meeting-info location lookup, or entrypoint titles. Broad entrypoint token fallback is skipped while Presenter meta matching is active.
+
+Do not claim persistent language or tone state changes from this guard. It does not persist language, tone, pacing, detail, or guidance-depth settings unless a separate controller or session state slice implements and tests that behavior.
+
+Do not add Presenter meta phrases to `packages/ringcentral-video.yaml` as aliases, Q&A, localized titles, or package facts. The package owns RingCentral Video surfaces and product knowledge; the runtime guard owns Presenter expression requests. YAML, localization, and package-count drift are regressions unless a separate package slice explicitly owns them.
+
+Keep fragments phrase-level, especially for Chinese and other CJK prompts. Bare safety, privacy, status, language, tone, or pacing words can steal meeting-info, encryption, host-control, notes/transcript, recording, chat, participants, share, invite, leave, or full-screen routes. Mojibake text should remain unsupported rather than becoming a valid Presenter meta request or RingCentral Video alias.
+
+Repo tests prove local routing boundaries only. They are not live RingCentral acceptance evidence.
+
 ## Localization And Counts
 
 Runtime-only safety hardening should not change package counts. Treat count drift as a review trigger unless the cycle explicitly changes YAML.
@@ -176,4 +192,5 @@ Focused sentinels:
 - Before making an entrypoint operable from questions, check `privacy-matrix.md`, `locator-matrix.md`, and `validation-checklist-index.md`.
 - Before changing a safety answer, check localized Q&A coverage and avoid English prefixes in authored Chinese/Japanese answers.
 - Before expanding tone behavior, run route-parity tests. Tone must remain style-only.
+- Before documenting Presenter meta routing, verify the wording says answer-only/no-interrupt, does not claim persistent voice-state mutation, keeps package YAML ownership separate, and does not promote repo tests to live RingCentral evidence.
 - Before promoting any live route evidence, record a dated acceptance run first.

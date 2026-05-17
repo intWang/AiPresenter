@@ -1382,6 +1382,13 @@ def test_ringcentral_knowledge_docs_preserve_evidence_boundaries() -> None:
     assert (
         "Before promoting any live route evidence, record a dated acceptance run first."
     ) in runtime_text
+    assert (
+        "Presenter expression requests are runtime answer-only guards, not "
+        "RingCentralVideo package aliases or Q&A."
+    ) in runtime_text
+    assert "Pure meta requests are answer-only" in runtime_text
+    assert "should not produce a RingCentralVideo entrypoint" in runtime_text
+    assert "Do not claim persistent language or tone state changes" in runtime_text
 
     for doc_text in (checklist_text, evidence_text, source_text, runtime_text):
         normalized = " ".join(doc_text.split()).casefold()

@@ -128,6 +128,18 @@ def check_voice_asset_availability(*args: Any, **kwargs: Any) -> Any:
     return _check_voice_asset_availability(*args, **kwargs)
 
 
+class VoiceAssetAvailabilityCache:
+    def __init__(self) -> None:
+        self._results: dict[tuple[str, str, str], Any] = {}
+
+    def get(self, profile: Any, voice: PresenterVoiceSettings) -> Any:
+        route = resolve_speech_provider_name(profile, voice)
+        key = (profile.id, profile.providers.speech, route)
+        if key not in self._results:
+            self._results[key] = check_voice_asset_availability(profile, voice)
+        return self._results[key]
+
+
 @app.command()
 def run(
     profile: str = typer.Option(..., "--profile", help="Profile id or YAML path."),
@@ -450,6 +462,7 @@ def voices(
 ) -> None:
     """List presenter voice choices and optionally check profile compatibility."""
     _print_voice_catalog()
+    asset_cache = VoiceAssetAvailabilityCache()
 
     loaded_profile = None
     if profile is not None:
@@ -466,7 +479,7 @@ def voices(
                 typer.echo(f"- {label}: unsupported ({exc})")
             else:
                 route = resolve_speech_provider_name(loaded_profile, voice)
-                asset = check_voice_asset_availability(loaded_profile, voice)
+                asset = asset_cache.get(loaded_profile, voice)
                 asset_detail = "" if asset is None else f"; assets {asset.status}: {asset.detail}"
                 typer.echo(f"- {label}: supported via {route}{asset_detail}")
 
@@ -487,7 +500,7 @@ def voices(
         raise typer.Exit(1) from exc
     route = resolve_speech_provider_name(loaded_profile, selected_voice)
     typer.echo(f"Selected voice supported via {route}.")
-    asset = check_voice_asset_availability(loaded_profile, selected_voice)
+    asset = asset_cache.get(loaded_profile, selected_voice)
     if asset is None:
         return
     if asset.status == "FAIL":

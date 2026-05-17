@@ -1438,6 +1438,45 @@ def test_voices_profile_reports_local_asset_status(monkeypatch: pytest.MonkeyPat
     assert "Huihui" in result.stdout
 
 
+def test_voices_reuses_profile_asset_checks_for_selected_route(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[tuple[str, str]] = []
+
+    def fake_check_assets(
+        _profile: object,
+        voice: PresenterVoiceSettings,
+    ) -> VoiceAssetAvailability:
+        calls.append((voice.language, voice.tone))
+        return VoiceAssetAvailability(
+            status="OK",
+            route=f"route-{voice.language}",
+            detail=f"asset check {len(calls)} for {voice.language}",
+        )
+
+    monkeypatch.setattr(
+        "ai_presenter.cli.check_voice_asset_availability",
+        fake_check_assets,
+    )
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "voices",
+            "--profile",
+            "ringcentral-video-bind-speaker",
+            "--language",
+            "en-US",
+            "--tone",
+            "friendly",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "Selected voice assets available" in result.stdout
+    assert calls == [("en", "professional"), ("zh", "professional")]
+
+
 def test_voices_targeted_incompatible_profile_voice_exits_nonzero() -> None:
     result = CliRunner().invoke(
         app,

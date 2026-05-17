@@ -45,6 +45,7 @@ Automated baselines, dry runs, and `doctor` checks can support repo baseline evi
 - Virtual mic:
 - Profile:
 - Package flow:
+- Entrypoint IDs tested:
 - Meeting role:
 - Meeting scenario:
 - Participant count:
@@ -75,6 +76,7 @@ Automated baselines, dry runs, and `doctor` checks can support repo baseline evi
 - Failed, blocked, incomplete, skipped, automated-only, dry-run, `doctor`, and read-only observation records may be logged here, but they are not promotion evidence.
 - If the outcome is fail, blocked, incomplete, or skipped, leave the evidence level unchanged or lower confidence, then record follow-up.
 - A read-only observation may pass for observation scope without making a clicked route `Accepted`.
+- The evidence guard only recognizes a promotion run when the dated manual acceptance record names the entrypoint ID, records `Outcome: pass`, records `Accepted promotion eligible: yes`, and includes promotion rationale plus recovery and privacy notes.
 - Update `evidence-index.md` only after the dated run is recorded and the evidence-level change is justified.
 
 ## Current Automated Evidence From Cycle 001

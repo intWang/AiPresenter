@@ -46,6 +46,16 @@ Update `acceptance-runs.md` before raising an evidence level.
 
 Current overall state: no executable RingCentral Video route is fully `Accepted` for live operation yet. Cycle 003 produced a read-only empty-room UIA observation for RingCentral Video `26.2.20.355`, `en-US`, 100% DPI, window bounds `(500, 196, 1420, 836)`. Cycle 004 updated `ringcentral.video.main.add-coworkers` to the observed UIA button route but did not perform a live click or modal cleanup acceptance run.
 
+## Accepted Promotion Guard
+
+Every `Accepted` row in the Entry Point Evidence Table must cite `acceptance-runs.md` and a dated manual/live record whose `Outcome` is `pass`.
+
+The same record must identify the entrypoint or route under test and set `Accepted promotion eligible: yes`.
+
+The same record must include promotion rationale, recovery or cleanup notes, and privacy notes.
+
+Do not use failed, blocked, incomplete, skipped, automated-only, dry-run, `doctor`, or read-only observation records as `Accepted` promotion evidence.
+
 ## Evidence Records
 
 | Evidence ID | Type | Source | Environment | Scope | Result | Freshness |

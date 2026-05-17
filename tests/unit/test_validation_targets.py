@@ -34,6 +34,12 @@ def load_evidence_text() -> str:
     return Path("docs/knowledge/ringcentral-video/evidence-index.md").read_text(encoding="utf-8")
 
 
+def load_acceptance_text() -> str:
+    return Path("docs/knowledge/ringcentral-video/acceptance-runs.md").read_text(
+        encoding="utf-8"
+    )
+
+
 def discover_catalog(
     *,
     checklist_text: str | None = None,
@@ -246,6 +252,135 @@ def test_evidence_index_integrity_rejects_invalid_evidence_level() -> None:
         match="invalid evidence level for ringcentral.video.toolbar.chat: Rumored",
     ):
         validate_entrypoint_evidence_index(load_ringcentral_package(), evidence_text)
+
+
+def test_accepted_evidence_guard_allows_current_catalog_without_accepted_routes() -> None:
+    report = validate_entrypoint_evidence_index(
+        load_ringcentral_package(),
+        load_evidence_text(),
+        acceptance_text=load_acceptance_text(),
+    )
+
+    assert "Accepted" not in set(report.evidence_levels.values())
+
+
+def test_accepted_evidence_requires_dated_passing_manual_acceptance_run() -> None:
+    evidence_text = evidence_with_level("ringcentral.video.toolbar.chat", "Accepted")
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Accepted evidence for ringcentral.video.toolbar.chat requires a "
+            "dated passing live/manual acceptance run in acceptance-runs.md"
+        ),
+    ):
+        validate_entrypoint_evidence_index(
+            load_ringcentral_package(),
+            evidence_text,
+            acceptance_text=load_acceptance_text(),
+        )
+
+
+def test_accepted_evidence_guard_accepts_matching_manual_pass_record() -> None:
+    evidence_text = evidence_with_level("ringcentral.video.toolbar.chat", "Accepted")
+    acceptance_text = (
+        load_acceptance_text()
+        + """
+
+## 2026-05-17 09:00 Local - Manual RingCentral Acceptance
+
+- Entrypoint IDs tested: `ringcentral.video.toolbar.chat`
+- Steps executed: Opened and closed `ringcentral.video.toolbar.chat`.
+- Outcome: pass
+- Accepted promotion eligible: yes
+- Promotion rationale: Current build route passed and cleanup restored.
+- Recovery: Chat panel closed and toolbar was usable again.
+- Privacy notes: No chat content was read or captured.
+"""
+    )
+
+    report = validate_entrypoint_evidence_index(
+        load_ringcentral_package(),
+        evidence_text,
+        acceptance_text=acceptance_text,
+    )
+
+    assert report.evidence_levels["ringcentral.video.toolbar.chat"] == "Accepted"
+
+
+def test_accepted_evidence_guard_rejects_automated_pass_record() -> None:
+    evidence_text = evidence_with_level("ringcentral.video.toolbar.chat", "Accepted")
+    acceptance_text = (
+        load_acceptance_text()
+        + """
+
+## 2026-05-17 - Automated Baseline
+
+- Steps executed: `ringcentral.video.toolbar.chat`
+- Outcome: pass
+- Accepted promotion eligible: yes
+- Promotion rationale: Tests passed.
+- Privacy notes: None.
+"""
+    )
+
+    with pytest.raises(ValueError, match="requires a dated passing live/manual"):
+        validate_entrypoint_evidence_index(
+            load_ringcentral_package(),
+            evidence_text,
+            acceptance_text=acceptance_text,
+        )
+
+
+def test_accepted_evidence_guard_rejects_followup_only_entrypoint_mention() -> None:
+    evidence_text = evidence_with_level("ringcentral.video.toolbar.chat", "Accepted")
+    acceptance_text = (
+        load_acceptance_text()
+        + """
+
+## 2026-05-17 09:00 Local - Manual RingCentral Acceptance
+
+- Entrypoint IDs tested: `ringcentral.video.toolbar.participants`
+- Steps executed: Opened and closed `ringcentral.video.toolbar.participants`.
+- Outcome: pass
+- Accepted promotion eligible: yes
+- Promotion rationale: Current build route passed and cleanup restored.
+- Recovery: Participants panel closed and toolbar was usable again.
+- Privacy notes: No participant names or roles were read or captured.
+- Follow-up: Validate `ringcentral.video.toolbar.chat`.
+"""
+    )
+
+    with pytest.raises(ValueError, match="requires a dated passing live/manual"):
+        validate_entrypoint_evidence_index(
+            load_ringcentral_package(),
+            evidence_text,
+            acceptance_text=acceptance_text,
+        )
+
+
+def test_accepted_evidence_guard_rejects_manual_pass_without_recovery() -> None:
+    evidence_text = evidence_with_level("ringcentral.video.toolbar.chat", "Accepted")
+    acceptance_text = (
+        load_acceptance_text()
+        + """
+
+## 2026-05-17 09:00 Local - Manual RingCentral Acceptance
+
+- Steps executed: Opened and closed `ringcentral.video.toolbar.chat`.
+- Outcome: pass
+- Accepted promotion eligible: yes
+- Promotion rationale: Current build route passed.
+- Privacy notes: No chat content was read or captured.
+"""
+    )
+
+    with pytest.raises(ValueError, match="requires a dated passing live/manual"):
+        validate_entrypoint_evidence_index(
+            load_ringcentral_package(),
+            evidence_text,
+            acceptance_text=acceptance_text,
+        )
 
 
 def test_discover_validation_targets_separates_flow_ids_from_entrypoints() -> None:

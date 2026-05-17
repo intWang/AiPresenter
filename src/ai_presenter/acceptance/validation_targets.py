@@ -34,6 +34,11 @@ _EVIDENCE_CAPTURE_NOTE = (
     "content before recording results."
 )
 _ALLOWED_EVIDENCE_LEVELS = ("Accepted", "Observed", "Repo-tested", "Backlog", "Blocked")
+_ACCEPTANCE_FIELD_RE = re.compile(r"^-\s*([^:]+):\s*(.*)$")
+_DATED_MANUAL_ACCEPTANCE_HEADING_RE = re.compile(
+    r"^\d{4}-\d{2}-\d{2}\b.*manual ringcentral acceptance",
+    re.IGNORECASE,
+)
 
 
 @dataclass(frozen=True)
@@ -115,9 +120,16 @@ def discover_validation_targets(
 def validate_entrypoint_evidence_index(
     package: MaterialPackage,
     evidence_text: str,
+    *,
+    acceptance_text: str | None = None,
 ) -> EvidenceIndexIntegrityReport:
     evidence_levels, evidence_gaps = _parse_entrypoint_evidence(evidence_text)
     _validate_entrypoint_evidence_integrity(package, evidence_levels)
+    if acceptance_text is not None:
+        _validate_accepted_entrypoints_have_passing_manual_runs(
+            evidence_levels=evidence_levels,
+            acceptance_text=acceptance_text,
+        )
     return EvidenceIndexIntegrityReport(
         package_id=package.app_id,
         entrypoint_count=len(package.entrypoints_by_id),
@@ -391,6 +403,81 @@ def _parse_entrypoint_evidence(evidence_text: str) -> tuple[dict[str, str], dict
         evidence_levels[entrypoint_id] = evidence_level
         evidence_gaps[entrypoint_id] = row["main gap"]
     return evidence_levels, evidence_gaps
+
+
+def _validate_accepted_entrypoints_have_passing_manual_runs(
+    *,
+    evidence_levels: Mapping[str, str],
+    acceptance_text: str,
+) -> None:
+    for entrypoint_id, evidence_level in evidence_levels.items():
+        if evidence_level != "Accepted":
+            continue
+        if _has_passing_manual_acceptance_run(entrypoint_id, acceptance_text):
+            continue
+        raise ValueError(
+            f"Accepted evidence for {entrypoint_id} requires a dated passing "
+            "live/manual acceptance run in acceptance-runs.md"
+        )
+
+
+def _has_passing_manual_acceptance_run(entrypoint_id: str, acceptance_text: str) -> bool:
+    for heading, body in _iter_acceptance_run_sections(acceptance_text):
+        if _DATED_MANUAL_ACCEPTANCE_HEADING_RE.match(heading) is None:
+            continue
+        fields = _parse_acceptance_fields(body)
+        if entrypoint_id not in _extract_ids(fields.get("entrypoint ids tested", "")):
+            continue
+        if _first_field_token(fields.get("outcome", "")) != "pass":
+            continue
+        if _first_field_token(fields.get("accepted promotion eligible", "")) != "yes":
+            continue
+        if not fields.get("promotion rationale", "").strip():
+            continue
+        if not (
+            fields.get("recovery", "").strip()
+            or fields.get("cleanup", "").strip()
+        ):
+            continue
+        if not fields.get("privacy notes", "").strip():
+            continue
+        return True
+    return False
+
+
+def _iter_acceptance_run_sections(acceptance_text: str) -> list[tuple[str, str]]:
+    sections: list[tuple[str, str]] = []
+    current_heading: str | None = None
+    current_body: list[str] = []
+    for line in acceptance_text.splitlines():
+        if line.startswith("## "):
+            if current_heading is not None:
+                sections.append((current_heading, "\n".join(current_body)))
+            current_heading = line.removeprefix("## ").strip()
+            current_body = []
+            continue
+        if current_heading is not None:
+            current_body.append(line)
+    if current_heading is not None:
+        sections.append((current_heading, "\n".join(current_body)))
+    return sections
+
+
+def _parse_acceptance_fields(section_body: str) -> dict[str, str]:
+    fields: dict[str, str] = {}
+    for line in section_body.splitlines():
+        match = _ACCEPTANCE_FIELD_RE.match(line.strip())
+        if match is None:
+            continue
+        fields[match.group(1).strip().casefold()] = match.group(2).strip()
+    return fields
+
+
+def _first_field_token(value: str) -> str:
+    stripped = value.strip()
+    if not stripped:
+        return ""
+    return stripped.split(maxsplit=1)[0].strip(".,;:").casefold()
 
 
 def _extract_section(text: str, heading: str) -> str:

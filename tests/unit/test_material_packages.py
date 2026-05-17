@@ -1445,6 +1445,7 @@ def test_ringcentral_acceptance_runs_define_outcome_promotion_rules() -> None:
         "- Outcome: pass | fail | blocked | incomplete | skipped",
         "- Accepted promotion eligible: yes | no",
         "- Promotion rationale:",
+        "- Entrypoint IDs tested:",
         "- Failures:",
         "- Recovery:",
         "- Follow-up:",
@@ -1477,6 +1478,73 @@ def test_ringcentral_acceptance_runs_define_outcome_promotion_rules() -> None:
         ),
     ):
         assert rule in acceptance_text
+
+
+def test_ringcentral_accepted_evidence_requires_passing_run_traceability() -> None:
+    knowledge_dir = Path("docs/knowledge/ringcentral-video")
+    evidence_text = (knowledge_dir / "evidence-index.md").read_text(encoding="utf-8")
+    acceptance_text = (knowledge_dir / "acceptance-runs.md").read_text(
+        encoding="utf-8"
+    )
+
+    for rule in (
+        "## Accepted Promotion Guard",
+        (
+            "Every `Accepted` row in the Entry Point Evidence Table must cite "
+            "`acceptance-runs.md` and a dated manual/live record whose `Outcome` "
+            "is `pass`."
+        ),
+        (
+            "The same record must identify the entrypoint or route under test and "
+            "set `Accepted promotion eligible: yes`."
+        ),
+        (
+            "The same record must include promotion rationale, recovery or cleanup "
+            "notes, and privacy notes."
+        ),
+        (
+            "Do not use failed, blocked, incomplete, skipped, automated-only, "
+            "dry-run, `doctor`, or read-only observation records as `Accepted` "
+            "promotion evidence."
+        ),
+    ):
+        assert rule in evidence_text
+
+    lines = evidence_text.splitlines()
+    table_start = lines.index("## Entry Point Evidence Table")
+    table_lines = []
+    for line in lines[table_start + 1 :]:
+        if line.startswith("## "):
+            break
+        if line.strip().startswith("|"):
+            table_lines.append(line.strip())
+    headers = [cell.strip().casefold() for cell in table_lines[0].strip("|").split("|")]
+    accepted_rows: list[dict[str, str]] = []
+    for line in table_lines[2:]:
+        cells = [cell.strip() for cell in line.strip("|").split("|")]
+        row = dict(zip(headers, cells, strict=False))
+        if row["evidence level"].strip("`") == "Accepted":
+            accepted_rows.append(row)
+
+    for row in accepted_rows:
+        entrypoint_match = re.search(r"`([^`]+)`", row["entrypoint"])
+        assert entrypoint_match is not None
+        entrypoint_id = entrypoint_match.group(1)
+        assert "acceptance-runs.md" in row["evidence links"]
+        assert entrypoint_id in acceptance_text
+        entrypoint_index = acceptance_text.index(entrypoint_id)
+        next_record_index = acceptance_text.find("\n## ", entrypoint_index + 1)
+        if next_record_index == -1:
+            next_record_index = len(acceptance_text)
+        acceptance_record = acceptance_text[entrypoint_index:next_record_index]
+        assert "- Outcome: pass" in acceptance_record
+        assert "- Accepted promotion eligible: yes" in acceptance_record
+        assert "- Promotion rationale:" in acceptance_record
+        assert (
+            "- Recovery:" in acceptance_record
+            or "- Cleanup:" in acceptance_record
+        )
+        assert "- Privacy notes:" in acceptance_record
 
 
 def test_ringcentral_evidence_status_taxonomy_maps_checklist_terms() -> None:

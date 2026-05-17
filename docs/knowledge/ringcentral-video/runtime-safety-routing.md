@@ -145,9 +145,9 @@ Current expected package signals as of 2026-05-17:
 - Japanese aliases: 13/27 entrypoints, 34 aliases.
 - Spanish aliases: 26/27 entrypoints, 69 aliases.
 - French package seed: `meeting-basics-demo` has 3/3 French narration
-  strings, one background privacy Q&A has French question/answer text, and
-  French aliases cover 1/27 entrypoints with 2 aliases. French remains
-  package-only and is not runtime `--language fr` support.
+  strings, `vbg-blur-demo` has 4/4 French narration strings, one background
+  privacy Q&A has French question/answer text, and French aliases cover 1/27
+  entrypoints with 2 aliases. French remains package-only and is not runtime `--language fr` support.
 - Chinese, Japanese, and Spanish required package localization coverage: 51/51 demo steps, 16/16 Q&A questions, 16/16 Q&A answers.
 - Spanish is runtime-selectable only with OpenAI-backed speech. Its localization
   is complete, but local SAPI/Piper routes and live RingCentral acceptance are

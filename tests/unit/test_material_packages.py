@@ -463,8 +463,10 @@ def test_localization_status_reports_french_package_seed() -> None:
     report = build_localization_status(package, language="fr")
 
     assert report.language == "fr"
-    assert report.demo_localized_steps == 3
+    assert report.demo_localized_steps == 7
     assert report.demo_total_steps == 51
+    assert report.flow_by_id["vbg-blur-demo"].localized_steps == 4
+    assert report.flow_by_id["vbg-blur-demo"].missing_step_ids == ()
     assert report.flow_by_id["meeting-basics-demo"].localized_steps == 3
     assert report.flow_by_id["meeting-basics-demo"].missing_step_ids == ()
     assert report.qa_localized_questions == 1
@@ -483,6 +485,7 @@ def test_localization_status_marks_french_coverage_incomplete() -> None:
 
 def test_ringcentral_french_seed_qa_aliases_and_lifecycle_boundary_are_present() -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    vbg_flow = package.demo_flow_by_id("vbg-blur-demo")
     item = next(qa for qa in package.qa if qa.question == "How do I protect my real background?")
     aliases = package.entrypoint_by_id(
         "ringcentral.video.settings.background"
@@ -493,7 +496,20 @@ def test_ringcentral_french_seed_qa_aliases_and_lifecycle_boundary_are_present()
         encoding="utf-8"
     )
     normalized_lifecycle_text = " ".join(lifecycle_text.split())
+    vbg_french_text = {
+        step.id: step.narration.localized_text["fr"] for step in vbg_flow.steps
+    }
 
+    assert set(vbg_french_text) == {
+        "open-video-settings",
+        "open-background-panel",
+        "select-blur",
+        "verify-meeting-video",
+    }
+    assert "Settings" in vbg_french_text["open-video-settings"]
+    assert "Background" in vbg_french_text["open-background-panel"]
+    assert "Blur" in vbg_french_text["select-blur"]
+    assert "Stop video" in vbg_french_text["verify-meeting-video"]
     assert len(questions) == 2
     assert any("arriere-plan" in question for question in questions)
     assert any("flouter" in question for question in questions)
@@ -506,6 +522,8 @@ def test_ringcentral_french_seed_qa_aliases_and_lifecycle_boundary_are_present()
         "flouter l'arriere-plan",
     }
     assert "French package-local seed" in normalized_lifecycle_text
+    assert "`7/51` demo steps" in normalized_lifecycle_text
+    assert "`vbg-blur-demo`" in normalized_lifecycle_text
     assert "French remains package-only" in normalized_lifecycle_text
     assert "presenter runtime does not support `--language fr`" in normalized_lifecycle_text
 

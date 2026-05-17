@@ -784,8 +784,8 @@ def test_localization_report_outputs_french_package_seed() -> None:
     assert result.exit_code == 0
     assert "Language: fr" in result.stdout
     assert "- meeting-basics-demo: 3/3 narration localized" in result.stdout
-    assert "- vbg-blur-demo: 0/4 narration localized" in result.stdout
-    assert "Localization report: 3/51 demo steps" in result.stdout
+    assert "- vbg-blur-demo: 4/4 narration localized" in result.stdout
+    assert "Localization report: 7/51 demo steps" in result.stdout
     assert "- localized questions: 1/16" in result.stdout
     assert "- localized answers: 1/16" in result.stdout
     assert "questionAliases.fr present on 1/27 entrypoints (2 aliases)" in result.stdout
@@ -811,7 +811,8 @@ def test_localization_report_require_complete_fails_for_french_seed() -> None:
     assert result.exit_code == 1
     assert "Language: fr" in result.stdout
     assert "- meeting-basics-demo: 3/3 narration localized" in result.stdout
-    assert "Localization report: 3/51 demo steps" in result.stdout
+    assert "- vbg-blur-demo: 4/4 narration localized" in result.stdout
+    assert "Localization report: 7/51 demo steps" in result.stdout
     assert "Localization coverage incomplete for fr." in result.stdout
     assert "Unsupported presenter language" not in result.output
 

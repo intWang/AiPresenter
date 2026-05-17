@@ -400,7 +400,7 @@ def test_diagnostics_french_seed_stays_package_only_runtime_unsupported() -> Non
     )
     assert localization_check.status == "FAIL"
     assert "required fr localization incomplete" in localization_check.detail
-    assert "3/51 demo steps" in localization_check.detail
+    assert "7/51 demo steps" in localization_check.detail
     assert "1/16 Q&A questions" in localization_check.detail
     assert "1/16 Q&A answers" in localization_check.detail
     runtime_language_check = next(

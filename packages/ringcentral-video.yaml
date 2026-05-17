@@ -719,6 +719,8 @@ demoFlows:
     narration:
       text: I am opening the video settings from the camera control so we can configure the visual presentation.
       localizedText:
+        fr: J'ouvre Settings depuis le controle de la camera afin de regler la presentation visuelle sans changer
+          l'etat des autres participants.
         es: Abro Settings desde el control de la cámara para ajustar la presentación visual sin cambiar el estado
           de otras personas en la reunión.
         ja: カメラコントロールからビデオ設定を開きます。会議中の他の参加者の状態を変えずに、表示の見え方を調整できます。
@@ -732,6 +734,8 @@ demoFlows:
     narration:
       text: The Background panel contains blur, built-in virtual backgrounds, and custom background upload.
       localizedText:
+        fr: Dans Background, tu peux gerer Blur, les arriere-plans virtuels inclus et l'ajout d'un arriere-plan
+          personnalise pour proteger l'environnement reel.
         es: En Background puedes gestionar Blur, fondos virtuales incluidos y la carga de fondos personalizados;
           es la entrada para proteger el entorno real y mejorar la presentación.
         ja: Background パネルでは、ぼかし、標準の仮想背景、カスタム背景のアップロードを管理できます。実際の環境を守りながら見栄えを整える入口です。
@@ -747,6 +751,8 @@ demoFlows:
     narration:
       text: Blur keeps the presenter visible while reducing detail from the real room.
       localizedText:
+        fr: Choisir Blur garde le presenter visible tout en reduisant les details de la piece reelle afin de continuer
+          la reunion sans exposer l'environnement.
         es: Seleccionar Blur mantiene visible al presenter y reduce los detalles de la habitación real para continuar
           la reunión sin exponer el entorno.
         ja: Blur を選ぶと、発表者は見えるまま、実際の部屋の細部を目立たなくできます。環境を見せすぎずに会議を続けるときに役立ちます。
@@ -762,6 +768,8 @@ demoFlows:
     narration:
       text: Back in the meeting, the live tile confirms video is on and the real background is blurred.
       localizedText:
+        fr: De retour dans la reunion, verifie que Stop video est disponible; cela confirme que la video locale reste
+          active et que l'arriere-plan reel est floute.
         es: De vuelta en la reunión, verifica que Stop video esté disponible; eso confirma que el video local sigue
           activo y que el fondo real está desenfocado.
         ja: 会議画面に戻ったら、ライブタイルでビデオがオンのままで、実際の背景がぼかされていることを確認します。

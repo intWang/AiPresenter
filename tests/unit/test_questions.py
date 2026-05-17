@@ -971,6 +971,94 @@ def test_ringcentral_localized_host_controls_question_returns_chinese_guidance()
 @pytest.mark.parametrize(
     "question",
     [
+        "Can you read chat messages?",
+        "Read chat aloud",
+        "Summarize the chat",
+        "What did John say in chat?",
+    ],
+)
+def test_ringcentral_chat_content_requests_stay_answer_only(question: str) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(),
+    )
+
+    assert response.entrypoint_id is None
+    assert response.entrypoint_id != "ringcentral.video.toolbar.chat"
+    assert response.can_operate is False
+    assert create_question_interrupt_step(package, response) is None
+    assert "chat messages" in response.answer_text
+    assert "verified" in response.answer_text
+    assert "Chat panel:" not in response.answer_text
+    assert "Meeting information:" not in response.answer_text
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Who is in the meeting?",
+        "List participants",
+        "Read participant names",
+    ],
+)
+def test_ringcentral_participant_identity_requests_stay_answer_only(
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(),
+    )
+
+    assert response.entrypoint_id is None
+    assert response.entrypoint_id != "ringcentral.video.toolbar.participants"
+    assert response.can_operate is False
+    assert create_question_interrupt_step(package, response) is None
+    assert "participant names" in response.answer_text
+    assert "verified" in response.answer_text
+    assert "Participants panel:" not in response.answer_text
+    assert "I could not find a matching control" not in response.answer_text
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Mute all participants",
+        "Remove a participant",
+        "Lock the meeting",
+    ],
+)
+def test_ringcentral_participant_host_action_requests_stay_answer_only(
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(),
+    )
+
+    assert response.entrypoint_id is None
+    assert response.entrypoint_id != "ringcentral.video.toolbar.participants"
+    assert response.can_operate is False
+    assert create_question_interrupt_step(package, response) is None
+    assert "Do not mute others" in response.answer_text
+    assert "lock the meeting" in response.answer_text
+    assert "explicitly asks" in response.answer_text
+    assert "verified" in response.answer_text
+    assert "Participants panel:" not in response.answer_text
+    assert "I could not find a matching control" not in response.answer_text
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
         "Where are captions?",
         "Can I use live transcription?",
         "How do I translate captions?",

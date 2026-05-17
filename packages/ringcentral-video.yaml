@@ -1753,6 +1753,14 @@ qa:
   - ringcentral.video.top.meeting-info
 - question: Can the presenter read meeting messages or participant names?
   localizedQuestions:
+    en:
+    - Can you read chat messages?
+    - Read chat aloud
+    - Summarize the chat
+    - What did John say in chat?
+    - Who is in the meeting?
+    - List participants
+    - Read participant names
     es:
     - ¿Puede leer los mensajes del chat o los nombres de participantes?
     ja:
@@ -1772,6 +1780,10 @@ qa:
     zh: Presenter 可以说明 Chat 和 Participants 在哪里，也可以在已验证时概括可见人数。默认不要朗读聊天消息、参会人姓名、角色或私人标签页，除非用户明确要求并且内容已经验证。
 - question: Where are host controls for participants?
   localizedQuestions:
+    en:
+    - Mute all participants
+    - Remove a participant
+    - Lock the meeting
     es:
     - ¿Dónde están los controles de host para participantes?
     ja:

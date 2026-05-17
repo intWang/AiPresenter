@@ -206,6 +206,8 @@ operationEntrypoints:
   area: Meeting toolbar
   purpose: Toggle mute and unmute in the live meeting.
   questionAliases:
+    en:
+    - microphone button
     es:
     - ubicación del botón mute
     - control del micrófono en la barra

@@ -671,6 +671,23 @@ def test_ringcentral_localized_audio_video_readiness_qa_returns_chinese_answer()
     assert "摄像头" in response.answer_text
 
 
+def test_ringcentral_microphone_button_location_routes_to_audio_without_interrupt(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    monkeypatch.setattr(questions_module, "_ENTRYPOINT_ALIASES", {})
+
+    response = answer_question(
+        package=package,
+        question="Where is the microphone button?",
+        voice=PresenterVoiceSettings(),
+    )
+
+    assert response.entrypoint_id == "ringcentral.video.toolbar.audio"
+    assert response.can_operate is False
+    assert create_question_interrupt_step(package, response) is None
+
+
 @pytest.mark.parametrize("question", ["怎么录制会议", "记录会议"])
 def test_ringcentral_localized_recording_question_returns_chinese_safety_answer(question: str) -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))

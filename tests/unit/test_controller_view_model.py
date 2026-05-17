@@ -429,6 +429,34 @@ def test_operator_summary_uses_privacy_safe_question_outcome() -> None:
     assert answer_text not in summary
 
 
+def test_operator_summary_uses_privacy_safe_run_status() -> None:
+    private_error = "private board agenda"
+    view_model = build_controller_operator_view_model(
+        ControllerOperatorSnapshot(
+            source_mode="material_package",
+            material_package_id="ringcentral-video",
+            material_flow_id="meeting-control-map-demo",
+            running_app_label="",
+            has_running_app_selection=False,
+            has_scanned_running_app=False,
+            scanned_package_id="",
+            scanned_flow_id="",
+            voice=PresenterVoiceSettings(),
+            voice_readiness=None,
+            run_status="Error: Controller error: action could not continue safely.",
+            is_running=False,
+            is_stopping=False,
+            question_text="",
+            last_question_outcome="",
+        )
+    )
+
+    summary = render_controller_operator_summary(view_model)
+
+    assert "State: Error: Controller error: action could not continue safely." in summary
+    assert private_error not in summary
+
+
 def test_running_state_disables_target_churn_and_enables_controls() -> None:
     view_model = build_controller_operator_view_model(
         ControllerOperatorSnapshot(

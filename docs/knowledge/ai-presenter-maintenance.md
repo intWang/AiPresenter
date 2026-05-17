@@ -87,6 +87,7 @@ Choose the smallest artifact that makes the next cycle safer or more useful.
 - Use `qa` for matched package Q&A guidance, including answer-only privacy guidance; use `entrypoint` for matched package controls; use `presenter_meta` for presenter settings questions; use `no_match` when no safe control or text guidance matched.
 - Leave failure logs minimal. Do not invent an answer source for exceptions, and do not log exception text that could contain private question or answer content.
 - Keep operator status and summary rows privacy-safe too. They may display bounded outcome labels from `describe_question_result()` or `describe_question_error()`, but should not include raw prompts, answer text, exception text, participant names, meeting links, chat content, or transcript content.
+- Route controller runtime exceptions through bounded public formatters such as `describe_controller_error()` or `describe_controller_action_error()`. Allowlist only known public configuration messages; treat arbitrary exception text as private by default.
 
 ## Verification And Staging Checklist
 

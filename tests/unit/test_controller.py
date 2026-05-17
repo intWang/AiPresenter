@@ -24,6 +24,8 @@ from ai_presenter.runtime.controller import _check_controller_voice_readiness
 from ai_presenter.runtime.controller import _configure_operator_summary_label
 from ai_presenter.runtime.controller import _ControllerVoiceReadinessCache
 from ai_presenter.runtime.controller import _voice_readiness_failure_message
+from ai_presenter.runtime.controller import describe_controller_action_error
+from ai_presenter.runtime.controller import describe_controller_error
 from ai_presenter.runtime.controller import describe_question_error
 from ai_presenter.runtime.controller import describe_question_result
 from ai_presenter.runtime.controller import format_chat_turns
@@ -68,7 +70,7 @@ def test_controller_voice_readiness_converts_checker_exception_to_failure() -> N
     profile, _package = _controller_inputs()
 
     def checker(*_args: object) -> VoiceAssetAvailability | None:
-        raise RuntimeError("SAPI unavailable")
+        raise RuntimeError("private voice path")
 
     readiness = _check_controller_voice_readiness(
         profile,
@@ -78,10 +80,12 @@ def test_controller_voice_readiness_converts_checker_exception_to_failure() -> N
 
     assert readiness is not None
     assert readiness.status == "FAIL"
-    assert "SAPI unavailable" in readiness.detail
+    assert readiness.detail == "voice asset check failed; retry or check local voice setup."
+    assert "private voice path" not in readiness.detail
     failure = _voice_readiness_failure_message(readiness)
     assert failure is not None
-    assert "SAPI unavailable" in failure
+    assert "voice asset check failed" in failure
+    assert "private voice path" not in failure
 
 
 def test_controller_voice_readiness_rejects_incompatible_voice_before_asset_check() -> None:
@@ -1266,6 +1270,35 @@ def test_describe_question_error_hides_exception_text() -> None:
     assert "private board agenda" not in message
 
 
+def test_describe_controller_error_hides_private_runtime_exception_text() -> None:
+    message = describe_controller_error(RuntimeError("private board agenda"))
+
+    assert message == "Controller error: action could not continue safely."
+    assert "private board agenda" not in message
+
+
+def test_describe_controller_error_preserves_known_public_flow_error() -> None:
+    message = describe_controller_error(
+        KeyError("Unknown demo flow: missing-flow. Available flows: demo")
+    )
+
+    assert message == "Unknown demo flow: missing-flow. Available flows: demo"
+
+
+def test_describe_controller_error_rejects_spoofed_private_flow_error() -> None:
+    message = describe_controller_error(KeyError("Unknown demo flow: private board agenda"))
+
+    assert message == "Controller error: action could not continue safely."
+    assert "private board agenda" not in message
+
+
+def test_describe_controller_action_error_hides_exception_text() -> None:
+    message = describe_controller_action_error("Scan", RuntimeError("private board agenda"))
+
+    assert message == "Scan error: action could not continue safely."
+    assert "private board agenda" not in message
+
+
 def test_render_voice_label_uses_controller_labels() -> None:
     assert render_voice_label(PresenterVoiceSettings()) == "English / Professional"
     assert (
@@ -1349,6 +1382,24 @@ def test_resolve_controller_status_uses_unquoted_key_error_message() -> None:
     assert update.mark_session_stopped is True
 
 
+def test_resolve_controller_status_hides_private_runtime_error_text() -> None:
+    update = resolve_controller_status(
+        ControllerStatusSnapshot(
+            current_status="Ready",
+            last_error=RuntimeError("private board agenda"),
+            is_running=False,
+            is_paused=False,
+            is_stopping=False,
+            is_switching_targets=False,
+            session_is_running=True,
+        )
+    )
+
+    assert update.status == "Error: Controller error: action could not continue safely."
+    assert "private board agenda" not in update.status
+    assert update.mark_session_stopped is True
+
+
 def test_resolve_controller_status_does_not_repeat_error_stop_after_session_stopped() -> None:
     update = resolve_controller_status(
         ControllerStatusSnapshot(
@@ -1362,7 +1413,8 @@ def test_resolve_controller_status_does_not_repeat_error_stop_after_session_stop
         )
     )
 
-    assert update.status == "Error: boom"
+    assert update.status == "Error: Controller error: action could not continue safely."
+    assert "boom" not in update.status
     assert update.mark_session_stopped is False
 
 

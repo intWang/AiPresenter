@@ -4,6 +4,7 @@ import threading
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
+import re
 from typing import TYPE_CHECKING, Any, Literal
 
 from ai_presenter.config.models import AppProfile
@@ -44,6 +45,9 @@ REPO_PACKAGE_DIR = Path(__file__).resolve().parents[3] / "packages"
 NO_RUNNING_APPS_LABEL = "No running apps found"
 RUNNING_APP_SCAN_REQUIRED_MESSAGE = "Scan the selected running app before asking questions."
 QUESTION_FLOW_ID = "question-answer-demo"
+_PUBLIC_UNKNOWN_FLOW_ERROR_PATTERN = re.compile(
+    r"^Unknown demo flow: [A-Za-z0-9_.-]+\. Available flows: [A-Za-z0-9_. ,:-]+$"
+)
 
 QuestionDemonstrationStatus = Literal["text_only", "interrupting", "queued", "started"]
 VoiceAssetChecker = Callable[[AppProfile, PresenterVoiceSettings], VoiceAssetAvailability | None]
@@ -129,7 +133,7 @@ def render_operator_summary_text(view_model: ControllerOperatorViewModel) -> str
 def resolve_controller_status(snapshot: ControllerStatusSnapshot) -> ControllerStatusUpdate:
     if snapshot.last_error is not None:
         return ControllerStatusUpdate(
-            status=f"Error: {_exception_message(snapshot.last_error)}",
+            status=f"Error: {describe_controller_error(snapshot.last_error)}",
             pause_label="Pause",
             mark_session_stopped=snapshot.session_is_running,
         )
@@ -150,10 +154,16 @@ def resolve_controller_status(snapshot: ControllerStatusSnapshot) -> ControllerS
     return ControllerStatusUpdate(status=snapshot.current_status, pause_label="Pause")
 
 
-def _exception_message(exc: Exception) -> str:
+def describe_controller_error(exc: Exception) -> str:
     if isinstance(exc, KeyError) and exc.args:
-        return str(exc.args[0])
-    return str(exc)
+        message = str(exc.args[0])
+        if _PUBLIC_UNKNOWN_FLOW_ERROR_PATTERN.fullmatch(message):
+            return message
+    return "Controller error: action could not continue safely."
+
+
+def describe_controller_action_error(action: str, _exc: Exception) -> str:
+    return f"{action} error: action could not continue safely."
 
 
 def describe_question_error(_exc: Exception) -> str:
@@ -196,11 +206,11 @@ def _check_controller_voice_readiness(
         )
     try:
         availability = checker(profile, voice)
-    except Exception as exc:
+    except Exception:
         return ControllerVoiceReadiness(
             status="FAIL",
             label="FAIL",
-            detail=f"voice asset check failed: {exc}",
+            detail="voice asset check failed; retry or check local voice setup.",
         )
     if availability is None:
         return None
@@ -717,7 +727,7 @@ def run_controller(
         except Exception as exc:
             scan_state.replace_windows({})
             app_choice.set(NO_RUNNING_APPS_LABEL)
-            status.set(f"App refresh error: {exc}")
+            status.set(describe_controller_action_error("App refresh", exc))
             sync_target_choice()
             refresh_operator_view()
             return
@@ -778,7 +788,7 @@ def run_controller(
                 f"Scanned {package.app_name}: {len(package.operation_entrypoints)} entrypoints"
             )
         except Exception as exc:
-            status.set(f"Scan error: {exc}")
+            status.set(describe_controller_action_error("Scan", exc))
         refresh_operator_view()
 
     def start() -> None:
@@ -823,7 +833,7 @@ def run_controller(
             pause_label.set("Pause")
         except Exception as exc:
             session.mark_stopped()
-            status.set(f"Start error: {exc}")
+            status.set(describe_controller_action_error("Start", exc))
         refresh_operator_view()
 
     def pause_or_resume() -> None:

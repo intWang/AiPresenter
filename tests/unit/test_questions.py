@@ -1655,6 +1655,26 @@ def test_ringcentral_participant_identity_requests_stay_answer_only(
             PresenterVoiceSettings(language="es"),
             ("nombres", "roles", "privadas"),
         ),
+        (
+            "\u00bfQui\u00e9nes est\u00e1n en la reuni\u00f3n?",
+            PresenterVoiceSettings(language="es"),
+            ("nombres", "roles", "privadas"),
+        ),
+        (
+            "\u00bfQui\u00e9nes est\u00e1n en el panel de participantes?",
+            PresenterVoiceSettings(language="es"),
+            ("nombres", "roles", "privadas"),
+        ),
+        (
+            "\u00bfQui\u00e9nes est\u00e1n en la lista de participantes?",
+            PresenterVoiceSettings(language="es"),
+            ("nombres", "roles", "privadas"),
+        ),
+        (
+            "Expl\u00edcame qui\u00e9n est\u00e1 en la lista de participantes",
+            PresenterVoiceSettings(language="es"),
+            ("nombres", "roles", "privadas"),
+        ),
     ],
 )
 def test_localized_participant_identity_requests_stay_answer_only(
@@ -1692,7 +1712,9 @@ def test_localized_participant_identity_requests_stay_answer_only(
         "\u53c2\u52a0\u8005\u4e00\u89a7\u306f\u3069\u3053\u3067\u3059\u304b",
         "\u53c2\u52a0\u8005\u30d1\u30cd\u30eb\u3092\u958b\u3044\u3066",
         "Muestrame el panel de participantes",
+        "Mu\u00e9strame el panel de participantes",
         "Donde esta la lista de participantes?",
+        "\u00bfD\u00f3nde est\u00e1 la lista de participantes?",
     ],
 )
 def test_participants_panel_location_requests_stay_operable_with_meta(

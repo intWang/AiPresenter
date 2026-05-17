@@ -36,6 +36,15 @@ When a control is safe in a scripted demo, that does not automatically make it s
 | Leave/end | Meeting presence, possible end for all | Explain exit path. | Clicking Leave/End automatically. | Always. |
 | Post-meeting artifacts | Recordings, summaries, transcripts, insights | Explain where artifacts may live. | Reading artifact content or making availability claims not verified. | Yes before reading content. |
 
+## Localized Participant Prompts
+
+Spanish participant wording must preserve the same privacy boundary as English:
+
+- Safe navigation: `Muéstrame el panel de participantes`, `Muestrame el panel de participantes`, `¿Dónde está la lista de participantes?`, and `Donde esta la lista de participantes?` may open or describe the Participants panel/list.
+- Identity disclosure: `Muéstrame los participantes`, `Lista los participantes`, `¿Quién está en la reunión?`, `¿Quiénes están en la lista de participantes?`, `con nombres`, `con roles`, `host`, and `moderador` stay answer-only.
+- Accent folding is a matching convenience, not a permission change. `Quién/Quien`, `Quiénes/Quienes`, `está/esta`, and `reunión/reunion` should route to the same privacy decision.
+- Panel/list terms do not make a request safe when the prompt also asks who is present, names, roles, host, or moderator status.
+
 ## Safety In Runtime
 
 - `runtime.questions` can match risky intent, but `can_operate` must stay false for risky controls.

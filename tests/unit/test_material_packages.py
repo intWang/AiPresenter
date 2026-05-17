@@ -9,6 +9,7 @@ from ai_presenter.packages.localization_status import build_localization_status
 from ai_presenter.packages.localization_status import render_localization_status_lines
 from ai_presenter.packages.loader import load_material_package
 from ai_presenter.packages.models import MaterialPackage
+from ai_presenter.packages.models import normalize_question_prompt
 from ai_presenter.runtime.voice import PresenterVoiceSettings
 from ai_presenter.runtime.voice import render_narration_text
 
@@ -157,6 +158,12 @@ def test_entrypoint_localized_title_and_purpose_do_not_affect_match_candidates()
     assert "participantes" not in candidate.title_tokens
     assert "abre" not in candidate.purpose_tokens
     assert "participantes" not in candidate.purpose_tokens
+
+
+def test_normalize_question_prompt_strips_latin_accents_but_preserves_punctuation() -> None:
+    assert normalize_question_prompt("Mu\u00e9strame") == "muestrame"
+    assert normalize_question_prompt("\u00bfD\u00f3nde est\u00e1?") == "\u00bfdonde esta?"
+    assert normalize_question_prompt("\u00bfQui\u00e9nes est\u00e1n?") == "\u00bfquienes estan?"
 
 
 def test_material_package_still_rejects_unknown_entrypoint_keys() -> None:

@@ -342,6 +342,41 @@ class _RunningAppScanState:
         return (label, window.pid, window.window_class)
 
 
+@dataclass
+class _ScannedRunningAppMetadata:
+    package_id: str = ""
+    flow_id: str = ""
+    scan_summary: str = ""
+    package: MaterialPackage | None = None
+    handle: WindowHandle | None = None
+
+    def apply_scan_result(self, result: RunningAppScanResult) -> None:
+        self.package_id = result.package.app_id
+        self.flow_id = result.flow_id
+        self.scan_summary = result.status_message
+        self.package = result.package
+        self.handle = result.handle
+
+    def clear(self) -> None:
+        self.package_id = ""
+        self.flow_id = ""
+        self.scan_summary = ""
+        self.package = None
+        self.handle = None
+
+
+def _clear_scanned_running_app_metadata_if_invalid(
+    metadata: _ScannedRunningAppMetadata,
+    *,
+    previously_scanned: bool,
+    scan_state: _RunningAppScanState,
+) -> bool:
+    if previously_scanned and not scan_state.has_scanned_selection:
+        metadata.clear()
+        return True
+    return False
+
+
 def _scan_running_app_for_controller(
     session: ControllerSession,
     target: RunningAppTarget,
@@ -714,11 +749,7 @@ def run_controller(
     )
     catalog = ControllerAppCatalog(package_dir=REPO_PACKAGE_DIR, desktop=desktop)
     scan_state = _RunningAppScanState()
-    scanned_package_id = ""
-    scanned_flow_id = ""
-    scanned_scan_summary = ""
-    scanned_package: MaterialPackage | None = None
-    scanned_handle: WindowHandle | None = None
+    scanned_running_app = _ScannedRunningAppMetadata()
 
     controller = PresenterController(
         profile=profile,
@@ -779,9 +810,9 @@ def run_controller(
                 running_app_label=app_choice.get(),
                 has_running_app_selection=selected_running_window() is not None,
                 has_scanned_running_app=scan_state.has_scanned_selection,
-                scanned_package_id=scanned_package_id,
-                scanned_flow_id=scanned_flow_id,
-                scan_summary=scanned_scan_summary,
+                scanned_package_id=scanned_running_app.package_id,
+                scanned_flow_id=scanned_running_app.flow_id,
+                scan_summary=scanned_running_app.scan_summary,
                 voice=voice,
                 voice_readiness=voice_readiness,
                 run_status=status.get(),
@@ -810,8 +841,8 @@ def run_controller(
     def sync_target_choice(*_args: object) -> None:
         if source.get() == "Running desktop app":
             if scan_state.has_scanned_selection:
-                package_choice.set(scanned_package_id)
-                flow_choice.set(scanned_flow_id)
+                package_choice.set(scanned_running_app.package_id)
+                flow_choice.set(scanned_running_app.flow_id)
             else:
                 package_choice.set(f"{app_choice.get() or 'No running app selected'} needs scan")
                 flow_choice.set("")
@@ -826,17 +857,28 @@ def run_controller(
     def choose_running_app(label: str) -> None:
         previously_scanned = scan_state.has_scanned_selection
         scan_state.choose(label)
+        scan_invalidated = _clear_scanned_running_app_metadata_if_invalid(
+            scanned_running_app,
+            previously_scanned=previously_scanned,
+            scan_state=scan_state,
+        )
         app_choice.set(label)
-        if previously_scanned and not scan_state.has_scanned_selection:
+        if scan_invalidated:
             status.set("Selected running app needs scanning")
         sync_target_choice()
         refresh_operator_view()
 
     def refresh_running_windows() -> None:
+        previously_scanned = scan_state.has_scanned_selection
         try:
             running_windows = list(catalog.list_running_apps())
         except Exception as exc:
             scan_state.replace_windows({})
+            _clear_scanned_running_app_metadata_if_invalid(
+                scanned_running_app,
+                previously_scanned=previously_scanned,
+                scan_state=scan_state,
+            )
             app_choice.set(NO_RUNNING_APPS_LABEL)
             status.set(describe_controller_action_error("App refresh", exc))
             sync_target_choice()
@@ -850,8 +892,12 @@ def run_controller(
                 label = f"{label} #{index}"
             next_window_by_label[label] = window
 
-        previously_scanned = scan_state.has_scanned_selection
         scan_state.replace_windows(next_window_by_label)
+        scan_invalidated = _clear_scanned_running_app_metadata_if_invalid(
+            scanned_running_app,
+            previously_scanned=previously_scanned,
+            scan_state=scan_state,
+        )
 
         menu = running_app_menu["menu"]
         menu.delete(0, "end")
@@ -859,7 +905,7 @@ def run_controller(
             app_choice.set(NO_RUNNING_APPS_LABEL)
             menu.add_command(label=app_choice.get(), command=lambda: choose_running_app(app_choice.get()))
             sync_target_choice()
-            if previously_scanned:
+            if scan_invalidated:
                 status.set("Selected running app needs scanning")
             refresh_operator_view()
             return
@@ -867,14 +913,12 @@ def run_controller(
         for label in scan_state.window_by_label:
             menu.add_command(label=label, command=lambda value=label: choose_running_app(value))
         app_choice.set(scan_state.selected_label)
-        if previously_scanned and not scan_state.has_scanned_selection:
+        if scan_invalidated:
             status.set("Selected running app needs scanning")
         sync_target_choice()
         refresh_operator_view()
 
     def scan_selected_app() -> None:
-        nonlocal scanned_flow_id, scanned_package_id, scanned_handle, scanned_package
-        nonlocal scanned_scan_summary
         selected = selected_running_window()
         if selected is None:
             status.set("Scan error: select a running app first")
@@ -888,18 +932,14 @@ def run_controller(
                 list_visible_controls=desktop.list_visible_controls,
             )
             scan_state.mark_selected_scanned()
-            scanned_package = scan_result.package
-            scanned_handle = scan_result.handle
-            scanned_package_id = scan_result.package.app_id
-            scanned_flow_id = scan_result.flow_id
-            scanned_scan_summary = scan_result.status_message
+            scanned_running_app.apply_scan_result(scan_result)
             controller.set_target(
                 material_package=scan_result.package,
-                flow_id=scanned_flow_id,
+                flow_id=scanned_running_app.flow_id,
                 handle=scan_result.handle,
             )
-            package_choice.set(scanned_package_id)
-            flow_choice.set(scanned_flow_id)
+            package_choice.set(scanned_running_app.package_id)
+            flow_choice.set(scanned_running_app.flow_id)
             status.set(scan_result.status_message)
         except Exception as exc:
             status.set(describe_controller_action_error("Scan", exc))
@@ -911,6 +951,9 @@ def run_controller(
             validate_profile_voice(profile, voice)
             controller.set_voice(voice)
             if source.get() == "Running desktop app":
+                scanned_package = scanned_running_app.package
+                scanned_handle = scanned_running_app.handle
+                scanned_flow_id = scanned_running_app.flow_id
                 if (
                     not scan_state.has_scanned_selection
                     or scanned_package is None

@@ -18,12 +18,15 @@ from ai_presenter.runtime.controller import ControllerAppliedStatusState
 from ai_presenter.runtime.controller import ControllerStatusSnapshot
 from ai_presenter.runtime.controller import ControllerStatusUpdate
 from ai_presenter.runtime.controller import PresenterController
+from ai_presenter.runtime.controller import RunningAppScanResult
+from ai_presenter.runtime.controller import _ScannedRunningAppMetadata
 from ai_presenter.runtime.controller import _RunningAppScanState
 from ai_presenter.runtime.controller import _apply_operator_summary_wraplength
 from ai_presenter.runtime.controller import _apply_button_state
 from ai_presenter.runtime.controller import _check_controller_voice_readiness
 from ai_presenter.runtime.controller import _configure_operator_summary_label
 from ai_presenter.runtime.controller import _ControllerVoiceReadinessCache
+from ai_presenter.runtime.controller import _clear_scanned_running_app_metadata_if_invalid
 from ai_presenter.runtime.controller import _voice_readiness_failure_message
 from ai_presenter.runtime.controller import describe_controller_action_error
 from ai_presenter.runtime.controller import describe_controller_error
@@ -1618,6 +1621,123 @@ def test_running_app_scan_state_clears_scan_when_refresh_removes_window() -> Non
 
     assert state.has_scanned_selection is False
     assert state.selected_label == "Demo B (DemoB:20)"
+
+
+def test_scanned_running_app_metadata_can_clear_scan_result_state() -> None:
+    window = VisibleWindow("DemoProcess", 42, "DemoClass", "Private Board", (0, 0, 800, 600))
+    handle = WindowHandle("DemoProcess", 42, "DemoClass", "Private Board")
+    package = build_temporary_package(window=window, controls=())
+    result = RunningAppScanResult(
+        package=package,
+        handle=handle,
+        flow_id="temp-demo",
+        control_count=0,
+        entrypoint_count=1,
+        openable_count=0,
+        explain_only_count=1,
+        duration_ms=12.3,
+    )
+    metadata = _ScannedRunningAppMetadata()
+
+    metadata.apply_scan_result(result)
+    metadata.clear()
+
+    assert metadata.package_id == ""
+    assert metadata.flow_id == ""
+    assert metadata.scan_summary == ""
+    assert metadata.package is None
+    assert metadata.handle is None
+
+
+def test_scanned_running_app_metadata_clears_when_selection_is_invalidated() -> None:
+    state = _RunningAppScanState()
+    app_a = VisibleWindow("DemoA", 10, "WindowA", "Demo A", (0, 0, 800, 600))
+    app_b = VisibleWindow("DemoB", 20, "WindowB", "Demo B", (0, 0, 800, 600))
+    state.replace_windows({"Demo A (DemoA:10)": app_a, "Demo B (DemoB:20)": app_b})
+    state.choose("Demo A (DemoA:10)")
+    state.mark_selected_scanned()
+    metadata = _ScannedRunningAppMetadata(
+        package_id="temp.demoa.10",
+        flow_id="temp-demo",
+        scan_summary="Scanned temp.demoa.10: 2 controls, 3 entrypoints, 50 ms",
+        package=build_temporary_package(window=app_a, controls=()),
+        handle=WindowHandle("DemoA", 10, "WindowA", "Demo A"),
+    )
+
+    previously_scanned = state.has_scanned_selection
+    state.choose("Demo B (DemoB:20)")
+    cleared = _clear_scanned_running_app_metadata_if_invalid(
+        metadata,
+        previously_scanned=previously_scanned,
+        scan_state=state,
+    )
+
+    assert cleared is True
+    assert metadata.package_id == ""
+    assert metadata.flow_id == ""
+    assert metadata.scan_summary == ""
+    assert metadata.package is None
+    assert metadata.handle is None
+
+
+def test_scanned_running_app_metadata_keeps_current_scan_after_matching_refresh() -> None:
+    state = _RunningAppScanState()
+    app_a = VisibleWindow("DemoA", 10, "WindowA", "Demo A", (0, 0, 800, 600))
+    state.replace_windows({"Demo A (DemoA:10)": app_a})
+    state.choose("Demo A (DemoA:10)")
+    state.mark_selected_scanned()
+    metadata = _ScannedRunningAppMetadata(
+        package_id="temp.demoa.10",
+        flow_id="temp-demo",
+        scan_summary="Scanned temp.demoa.10: 0 controls, 1 entrypoints, 12 ms",
+        package=build_temporary_package(window=app_a, controls=()),
+        handle=WindowHandle("DemoA", 10, "WindowA", "Demo A"),
+    )
+
+    previously_scanned = state.has_scanned_selection
+    state.replace_windows({"Demo A (DemoA:10)": app_a})
+    cleared = _clear_scanned_running_app_metadata_if_invalid(
+        metadata,
+        previously_scanned=previously_scanned,
+        scan_state=state,
+    )
+
+    assert cleared is False
+    assert metadata.package_id == "temp.demoa.10"
+    assert metadata.flow_id == "temp-demo"
+    assert metadata.scan_summary == "Scanned temp.demoa.10: 0 controls, 1 entrypoints, 12 ms"
+    assert metadata.package is not None
+    assert metadata.handle == WindowHandle("DemoA", 10, "WindowA", "Demo A")
+
+
+def test_scanned_running_app_metadata_clears_when_refresh_removes_all_windows() -> None:
+    state = _RunningAppScanState()
+    app_a = VisibleWindow("DemoA", 10, "WindowA", "Demo A", (0, 0, 800, 600))
+    state.replace_windows({"Demo A (DemoA:10)": app_a})
+    state.choose("Demo A (DemoA:10)")
+    state.mark_selected_scanned()
+    metadata = _ScannedRunningAppMetadata(
+        package_id="temp.demoa.10",
+        flow_id="temp-demo",
+        scan_summary="Scanned temp.demoa.10: 0 controls, 1 entrypoints, 12 ms",
+        package=build_temporary_package(window=app_a, controls=()),
+        handle=WindowHandle("DemoA", 10, "WindowA", "Demo A"),
+    )
+
+    previously_scanned = state.has_scanned_selection
+    state.replace_windows({})
+    cleared = _clear_scanned_running_app_metadata_if_invalid(
+        metadata,
+        previously_scanned=previously_scanned,
+        scan_state=state,
+    )
+
+    assert cleared is True
+    assert metadata.package_id == ""
+    assert metadata.flow_id == ""
+    assert metadata.scan_summary == ""
+    assert metadata.package is None
+    assert metadata.handle is None
 
 
 def test_running_app_scan_telemetry_logs_bounded_success_metadata(

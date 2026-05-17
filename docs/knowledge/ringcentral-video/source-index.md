@@ -36,7 +36,7 @@ This index separates product-scope sources from executable automation evidence f
 | `docs/knowledge/ringcentral-video/state-matrix.md` | State coverage | RingCentral Video meeting states, adapter signals, package behavior, and missing-state backlog. |
 | `docs/knowledge/ringcentral-video/privacy-matrix.md` | Privacy and safety policy | Sensitive surfaces, allowed summaries, disallowed readings, and confirmation boundaries. |
 | `docs/knowledge/ringcentral-video/evidence-index.md` | Evidence navigation | Cross-links package entrypoints, observation evidence, locator confidence, privacy policy, and next acceptance targets. |
-| `docs/knowledge/ringcentral-video/runtime-safety-routing.md` | Runtime safety-routing guide | Consolidates recent Q&A-first, `answerOnly`, Notes/Transcript, recording, and tone-as-style-only rules with verification anchors. |
+| `docs/knowledge/ringcentral-video/runtime-safety-routing.md` | Runtime safety-routing guide | Consolidates recent Q&A-first, `answerOnly`, Notes/Transcript, recording, tone-as-style-only rules, and private-surface examples for chat, meeting information, recording, and notes/transcript with verification anchors. |
 | `docs/knowledge/ringcentral-video/validation-checklist-index.md` | Manual validation procedure | Operator-ready checklist for turning evidence gaps into privacy-safe manual runs; proof still belongs in `acceptance-runs.md`. |
 | `docs/agent-handoffs/cycle-000-ringcentral-knowledge.md` | Cycle 000 review | Identifies locator drift, state gaps, schema companion-doc need. |
 | `docs/agent-handoffs/cycle-001-retro.md` | Cycle 001 lessons | Notes encoding/alias risks and recommends knowledge package hardening. |

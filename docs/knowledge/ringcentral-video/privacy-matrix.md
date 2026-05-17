@@ -36,6 +36,8 @@ When a control is safe in a scripted demo, that does not automatically make it s
 | Leave/end | Meeting presence, possible end for all | Explain exit path. | Clicking Leave/End automatically. | Always. |
 | Post-meeting artifacts | Recordings, summaries, transcripts, insights | Explain where artifacts may live. | Reading artifact content or making availability claims not verified. | Yes before reading content. |
 
+Prompt examples for these private-surface boundaries live in `runtime-safety-routing.md`; they document current routing behavior, not new permissions, live acceptance, or locator confidence.
+
 ## Localized Participant Prompts
 
 Spanish participant wording must preserve the same privacy boundary as English:

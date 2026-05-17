@@ -78,6 +78,17 @@ Leave/end and host/security controls are high-impact or role-gated.
 - Safe default: explain the control purpose and location.
 - Unsafe default: click Leave/End, lock/unlock, admit/remove people, mute others, or change permissions without a separate confirmation workflow.
 
+## Private Surface Examples
+
+These examples document existing routing boundaries only. They do not add product aliases, change package Q&A, promote live evidence, or make any route accepted for unattended operation.
+
+| Surface | Safe Location Prompt | Private Content Or Action Prompt | Expected Runtime Result | Why |
+| --- | --- | --- | --- | --- |
+| Chat | `open chat`, `where is chat` | `Read chat aloud`, `Summarize the chat`, `What did John say in chat?` | Location prompts may route to `ringcentral.video.toolbar.chat`; content prompts stay answer-only with no interrupt. | Chat can contain public and private messages. |
+| Meeting information | `meeting information`, `where is meeting information?` | `Read meeting information aloud`, `Copy meeting link`, `Share meeting details` | Prompts may identify `ringcentral.video.top.meeting-info`, but `questionPolicy: answerOnly` keeps `can_operate=False`. | Meeting details can include IDs, links, dial-in, host, and encryption values. |
+| Recording | `recording`, `where is Start recording?` | `Start recording`, `Stop recording`, `Are we recording?` | Prompts may identify `ringcentral.video.more.recording`, but the route remains non-operable and creates no interrupt. | Recording changes meeting state and may require role, policy, and consent checks. |
+| Notes and Transcript | `where are Notes and Transcript?` | `Start meeting notes`, `Read the transcript`, `Summarize the transcript` | Location prompts may identify `ringcentral.video.more.notes`; `questionPolicy: answerOnly` and Q&A guards prevent interrupts for notes/transcript actions or content. | Notes/transcript surfaces can expose meeting content and recording-adjacent controls. |
+
 ## Tone Is Style-Only
 
 Cycle 109 added canonical tone `careful`, with aliases including `privacy`, `safety`, `safe`, `guarded`, and `compliance`.

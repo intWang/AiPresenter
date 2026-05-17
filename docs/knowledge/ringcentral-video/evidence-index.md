@@ -153,6 +153,7 @@ Current overall state: no executable RingCentral Video route is fully `Accepted`
 - Evidence: package and policy docs only for execution-sensitive paths.
 - Package entrypoints: `ringcentral.video.more.notes`, `ringcentral.video.more.recording`, `ringcentral.video.toolbar.leave`.
 - Main risk: notes/transcripts/recording/leave have high privacy or meeting-impact side effects.
+- Docs-only private-surface examples do not upgrade `Repo-tested`, `Observed`, `Blocked`, or `Accepted` evidence states.
 - Next evidence: keep recording and leave explain-only; validate Notes panel shape without starting notes/transcription or reading content.
 
 ## Risk Queue

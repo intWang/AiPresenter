@@ -12,6 +12,7 @@ This checklist turns known RingCentral Video evidence gaps into safe manual vali
 2. Record build, locale, DPI, window bounds, role, scenario, participant count, action, cleanup, pass/fail, failures, recovery, privacy notes, and locator updates.
 3. Update `locator-matrix.md`, `state-matrix.md`, `privacy-matrix.md`, and `evidence-index.md` only after the run is recorded.
 4. Do not promote a route to `Accepted` from automated tests, dry runs, `doctor`, or read-only UIA observation alone.
+5. Treat private-surface prompt examples as policy guidance only; they do not prove route acceptance or permit private-content capture during validation.
 
 ## Priority Checklist
 

@@ -548,8 +548,8 @@ def test_localization_report_outputs_ringcentral_chinese_coverage() -> None:
     assert "Package: ringcentral-video" in result.stdout
     assert "Language: zh" in result.stdout
     assert "- meeting-controls-tour: 22/22 narration localized" in result.stdout
-    assert "- localized questions: 15/15" in result.stdout
-    assert "- localized answers: 15/15" in result.stdout
+    assert "- localized questions: 16/16" in result.stdout
+    assert "- localized answers: 16/16" in result.stdout
     assert "questionAliases.zh present on 15/27 entrypoints (49 aliases)" in result.stdout
     assert "localizedTitles.zh present on 0/27 entrypoints" in result.stdout
     assert "localizedPurposes.zh present on 0/27 entrypoints" in result.stdout
@@ -572,8 +572,8 @@ def test_localization_report_outputs_japanese_demo_and_qa_coverage() -> None:
     assert "- meeting-control-map-demo: 22/22 narration localized" in result.stdout
     assert "missing:" not in result.stdout
     assert "missing: explain-leave" not in result.stdout
-    assert "- localized questions: 15/15" in result.stdout
-    assert "- localized answers: 15/15" in result.stdout
+    assert "- localized questions: 16/16" in result.stdout
+    assert "- localized answers: 16/16" in result.stdout
     assert "questionAliases.ja present on 13/27 entrypoints (34 aliases)" in result.stdout
     assert "localizedTitles.ja present on 0/27 entrypoints" in result.stdout
     assert "localizedPurposes.ja present on 0/27 entrypoints" in result.stdout
@@ -592,8 +592,8 @@ def test_localization_report_outputs_complete_spanish_package() -> None:
     assert "- meeting-controls-tour: 22/22 narration localized" in result.stdout
     assert "- meeting-control-map-demo: 22/22 narration localized" in result.stdout
     assert "Localization report: 51/51 demo steps" in result.stdout
-    assert "- localized questions: 15/15" in result.stdout
-    assert "- localized answers: 15/15" in result.stdout
+    assert "- localized questions: 16/16" in result.stdout
+    assert "- localized answers: 16/16" in result.stdout
     assert "questionAliases.es present on 26/27 entrypoints (69 aliases)" in result.stdout
     assert "localizedTitles.es present on 8/27 entrypoints" in result.stdout
     assert "localizedPurposes.es present on 8/27 entrypoints" in result.stdout
@@ -613,8 +613,8 @@ def test_localization_report_normalizes_spanish_language_aliases() -> None:
     assert "- meeting-controls-tour: 22/22 narration localized" in result.stdout
     assert "- meeting-control-map-demo: 22/22 narration localized" in result.stdout
     assert "Localization report: 51/51 demo steps" in result.stdout
-    assert "- localized questions: 15/15" in result.stdout
-    assert "- localized answers: 15/15" in result.stdout
+    assert "- localized questions: 16/16" in result.stdout
+    assert "- localized answers: 16/16" in result.stdout
     assert "questionAliases.es present on 26/27 entrypoints (69 aliases)" in result.stdout
     assert "localizedTitles.es present on 8/27 entrypoints" in result.stdout
     assert "localizedPurposes.es present on 8/27 entrypoints" in result.stdout
@@ -714,8 +714,8 @@ def test_localization_report_require_complete_passes_for_spanish_package() -> No
     assert "- meeting-controls-tour: 22/22 narration localized" in result.stdout
     assert "- meeting-control-map-demo: 22/22 narration localized" in result.stdout
     assert "Localization report: 51/51 demo steps" in result.stdout
-    assert "- localized questions: 15/15" in result.stdout
-    assert "- localized answers: 15/15" in result.stdout
+    assert "- localized questions: 16/16" in result.stdout
+    assert "- localized answers: 16/16" in result.stdout
     assert "Localization coverage incomplete for es." not in result.stdout
 
 
@@ -759,8 +759,8 @@ def test_localization_report_require_complete_passes_for_japanese() -> None:
     assert "- meeting-control-map-demo: 22/22 narration localized" in result.stdout
     assert "missing:" not in result.stdout
     assert "missing: explain-leave" not in result.stdout
-    assert "- localized questions: 15/15" in result.stdout
-    assert "- localized answers: 15/15" in result.stdout
+    assert "- localized questions: 16/16" in result.stdout
+    assert "- localized answers: 16/16" in result.stdout
     assert "Localization coverage incomplete for ja." not in result.stdout
 
 
@@ -1509,9 +1509,9 @@ def test_doctor_loads_profile_package_and_flow(monkeypatch: pytest.MonkeyPatch) 
     assert "[OK] question aliases:" in result.stdout
     assert "165 package-owned aliases have no cross-entrypoint duplicates" in result.stdout
     assert "[OK] qa questions:" in result.stdout
-    assert "178 Q&A question prompts have no cross-item duplicates" in result.stdout
+    assert "200 Q&A question prompts have no cross-item duplicates" in result.stdout
     assert "[OK] qa alias overlap:" in result.stdout
-    assert "178 Q&A question prompts have no unsafe package-owned alias overlaps" in result.stdout
+    assert "200 Q&A question prompts have no unsafe package-owned alias overlaps" in result.stdout
     assert "[INFO] qa alias substring risk:" in result.stdout
     assert (
         "11 Q&A question prompts contain package-owned alias substrings outside "
@@ -1843,8 +1843,8 @@ def test_doctor_require_localization_accepts_spanish_runtime_language(
     assert result.exit_code == 0
     assert "[OK] localization: required es localization complete" in result.stdout
     assert "51/51 demo steps" in result.stdout
-    assert "15/15 Q&A questions" in result.stdout
-    assert "15/15 Q&A answers" in result.stdout
+    assert "16/16 Q&A questions" in result.stdout
+    assert "16/16 Q&A answers" in result.stdout
     assert "[OK] runtime language support: localization language es" in result.stdout
     assert "Spanish" in result.stdout
     assert "Invalid value" not in result.output

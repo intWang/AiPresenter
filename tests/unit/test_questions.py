@@ -795,6 +795,111 @@ def test_ringcentral_english_meeting_info_privacy_questions_stay_qa_first(
     assert create_question_interrupt_step(package, response) is None
 
 
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Is this meeting encrypted?",
+        "Is the meeting encrypted?",
+        "Can you check encryption status?",
+        "Show encryption status",
+        "Show meeting encryption status",
+        "Where can I see encryption?",
+        "Where is end-to-end encryption?",
+        "Is end-to-end encryption enabled?",
+        "What is the encryption status?",
+        "Can you verify encryption?",
+        "Can you verify end-to-end encryption?",
+        "Is end-to-end encryption on?",
+        "Open encryption settings",
+        "Show encryption settings",
+        "Change encryption settings",
+        "Turn off end-to-end encryption",
+        "Leave encryption off",
+        "Security status",
+        "What is the security status?",
+        "Is the meeting secure?",
+        "Can you verify meeting security?",
+        "Share meeting security status",
+        "Open security tab in RingCentralDevelop",
+    ],
+)
+def test_ringcentral_encryption_status_questions_stay_meeting_info_answer_only(
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(),
+    )
+
+    assert response.entrypoint_id == "ringcentral.video.top.meeting-info"
+    assert response.entrypoint_id != "ringcentral.video.toolbar.share"
+    assert response.entrypoint_id != "ringcentral.video.toolbar.participants"
+    assert response.entrypoint_id != "ringcentral.video.toolbar.leave"
+    assert response.entrypoint_id != "ringcentral.video.top.network-quality"
+    assert response.entrypoint_id != "ringcentral.video.settings.background"
+    assert response.entrypoint_id != "ringcentral.video.more.settings"
+    assert response.entrypoint_id != "ringcentral.develop.video.tab"
+    assert response.can_operate is False
+    assert create_question_interrupt_step(package, response) is None
+    assert response.answer_text.startswith("Encryption status:")
+    assert "visible status is verified" in response.answer_text
+    assert "Meeting information:" not in response.answer_text
+    assert "https://" not in response.answer_text
+    assert "ringcentral.com" not in response.answer_text
+    assert "123456789" not in response.answer_text
+    assert "copied" not in response.answer_text.casefold()
+    assert "read" not in response.answer_text.casefold()
+    assert "dialed" not in response.answer_text.casefold()
+
+
+@pytest.mark.parametrize(
+    ("question", "language", "expected_phrase"),
+    [
+        (
+            "\u4f1a\u8bae\u4fe1\u606f\u91cc\u80fd\u770b\u5230\u52a0\u5bc6\u72b6\u6001\u5417",
+            "zh",
+            "\u52a0\u5bc6\u72b6\u6001",
+        ),
+        (
+            "\u6697\u53f7\u5316\u72b6\u614b\u306f\u3069\u3053\u3067\u78ba\u8a8d\u3067\u304d\u307e\u3059\u304b",
+            "ja",
+            "\u6697\u53f7\u5316\u72b6\u614b",
+        ),
+        (
+            "\u00bfD\u00f3nde veo el cifrado de la reuni\u00f3n?",
+            "es",
+            "cifrado",
+        ),
+    ],
+)
+def test_ringcentral_localized_encryption_status_questions_are_answer_only(
+    question: str,
+    language: str,
+    expected_phrase: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(language=language),
+    )
+
+    assert response.entrypoint_id == "ringcentral.video.top.meeting-info"
+    assert response.can_operate is False
+    assert create_question_interrupt_step(package, response) is None
+    assert expected_phrase in response.answer_text
+    assert "https://" not in response.answer_text
+    assert "ringcentral.com" not in response.answer_text
+    assert "123456789" not in response.answer_text
+    assert "copied" not in response.answer_text.casefold()
+    assert "read" not in response.answer_text.casefold()
+    assert "dialed" not in response.answer_text.casefold()
+
+
 def test_ringcentral_localized_audio_video_readiness_qa_returns_chinese_answer() -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
 
@@ -952,6 +1057,14 @@ def test_ringcentral_careful_tone_preserves_privacy_question_route() -> None:
         ),
         ("Read the transcript", None, False, False),
         ("meeting information", "ringcentral.video.top.meeting-info", False, False),
+        ("Is this meeting encrypted?", "ringcentral.video.top.meeting-info", False, False),
+        ("Open encryption settings", "ringcentral.video.top.meeting-info", False, False),
+        (
+            "Share meeting security status",
+            "ringcentral.video.top.meeting-info",
+            False,
+            False,
+        ),
         (
             "Can AiPresenter read meeting messages or participant names?",
             None,

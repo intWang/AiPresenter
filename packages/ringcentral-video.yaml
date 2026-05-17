@@ -1768,6 +1768,44 @@ qa:
     zh: 会议号和会议链接属于私人会议详情。AiPresenter 可以说明它们在哪里，但除非用户明确要求且可见内容已验证，不要复制、朗读或暴露准确的会议号、链接、拨入信息或主持人信息。
   relatedEntrypointIds:
   - ringcentral.video.top.meeting-info
+- question: Where can I verify meeting encryption status?
+  localizedQuestions:
+    en:
+    - Is this meeting encrypted?
+    - Is the meeting encrypted?
+    - Can you check encryption status?
+    - Show encryption status
+    - Show meeting encryption status
+    - Where can I see encryption?
+    - Where is end-to-end encryption?
+    - Is end-to-end encryption enabled?
+    - Open encryption settings
+    - Show encryption settings
+    - Change encryption settings
+    - Leave encryption off
+    - Security status
+    - What is the security status?
+    - Is the meeting secure?
+    - Can you verify meeting security?
+    - Share meeting security status
+    - Open security tab in RingCentralDevelop
+    es:
+    - ¿Dónde veo el cifrado de la reunión?
+    ja:
+    - 暗号化状態はどこで確認できますか
+    zh:
+    - 会议信息里能看到加密状态吗
+  answer: 'Encryption status: use Meeting information to verify visible encryption and end-to-end encryption status.
+    AiPresenter can point to the place and summarize what is visible, but should not claim the meeting is encrypted,
+    enabled, or disabled unless the visible status is verified.'
+  localizedAnswers:
+    es: 'Estado de cifrado: usa Meeting information para verificar el cifrado visible y el estado de end-to-end encryption.
+      AiPresenter puede indicar el lugar y resumir lo visible, pero no debe afirmar que la reunión está cifrada,
+      activada o desactivada salvo que el estado visible esté verificado.'
+    ja: 暗号化状態は Meeting information で確認します。AiPresenter は場所を示し、見えている内容を要約できますが、画面上の状態が確認されるまで、暗号化が有効か無効かを断定しません。
+    zh: 加密状态要在 Meeting information 里确认。AiPresenter 可以指出位置并概括可见内容，但在屏幕上的状态被验证之前，不要断言会议已经加密、已启用或已关闭。
+  relatedEntrypointIds:
+  - ringcentral.video.top.meeting-info
 - question: Can the presenter read meeting messages or participant names?
   localizedQuestions:
     en:

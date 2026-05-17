@@ -509,11 +509,12 @@ def _can_match_qa_fragment(
     item: QuestionAnswer,
     normalized_question: str,
 ) -> bool:
-    if item.related_entrypoint_ids:
-        return True
     if _is_specific_question_fragment(normalized_question):
         return True
-    return _match_entrypoint(package, normalized_question) is None
+    entrypoint_match = _match_entrypoint(package, normalized_question)
+    if entrypoint_match is None:
+        return True
+    return entrypoint_match.id in item.related_entrypoint_ids
 
 
 def _contains_cjk(text: str) -> bool:

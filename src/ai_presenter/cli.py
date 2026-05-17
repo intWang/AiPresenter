@@ -587,6 +587,10 @@ def _print_voice_catalog() -> None:
     for label, language_value in PRESENTER_LANGUAGE_CHOICES:
         aliases = _format_voice_aliases(presenter_language_aliases(language_value))
         typer.echo(f"- {label} aliases: {aliases}")
+    typer.echo("Language readiness:")
+    typer.echo("- --language selects a runtime presenter voice.")
+    typer.echo("- --profile checks speech provider compatibility and local voice assets.")
+    typer.echo("- Package localization and live acceptance are separate checks.")
 
     typer.echo("Tones:")
     for label, tone_value in PRESENTER_TONE_CHOICES:

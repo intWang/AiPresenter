@@ -1495,6 +1495,20 @@ def test_voices_catalog_output_is_ascii_safe_for_legacy_windows_console() -> Non
     assert result.stdout.isascii()
 
 
+def test_voices_catalog_explains_language_readiness_boundaries() -> None:
+    result = CliRunner().invoke(app, ["voices"])
+
+    assert result.exit_code == 0
+    assert "Language readiness:" in result.stdout
+    assert "--language selects a runtime presenter voice" in result.stdout
+    assert "--profile checks speech provider compatibility and local voice assets" in (
+        result.stdout
+    )
+    assert "Package localization and live acceptance are separate checks" in (
+        result.stdout
+    )
+
+
 def test_voices_targeted_executive_alias_reports_canonical_tone() -> None:
     result = CliRunner().invoke(app, ["voices", "--tone", "briefing"])
 

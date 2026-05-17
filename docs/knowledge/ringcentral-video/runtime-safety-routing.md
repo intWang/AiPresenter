@@ -92,6 +92,7 @@ These examples document existing routing boundaries only. They do not add produc
 ## Tone Is Style-Only
 
 Cycle 109 added canonical tone `careful`, with aliases including `privacy`, `safety`, `safe`, `guarded`, and `compliance`. Cycle 195 added canonical tone `executive`, with aliases including `briefing` and `boardroom`.
+For the full repo-wide tone catalog, use `docs/knowledge/presenter-tone-behavior-matrix.md`.
 
 Tone may:
 

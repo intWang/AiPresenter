@@ -164,6 +164,46 @@ def test_presenter_tone_aliases_and_description_are_public() -> None:
     assert "privacy-aware" in voice.presenter_tone_description("careful")
 
 
+def test_presenter_tone_behavior_matrix_matches_runtime_contract() -> None:
+    matrix_path = Path("docs/knowledge/presenter-tone-behavior-matrix.md")
+
+    matrix = matrix_path.read_text(encoding="utf-8")
+
+    for label, tone in voice.PRESENTER_TONE_CHOICES:
+        aliases = ", ".join(
+            f"`{alias}`" for alias in voice.presenter_tone_aliases(tone)
+        )
+        assert f"| `{tone}` | {label} |" in matrix
+        assert aliases in matrix
+        assert voice.presenter_tone_description(tone) in matrix
+
+    required_contract_phrases = (
+        "Tone is style-only.",
+        "`entrypoint_id`",
+        "`can_operate`",
+        "`questionPolicy`",
+        "Q&A-first matching",
+        "`create_question_interrupt_step(...)`",
+        "package YAML",
+        "locators",
+        "live acceptance evidence",
+        "Japanese and Spanish",
+        "only `concise` applies first-sentence shortening",
+        "does not add English prefixes",
+        "Chinese SAPI rate",
+        "`Sure.`",
+        "`Happy to help.`",
+        "`Let's walk through it.`",
+        "`Certainly.`",
+        "`Executive brief.`",
+        "`Let's troubleshoot this.`",
+        "`Safety note.`",
+        "`privacy`, `safety`, and `compliance` are aliases for `careful`",
+    )
+    for phrase in required_contract_phrases:
+        assert phrase in matrix
+
+
 def test_voice_settings_reject_unknown_language_and_tone() -> None:
     with pytest.raises(ValueError, match="Unsupported presenter language"):
         PresenterVoiceSettings(language="fr")

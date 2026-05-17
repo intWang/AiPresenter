@@ -654,7 +654,7 @@ def test_diagnostics_reports_qa_questions_ok_for_ringcentral_package() -> None:
 
     qa_check = next(check for check in report.checks if check.name == "qa questions")
     assert qa_check.status == "OK"
-    assert qa_check.detail == "103 Q&A question prompts have no cross-item duplicates"
+    assert qa_check.detail == "109 Q&A question prompts have no cross-item duplicates"
 
 
 def test_diagnostics_reports_qa_alias_overlap_ok_for_ringcentral_package() -> None:
@@ -671,7 +671,7 @@ def test_diagnostics_reports_qa_alias_overlap_ok_for_ringcentral_package() -> No
     )
     assert overlap_check.status == "OK"
     assert overlap_check.detail == (
-        "103 Q&A question prompts have no unsafe package-owned alias overlaps"
+        "109 Q&A question prompts have no unsafe package-owned alias overlaps"
     )
 
 

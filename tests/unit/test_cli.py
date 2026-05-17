@@ -1509,9 +1509,9 @@ def test_doctor_loads_profile_package_and_flow(monkeypatch: pytest.MonkeyPatch) 
     assert "[OK] question aliases:" in result.stdout
     assert "157 package-owned aliases have no cross-entrypoint duplicates" in result.stdout
     assert "[OK] qa questions:" in result.stdout
-    assert "103 Q&A question prompts have no cross-item duplicates" in result.stdout
+    assert "109 Q&A question prompts have no cross-item duplicates" in result.stdout
     assert "[OK] qa alias overlap:" in result.stdout
-    assert "103 Q&A question prompts have no unsafe package-owned alias overlaps" in result.stdout
+    assert "109 Q&A question prompts have no unsafe package-owned alias overlaps" in result.stdout
     assert "[INFO] qa alias substring risk:" in result.stdout
     assert (
         "11 Q&A question prompts contain package-owned alias substrings outside "

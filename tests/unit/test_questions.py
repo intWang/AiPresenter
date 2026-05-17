@@ -1482,6 +1482,12 @@ def test_ringcentral_japanese_unmatched_question_returns_localized_no_match() ->
         "Can you raise my hand for me?",
         "How do I use reactions safely?",
         "How should AiPresenter handle raise hand?",
+        "Raise my hand",
+        "Lower my hand",
+        "Send a thumbs up",
+        "Send a reaction",
+        "React with thumbs up",
+        "Can you raise my hand?",
     ],
 )
 def test_ringcentral_reaction_and_raise_hand_safety_questions_are_answer_only(

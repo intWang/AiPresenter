@@ -1090,6 +1090,12 @@ def test_ringcentral_participant_host_action_requests_stay_answer_only(
         "Read captions aloud",
         "Can you read the captions?",
         "Can you read captions?",
+        "Copy captions",
+        "Can you copy the captions?",
+        "Export captions",
+        "Save captions",
+        "Download captions",
+        "Download transcript text",
     ],
 )
 def test_ringcentral_captions_and_translation_questions_are_answer_only(
@@ -1113,11 +1119,15 @@ def test_ringcentral_captions_and_translation_questions_are_answer_only(
     assert "caption or transcript text" in response.answer_text
     assert "Microphone control:" not in response.answer_text
     assert "Meeting information:" not in response.answer_text
+    assert "Notes and transcript:" not in response.answer_text
     assert "I could not find a matching control" not in response.answer_text
     assert "The caption says" not in response.answer_text
     assert "Here are the captions" not in response.answer_text
     assert "copied" not in response.answer_text.casefold()
     assert "exported" not in response.answer_text.casefold()
+    assert "saved" not in response.answer_text.casefold()
+    assert "downloaded" not in response.answer_text.casefold()
+    assert "started" not in response.answer_text.casefold()
     assert "turned on" not in response.answer_text.casefold()
 
 

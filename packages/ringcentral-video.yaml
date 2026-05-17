@@ -1919,6 +1919,12 @@ qa:
     - Read captions aloud
     - Can you read the captions?
     - Can you read captions?
+    - Copy captions
+    - Can you copy the captions?
+    - Export captions
+    - Save captions
+    - Download captions
+    - Download transcript text
     es:
     - ¿Dónde están los subtítulos, la transcripción en vivo y la traducción?
     ja:

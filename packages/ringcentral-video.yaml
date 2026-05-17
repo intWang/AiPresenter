@@ -1734,6 +1734,14 @@ qa:
     - Can you paste the meeting link?
     - Read the meeting link aloud
     - Can you read the meeting ID?
+    - Read the dial-in number
+    - What is the dial-in number?
+    - Copy the dial-in details
+    - Read dial-in details aloud
+    - Who is the host?
+    - Read the host information
+    - Copy host info
+    - Read meeting details aloud
     es:
     - ¿Cómo debe manejar AiPresenter los ID y enlaces de reunión?
     ja:

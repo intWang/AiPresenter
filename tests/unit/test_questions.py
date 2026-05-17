@@ -729,6 +729,14 @@ def test_ringcentral_english_invite_privacy_questions_stay_qa_first(
         "Can you paste the meeting link?",
         "Read the meeting link aloud",
         "Can you read the meeting ID?",
+        "Read the dial-in number",
+        "What is the dial-in number?",
+        "Copy the dial-in details",
+        "Read dial-in details aloud",
+        "Who is the host?",
+        "Read the host information",
+        "Copy host info",
+        "Read meeting details aloud",
     ],
 )
 def test_ringcentral_english_meeting_info_privacy_questions_stay_qa_first(
@@ -746,6 +754,11 @@ def test_ringcentral_english_meeting_info_privacy_questions_stay_qa_first(
     assert response.can_operate is False
     assert "Meeting IDs and links are private meeting details" in response.answer_text
     assert "Meeting information:" not in response.answer_text
+    assert "https://" not in response.answer_text
+    assert "ringcentral.com" not in response.answer_text
+    assert "123456789" not in response.answer_text
+    assert "copied" not in response.answer_text.casefold()
+    assert "dialed" not in response.answer_text.casefold()
     assert create_question_interrupt_step(package, response) is None
 
 

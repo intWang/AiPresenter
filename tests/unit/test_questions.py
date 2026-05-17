@@ -732,6 +732,36 @@ def test_ringcentral_english_recording_action_questions_stay_qa_first(
     assert create_question_interrupt_step(package, response) is None
 
 
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Leave meeting",
+        "End meeting",
+        "Hang up",
+        "End call",
+        "Close meeting",
+        "Can you leave the meeting?",
+        "Can you end the meeting?",
+    ],
+)
+def test_ringcentral_english_leave_end_questions_stay_qa_first(
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(),
+    )
+
+    assert response.entrypoint_id == "ringcentral.video.toolbar.leave"
+    assert response.can_operate is False
+    assert "Leaving or ending a meeting is destructive" in response.answer_text
+    assert "Leave meeting:" not in response.answer_text
+    assert create_question_interrupt_step(package, response) is None
+
+
 def test_ringcentral_host_controls_question_returns_participants_guidance() -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
 

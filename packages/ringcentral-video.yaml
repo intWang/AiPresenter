@@ -1892,6 +1892,31 @@ qa:
     zh: 录制会改变会议状态，也会影响房间里的所有人。除非用户明确确认、当前角色允许，并且参会者同意已经清楚，否则只解释入口，不自动开始录制。
   relatedEntrypointIds:
   - ringcentral.video.more.recording
+- question: How should AiPresenter handle leaving or ending the meeting safely?
+  localizedQuestions:
+    en:
+    - Leave meeting
+    - End meeting
+    - Hang up
+    - End call
+    - Close meeting
+    - Can you leave the meeting?
+    - Can you end the meeting?
+    es:
+    - ¿Cómo debe manejar AiPresenter salir o finalizar la reunión?
+    ja:
+    - 会議から退出または終了するときはどう扱うべきですか
+    zh:
+    - 怎么安全离开或结束会议
+  answer: Leaving or ending a meeting is destructive and can affect the current user or everyone in the room. Treat
+    it as explain-only until the user explicitly confirms the visible choice and its impact.
+  localizedAnswers:
+    es: Salir o finalizar una reunión es una acción destructiva y puede afectar al usuario actual o a todas las personas
+      en la sala. Trátala como solo explicación hasta que el usuario confirme explícitamente la opción visible y su impacto.
+    ja: 会議から退出または終了する操作は破壊的で、現在のユーザーまたは会議中の全員に影響する可能性があります。表示された選択肢と影響をユーザーが明示的に確認するまで、説明のみに留めます。
+    zh: 离开或结束会议属于破坏性动作，可能影响当前用户或房间里的所有人。除非用户明确确认可见选项及其影响，否则只解释入口，不执行操作。
+  relatedEntrypointIds:
+  - ringcentral.video.toolbar.leave
 manualControls:
 - name: say
   examples:

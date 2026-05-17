@@ -1699,6 +1699,8 @@ qa:
     - Include system audio
     - Share computer audio
     - Can you share system audio?
+    fr:
+    - Comment AiPresenter doit-il gerer le partage d'ecran en toute securite?
     es:
     - ¿Cómo debe manejar AiPresenter compartir pantalla de forma segura?
     ja:
@@ -1709,6 +1711,10 @@ qa:
     explain-only until the user explicitly confirms what should be shared or stopped, and only describe visible shared
     content after an approved observation source has captured it and the user allows it.
   localizedAnswers:
+    fr: Le partage d'ecran peut exposer du contenu prive et change ce que les autres personnes voient. Les controles de
+      partage restent en mode explication jusqu'a ce que l'utilisateur confirme explicitement quoi partager ou arreter,
+      et le contenu partage visible ne doit etre decrit qu'apres capture par une source d'observation approuvee et si
+      l'utilisateur l'autorise.
     es: Compartir pantalla puede exponer contenido privado y cambia lo que ven otras personas. Trata los controles de
       compartir como solo explicación hasta que el usuario confirme explícitamente qué debe compartirse o detenerse, y
       describe contenido compartido visible solo después de que una fuente aprobada lo haya capturado y el usuario lo permita.

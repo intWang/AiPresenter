@@ -45,6 +45,29 @@ def test_manual_acceptance_draft_prefills_entrypoint_context_without_claiming_ac
     assert "- Pass/fail:" in draft
 
 
+def test_manual_acceptance_draft_includes_evidence_redaction_checklist() -> None:
+    draft = render_manual_acceptance_draft(
+        load_ringcentral_package(),
+        AcceptanceDraftRequest(entrypoint_id="ringcentral.video.toolbar.chat"),
+    )
+
+    assert_manual_draft_boundary(draft)
+    assert "### Evidence Redaction Checklist" in draft
+    assert "Prefer UIA/window metadata and allowlisted product-control labels" in draft
+    assert "Capture screenshots only when there is a clear verification need" in draft
+    assert "privacy review path" in draft
+    assert "chat text" in draft
+    assert "participant names or roles" in draft
+    assert "invite links" in draft
+    assert "meeting IDs" in draft
+    assert "emails" in draft
+    assert "device lists" in draft
+    assert "account/profile content" in draft
+    assert "notes/transcripts" in draft
+    assert "shared content" in draft
+    assert "state what was redacted or intentionally not captured" in draft
+
+
 def test_manual_acceptance_draft_prefills_flow_steps() -> None:
     draft = render_manual_acceptance_draft(
         load_ringcentral_package(),

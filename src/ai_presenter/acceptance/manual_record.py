@@ -37,6 +37,21 @@ _PRIVACY_REMINDER = (
     "or report contents."
 )
 
+_EVIDENCE_REDACTION_CHECKLIST_ITEMS = (
+    "Prefer UIA/window metadata and allowlisted product-control labels before screenshots.",
+    (
+        "Capture screenshots only when there is a clear verification need and a "
+        "privacy review path."
+    ),
+    (
+        "Redact or omit chat text, participant names or roles, invite links, meeting IDs, "
+        "dial-in details, emails, device lists, account/profile content, notes/transcripts, "
+        "recordings, shared content, and room imagery."
+    ),
+    "In Evidence files, name only sanitized artifacts; delete or quarantine raw artifacts.",
+    "In Privacy notes, state what was redacted or intentionally not captured.",
+)
+
 
 @dataclass(frozen=True)
 class AcceptanceDraftRequest:
@@ -131,6 +146,9 @@ def render_manual_acceptance_draft(
     }
     for field in required_manual_acceptance_fields():
         lines.append(f"- {field}: {field_prefills.get(field, '')}")
+
+    lines.extend(["", "### Evidence Redaction Checklist", ""])
+    lines.extend(f"- {item}" for item in _EVIDENCE_REDACTION_CHECKLIST_ITEMS)
 
     lines.extend(
         [

@@ -51,6 +51,14 @@ Use this file to record dated automated and manual acceptance evidence for RingC
 - Recovery:
 - Privacy notes:
 - Locator updates needed:
+
+### Evidence Redaction Checklist
+
+- Prefer UIA/window metadata and allowlisted product-control labels before screenshots.
+- Capture screenshots only when there is a clear verification need and a privacy review path.
+- Redact or omit chat text, participant names or roles, invite links, meeting IDs, dial-in details, emails, device lists, account/profile content, notes/transcripts, recordings, shared content, and room imagery.
+- In Evidence files, name only sanitized artifacts; delete or quarantine raw artifacts.
+- In Privacy notes, state what was redacted or intentionally not captured.
 ```
 
 ## Current Automated Evidence From Cycle 001

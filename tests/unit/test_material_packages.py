@@ -1338,6 +1338,9 @@ def test_ringcentral_knowledge_docs_preserve_evidence_boundaries() -> None:
     runtime_text = (knowledge_dir / "runtime-safety-routing.md").read_text(
         encoding="utf-8"
     )
+    runbook_text = Path("docs/runbooks/ringcentral-manual-acceptance.md").read_text(
+        encoding="utf-8"
+    )
 
     assert (
         "This checklist turns known RingCentral Video evidence gaps into safe manual "
@@ -1382,6 +1385,20 @@ def test_ringcentral_knowledge_docs_preserve_evidence_boundaries() -> None:
         "A checklist in a runbook is not acceptance evidence until a run is "
         "recorded here."
     ) in acceptance_text
+    assert "### Evidence Redaction Checklist" in acceptance_text
+    for phrase in (
+        "Prefer UIA/window metadata and allowlisted product-control labels before screenshots.",
+        "clear verification need and a privacy review path",
+        "chat text, participant names or roles, invite links, meeting IDs",
+        "emails, device lists, account/profile content, notes/transcripts",
+        "recordings, shared content, and room imagery",
+        "state what was redacted or intentionally not captured",
+    ):
+        assert phrase in acceptance_text
+    assert "Evidence Redaction Checklist" in runbook_text
+    assert "generated draft or `acceptance-runs.md` template" in runbook_text
+    assert "Prefer UIA/window metadata first" in runbook_text
+    assert "clear verification need and a privacy review path" in runbook_text
     assert (
         "Live manual observations are required before a locator or flow is treated "
         "as current-build evidence."

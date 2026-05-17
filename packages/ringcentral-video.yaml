@@ -1739,10 +1739,18 @@ qa:
     en:
     - Copy meeting link
     - Can you copy the meeting link?
+    - Please copy the meeting link
     - Copy the meeting URL
     - Can you paste the meeting link?
+    - Can you share the meeting link?
     - Read the meeting link aloud
+    - Read meeting link
+    - Please read meeting link
+    - Read meeting ID
+    - Copy meeting ID
     - Can you read the meeting ID?
+    - Share meeting URL
+    - Can you share meeting URL?
     - Read the dial-in number
     - What is the dial-in number?
     - Copy the dial-in details
@@ -1750,6 +1758,12 @@ qa:
     - Who is the host?
     - Read the host information
     - Copy host info
+    - Read meeting information
+    - Read meeting information aloud
+    - Copy meeting information
+    - Share meeting information
+    - Copy meeting details
+    - Share meeting details
     - Read meeting details aloud
     es:
     - ¿Cómo debe manejar AiPresenter los ID y enlaces de reunión?
@@ -1788,6 +1802,12 @@ qa:
     - Is the meeting secure?
     - Can you verify meeting security?
     - Share meeting security status
+    - Share secure
+    - Share verify
+    - Copy status
+    - Copy security
+    - Copy secure
+    - Copy verify
     - Open security tab in RingCentralDevelop
     es:
     - ¿Dónde veo el cifrado de la reunión?

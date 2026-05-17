@@ -758,10 +758,23 @@ def test_ringcentral_english_invite_privacy_questions_stay_qa_first(
     [
         "Copy meeting link",
         "Can you copy the meeting link?",
+        "Please copy the meeting link",
         "Copy the meeting URL",
         "Can you paste the meeting link?",
+        "Can you share the meeting link?",
         "Read the meeting link aloud",
+        "Read meeting link",
+        "Please read the meeting link",
+        "Please read meeting link",
+        "Read meeting ID",
+        "Copy meeting ID",
+        "Can you share the meeting ID?",
+        "Share meeting ID",
+        "Paste meeting ID",
         "Can you read the meeting ID?",
+        "Share meeting URL",
+        "Can you share meeting URL?",
+        "Read meeting URL",
         "Read the dial-in number",
         "What is the dial-in number?",
         "Copy the dial-in details",
@@ -769,6 +782,16 @@ def test_ringcentral_english_invite_privacy_questions_stay_qa_first(
         "Who is the host?",
         "Read the host information",
         "Copy host info",
+        "Read meeting information",
+        "Can you read meeting information aloud?",
+        "Read meeting information aloud",
+        "Could you copy meeting information?",
+        "Copy meeting information",
+        "Please share meeting details",
+        "Share meeting information",
+        "Could you copy the meeting link?",
+        "Copy meeting details",
+        "Share meeting details",
         "Read meeting details aloud",
     ],
 )
@@ -798,6 +821,32 @@ def test_ringcentral_english_meeting_info_privacy_questions_stay_qa_first(
 @pytest.mark.parametrize(
     "question",
     [
+        "status",
+        "security",
+        "secure",
+        "verify",
+    ],
+)
+def test_ringcentral_bare_status_words_do_not_match_encryption_status(
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(),
+    )
+
+    assert response.entrypoint_id is None
+    assert response.can_operate is False
+    assert create_question_interrupt_step(package, response) is None
+    assert "Encryption status:" not in response.answer_text
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
         "Is this meeting encrypted?",
         "Is the meeting encrypted?",
         "Can you check encryption status?",
@@ -820,6 +869,14 @@ def test_ringcentral_english_meeting_info_privacy_questions_stay_qa_first(
         "Is the meeting secure?",
         "Can you verify meeting security?",
         "Share meeting security status",
+        "Share status",
+        "Share security",
+        "Share secure",
+        "Share verify",
+        "Copy status",
+        "Copy security",
+        "Copy secure",
+        "Copy verify",
         "Open security tab in RingCentralDevelop",
     ],
 )
@@ -2768,6 +2825,35 @@ def test_chinese_meeting_link_short_question_uses_privacy_qa() -> None:
     response = answer_question(
         package=package,
         question="\u4f1a\u8bae\u94fe\u63a5",
+        voice=PresenterVoiceSettings(language="zh"),
+    )
+
+    assert response.entrypoint_id == "ringcentral.video.top.meeting-info"
+    assert response.can_operate is False
+    assert "\u79c1\u4eba\u4f1a\u8bae\u8be6\u60c5" in response.answer_text
+    assert "Meeting information:" not in response.answer_text
+    assert create_question_interrupt_step(package, response) is None
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "\u590d\u5236\u4f1a\u8bae\u94fe\u63a5",
+        "\u7c98\u8d34\u4f1a\u8bae\u94fe\u63a5",
+        "\u8d34\u4e0a\u4f1a\u8bae\u94fe\u63a5",
+        "\u8bf7\u5206\u4eab\u4f1a\u8bae\u94fe\u63a5",
+        "\u8bfb\u51fa\u4f1a\u8bae\u53f7",
+        "\u590d\u5236\u4f1a\u8bae\u53f7",
+    ],
+)
+def test_chinese_meeting_info_action_requests_use_privacy_qa(
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
         voice=PresenterVoiceSettings(language="zh"),
     )
 

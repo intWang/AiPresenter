@@ -39,6 +39,38 @@ _RISKY_ENTRYPOINT_WORDS = {
     "unmute",
 }
 _GENERIC_ENTRYPOINT_TOKENS = {"people"}
+_BROAD_QA_FRAGMENT_TOKENS = {"secure", "security", "status", "verify"}
+_MEETING_INFO_ENTRYPOINT_ID = "ringcentral.video.top.meeting-info"
+_MEETING_INFO_PRIVACY_QUESTION = (
+    "How should AiPresenter handle meeting IDs and links safely?"
+)
+_PRIVATE_MEETING_INFO_ACTION_TOKENS = {
+    "copy",
+    "paste",
+    "read",
+    "share",
+    "\u590d\u5236",
+    "\u7c98\u8d34",
+    "\u8d34\u4e0a",
+    "\u5206\u4eab",
+    "\u8bfb",
+    "\u8bfb\u51fa",
+    "\u6717\u8bfb",
+}
+_PRIVATE_MEETING_INFO_ALIAS_FRAGMENTS = {
+    "meeting id",
+    "meeting link",
+    "\u4f1a\u8bae\u53f7",
+    "\u4f1a\u8bae\u94fe\u63a5",
+}
+_PRIVATE_MEETING_INFO_CONTENT_FRAGMENTS = _PRIVATE_MEETING_INFO_ALIAS_FRAGMENTS | {
+    "dial in",
+    "dial-in",
+    "host",
+    "meeting details",
+    "meeting information",
+    "meeting url",
+}
 _RECORDING_SAFETY_ENTRYPOINT_ID = "ringcentral.video.more.recording"
 _NOTES_TRANSCRIPT_SAFETY_QUESTION = (
     "Where are captions, live transcription, and translation controls?"
@@ -311,8 +343,16 @@ def _match_qa(package: MaterialPackage, normalized_question: str) -> QuestionAns
     )
     if notes_safety_match is not None:
         return notes_safety_match
+    meeting_info_privacy_match = _match_meeting_info_privacy_qa(
+        package,
+        normalized_question,
+    )
+    if meeting_info_privacy_match is not None:
+        return meeting_info_privacy_match
 
     if _is_entrypoint_title_lookup(package, normalized_question):
+        return None
+    if _is_package_entrypoint_alias_lookup(package, normalized_question):
         return None
 
     for candidate in package.qa_question_candidates:
@@ -324,8 +364,6 @@ def _match_qa(package: MaterialPackage, normalized_question: str) -> QuestionAns
             return candidate.item
         if candidate.normalized_question in normalized_question:
             return candidate.item
-    if _match_package_entrypoint_alias(package, normalized_question) is not None:
-        return None
     query_tokens = _meaningful_tokens(normalized_question)
     if not query_tokens:
         return None
@@ -388,6 +426,32 @@ def _qa_by_related_entrypoint(
     )
 
 
+def _match_meeting_info_privacy_qa(
+    package: MaterialPackage,
+    normalized_question: str,
+) -> QuestionAnswer | None:
+    if any(term in normalized_question for term in _LOCATION_LOOKUP_TERMS):
+        return None
+    has_private_content = any(
+        fragment in normalized_question
+        for fragment in _PRIVATE_MEETING_INFO_CONTENT_FRAGMENTS
+    )
+    if not has_private_content:
+        return None
+    has_private_action = any(
+        token in normalized_question
+        for token in _PRIVATE_MEETING_INFO_ACTION_TOKENS
+    )
+    if (
+        not has_private_action
+        and normalized_question not in _PRIVATE_MEETING_INFO_ALIAS_FRAGMENTS
+    ):
+        return None
+    return package.qa_questions_by_normalized.get(
+        normalize_question_prompt(_MEETING_INFO_PRIVACY_QUESTION)
+    )
+
+
 def _is_entrypoint_title_lookup(package: MaterialPackage, normalized_question: str) -> bool:
     if not normalized_question.startswith(("where is ", "where are ")):
         return False
@@ -395,6 +459,24 @@ def _is_entrypoint_title_lookup(package: MaterialPackage, normalized_question: s
         normalize_question_prompt(entrypoint.title) in normalized_question
         for entrypoint in package.operation_entrypoints
     )
+
+
+def _is_package_entrypoint_alias_lookup(
+    package: MaterialPackage,
+    normalized_question: str,
+) -> bool:
+    entrypoint = _match_package_entrypoint_alias(package, normalized_question)
+    if entrypoint is None:
+        return False
+    if entrypoint.id != _MEETING_INFO_ENTRYPOINT_ID:
+        return True
+    if any(term in normalized_question for term in _LOCATION_LOOKUP_TERMS):
+        return True
+    if any(term in normalized_question for term in _PRIVATE_MEETING_INFO_ACTION_TOKENS):
+        return False
+    if normalized_question in _PRIVATE_MEETING_INFO_ALIAS_FRAGMENTS:
+        return False
+    return True
 
 
 def _qa_answer_text(item: QuestionAnswer, voice: PresenterVoiceSettings) -> str:
@@ -509,6 +591,8 @@ def _can_match_qa_fragment(
     item: QuestionAnswer,
     normalized_question: str,
 ) -> bool:
+    if normalized_question in _BROAD_QA_FRAGMENT_TOKENS:
+        return False
     if _is_specific_question_fragment(normalized_question):
         return True
     entrypoint_match = _match_entrypoint(package, normalized_question)

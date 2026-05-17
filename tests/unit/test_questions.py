@@ -3833,6 +3833,7 @@ def test_answer_question_logs_timing_without_question_text(
     assert "duration_ms=123.00" in message
     assert "package=ringcentral-video" in message
     assert "entrypoint=ringcentral.video.settings.background" in message
+    assert "answer_source=qa" in message
     assert response.can_operate is True
     assert "can_operate=True" in message
     assert "How do I protect" not in message
@@ -3891,3 +3892,30 @@ def test_answer_question_logs_canonical_language_for_language_alias(
     assert "language=zh" in message
     assert "language=zh-CN" not in message
     assert "tone=friendly" in message
+
+
+@pytest.mark.parametrize(
+    ("question", "expected_source"),
+    [
+        ("definitely unknown control", "no_match"),
+        ("show network quality", "entrypoint"),
+        ("Please be brief", "presenter_meta"),
+    ],
+)
+def test_answer_question_logs_answer_source(
+    caplog: pytest.LogCaptureFixture,
+    question: str,
+    expected_source: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    with caplog.at_level(logging.INFO, logger="ai_presenter.runtime.questions"):
+        answer_question(
+            package=package,
+            question=question,
+            voice=PresenterVoiceSettings(),
+        )
+
+    message = caplog.records[-1].getMessage()
+    assert f"answer_source={expected_source}" in message
+    assert question not in message

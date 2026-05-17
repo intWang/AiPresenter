@@ -534,6 +534,7 @@ def answer_question(
         tone=voice.tone,
         entrypoint=response.entrypoint_id,
         can_operate=response.can_operate,
+        answer_source=response.answer_source,
     )
     return response
 

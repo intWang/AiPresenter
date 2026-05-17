@@ -80,6 +80,13 @@ Choose the smallest artifact that makes the next cycle safer or more useful.
 - Keep public schemas, package YAML, and diagnostics stable unless the performance slice explicitly requires them.
 - Document any intentional cache invalidation rule in the implementation handoff.
 
+## Runtime Observability Hygiene
+
+- Keep question logs privacy-safe. Successful `question_answered` events may include route metadata such as package, canonical language, tone, entrypoint, `can_operate`, duration, status, and `answer_source`; they must not include the raw user question or answer text.
+- Treat `answer_source` as a routing outcome token: `qa`, `entrypoint`, `presenter_meta`, or `no_match`.
+- Use `qa` for matched package Q&A guidance, including answer-only privacy guidance; use `entrypoint` for matched package controls; use `presenter_meta` for presenter settings questions; use `no_match` when no safe control or text guidance matched.
+- Leave failure logs minimal. Do not invent an answer source for exceptions, and do not log exception text that could contain private question or answer content.
+
 ## Verification And Staging Checklist
 
 Before committing a cycle, choose checks that match the blast radius, then run the standard final gate.

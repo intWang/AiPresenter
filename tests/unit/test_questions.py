@@ -1084,6 +1084,12 @@ def test_ringcentral_participant_host_action_requests_stay_answer_only(
         "How do I translate captions?",
         "Where are translated captions?",
         "Turn on captions",
+        "Read caption text",
+        "Show captions text",
+        "Show live caption text",
+        "Read captions aloud",
+        "Can you read the captions?",
+        "Can you read captions?",
     ],
 )
 def test_ringcentral_captions_and_translation_questions_are_answer_only(
@@ -1104,6 +1110,15 @@ def test_ringcentral_captions_and_translation_questions_are_answer_only(
     assert "Settings" in response.answer_text
     assert "explicitly asks" in response.answer_text
     assert "verified" in response.answer_text
+    assert "caption or transcript text" in response.answer_text
+    assert "Microphone control:" not in response.answer_text
+    assert "Meeting information:" not in response.answer_text
+    assert "I could not find a matching control" not in response.answer_text
+    assert "The caption says" not in response.answer_text
+    assert "Here are the captions" not in response.answer_text
+    assert "copied" not in response.answer_text.casefold()
+    assert "exported" not in response.answer_text.casefold()
+    assert "turned on" not in response.answer_text.casefold()
 
 
 @pytest.mark.parametrize(

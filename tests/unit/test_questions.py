@@ -823,6 +823,20 @@ def test_chinese_presenter_meta_requests_do_not_route_to_ringcentral_controls(
             True,
             "Chat panel:",
         ),
+        (
+            "Please be brief and show network quality",
+            "ringcentral.video.top.network-quality",
+            True,
+            True,
+            "Network quality:",
+        ),
+        (
+            "Please be brief and open notes and transcript",
+            "ringcentral.video.more.notes",
+            False,
+            False,
+            "Starting notes can change",
+        ),
     ],
 )
 def test_presenter_meta_modifiers_do_not_steal_ringcentral_intents(

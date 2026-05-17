@@ -194,6 +194,12 @@ def test_session_does_not_create_interrupt_for_presenter_meta_answer(
             "ringcentral.video.toolbar.chat",
             "\u804a\u5929",
         ),
+        (
+            "Please be brief and show network quality",
+            PresenterVoiceSettings(language="en"),
+            "ringcentral.video.top.network-quality",
+            "Network quality:",
+        ),
     ],
 )
 def test_session_creates_interrupt_for_safe_mixed_presenter_meta_answer(
@@ -239,6 +245,12 @@ def test_session_creates_interrupt_for_safe_mixed_presenter_meta_answer(
             PresenterVoiceSettings(language="zh"),
             "ringcentral.video.top.meeting-info",
             "\u79c1\u4eba\u4f1a\u8bae\u8be6\u60c5",
+        ),
+        (
+            "Please be brief and open notes and transcript",
+            PresenterVoiceSettings(language="en"),
+            "ringcentral.video.more.notes",
+            "Starting notes can change",
         ),
     ],
 )

@@ -695,6 +695,12 @@ def test_presenter_controller_answers_meta_prompt_without_queuing_running_demo(
             "ringcentral.video.toolbar.chat",
             "\u804a\u5929",
         ),
+        (
+            "Please be brief and show network quality",
+            PresenterVoiceSettings(language="en"),
+            "ringcentral.video.top.network-quality",
+            "Network quality:",
+        ),
     ],
 )
 def test_presenter_controller_queues_safe_mixed_meta_question_for_running_demo(
@@ -765,6 +771,12 @@ def test_presenter_controller_queues_safe_mixed_meta_question_for_running_demo(
             PresenterVoiceSettings(language="zh"),
             "ringcentral.video.top.meeting-info",
             "\u79c1\u4eba\u4f1a\u8bae\u8be6\u60c5",
+        ),
+        (
+            "Please be brief and open notes and transcript",
+            PresenterVoiceSettings(language="en"),
+            "ringcentral.video.more.notes",
+            "Starting notes can change",
         ),
     ],
 )
@@ -893,6 +905,12 @@ def test_presenter_controller_answers_risky_question_without_demo() -> None:
             "ringcentral.video.toolbar.chat",
             "\u804a\u5929",
         ),
+        (
+            "Please be brief and show network quality",
+            PresenterVoiceSettings(language="en"),
+            "ringcentral.video.top.network-quality",
+            "Network quality:",
+        ),
     ],
 )
 def test_presenter_controller_starts_safe_mixed_meta_question_demo_when_idle(
@@ -948,6 +966,12 @@ def test_presenter_controller_starts_safe_mixed_meta_question_demo_when_idle(
             PresenterVoiceSettings(language="zh"),
             "ringcentral.video.top.meeting-info",
             "\u79c1\u4eba\u4f1a\u8bae\u8be6\u60c5",
+        ),
+        (
+            "Please be brief and open notes and transcript",
+            PresenterVoiceSettings(language="en"),
+            "ringcentral.video.more.notes",
+            "Starting notes can change",
         ),
     ],
 )

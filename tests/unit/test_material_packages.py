@@ -469,8 +469,8 @@ def test_localization_status_reports_french_package_seed() -> None:
     assert report.flow_by_id["vbg-blur-demo"].missing_step_ids == ()
     assert report.flow_by_id["meeting-basics-demo"].localized_steps == 3
     assert report.flow_by_id["meeting-basics-demo"].missing_step_ids == ()
-    assert report.qa_localized_questions == 1
-    assert report.qa_localized_answers == 1
+    assert report.qa_localized_questions == 2
+    assert report.qa_localized_answers == 2
     assert report.entrypoints_with_aliases == 1
     assert report.alias_total == 2
 
@@ -487,11 +487,19 @@ def test_ringcentral_french_seed_qa_aliases_and_lifecycle_boundary_are_present()
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
     vbg_flow = package.demo_flow_by_id("vbg-blur-demo")
     item = next(qa for qa in package.qa if qa.question == "How do I protect my real background?")
+    recording_item = next(
+        qa for qa in package.qa if qa.question == "How do I handle meeting recording safely?"
+    )
     aliases = package.entrypoint_by_id(
         "ringcentral.video.settings.background"
     ).question_aliases.get("fr", [])
+    recording_aliases = package.entrypoint_by_id(
+        "ringcentral.video.more.recording"
+    ).question_aliases.get("fr", [])
     questions = item.localized_questions.get("fr", [])
     answer = item.localized_answers.get("fr", "")
+    recording_questions = recording_item.localized_questions.get("fr", [])
+    recording_answer = recording_item.localized_answers.get("fr", "")
     lifecycle_text = Path("docs/knowledge/language-lifecycle.md").read_text(
         encoding="utf-8"
     )
@@ -521,8 +529,16 @@ def test_ringcentral_french_seed_qa_aliases_and_lifecycle_boundary_are_present()
         "parametres d'arriere-plan",
         "flouter l'arriere-plan",
     }
+    assert recording_questions == ["Comment gerer l'enregistrement en toute securite?"]
+    assert "explication" in recording_answer
+    assert "confirme explicitement" in recording_answer
+    assert "role" in recording_answer
+    assert "consentement" in recording_answer
+    assert recording_aliases == []
     assert "French package-local seed" in normalized_lifecycle_text
     assert "`7/51` demo steps" in normalized_lifecycle_text
+    assert "`2/16` Q&A questions" in normalized_lifecycle_text
+    assert "`2/16` Q&A answers" in normalized_lifecycle_text
     assert "`vbg-blur-demo`" in normalized_lifecycle_text
     assert "French remains package-only" in normalized_lifecycle_text
     assert "presenter runtime does not support `--language fr`" in normalized_lifecycle_text
@@ -1480,7 +1496,7 @@ def test_ringcentral_knowledge_docs_preserve_evidence_boundaries() -> None:
         "evidence-generation command."
     ) in source_text
     for doc_text in (source_text, observation_text, runtime_text):
-        assert "222 Q&A question prompts" in doc_text
+        assert "223 Q&A question prompts" in doc_text
         assert "171 package-owned" in doc_text
         assert "French" in doc_text
         assert "not runtime `--language fr` support" in doc_text

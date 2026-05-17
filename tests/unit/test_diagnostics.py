@@ -401,8 +401,8 @@ def test_diagnostics_french_seed_stays_package_only_runtime_unsupported() -> Non
     assert localization_check.status == "FAIL"
     assert "required fr localization incomplete" in localization_check.detail
     assert "7/51 demo steps" in localization_check.detail
-    assert "1/16 Q&A questions" in localization_check.detail
-    assert "1/16 Q&A answers" in localization_check.detail
+    assert "2/16 Q&A questions" in localization_check.detail
+    assert "2/16 Q&A answers" in localization_check.detail
     runtime_language_check = next(
         check for check in report.checks if check.name == "runtime language support"
     )
@@ -681,7 +681,7 @@ def test_diagnostics_reports_qa_questions_ok_for_ringcentral_package() -> None:
 
     qa_check = next(check for check in report.checks if check.name == "qa questions")
     assert qa_check.status == "OK"
-    assert qa_check.detail == "222 Q&A question prompts have no cross-item duplicates"
+    assert qa_check.detail == "223 Q&A question prompts have no cross-item duplicates"
 
 
 def test_diagnostics_reports_qa_alias_overlap_ok_for_ringcentral_package() -> None:
@@ -698,7 +698,7 @@ def test_diagnostics_reports_qa_alias_overlap_ok_for_ringcentral_package() -> No
     )
     assert overlap_check.status == "OK"
     assert overlap_check.detail == (
-        "222 Q&A question prompts have no unsafe package-owned alias overlaps"
+        "223 Q&A question prompts have no unsafe package-owned alias overlaps"
     )
 
 

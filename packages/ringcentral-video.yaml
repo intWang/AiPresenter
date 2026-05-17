@@ -2079,6 +2079,8 @@ qa:
     - Recording status
     es:
     - ¿Cómo manejo la grabación de la reunión de forma segura?
+    fr:
+    - Comment gerer l'enregistrement en toute securite?
     ja:
     - 会議を録画するにはどうすればいいですか
     zh:
@@ -2094,6 +2096,9 @@ qa:
       esté claro.
     ja: 録画は会議状態を変更し、会議中の全員に影響します。ユーザーが明示的に確認し、現在の役割で許可され、参加者の同意が明確な場合を除き、入口を説明するだけで自動的に録画を開始しません。
     zh: 录制会改变会议状态，也会影响房间里的所有人。除非用户明确确认、当前角色允许，并且参会者同意已经清楚，否则只解释入口，不自动开始录制。
+    fr: L'enregistrement change l'etat de la reunion et peut affecter toutes les personnes dans la salle. Il reste en mode
+      explication jusqu'a ce que l'utilisateur confirme explicitement, que le role soit autorise et que le consentement
+      des participants soit clair.
   relatedEntrypointIds:
   - ringcentral.video.more.recording
 - question: How should AiPresenter handle leaving or ending the meeting safely?

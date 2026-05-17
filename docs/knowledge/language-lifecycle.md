@@ -17,7 +17,7 @@ acceptance evidence. `--localization-language` checks package text;
 | `zh` | Chinese | `zh`, `zh-cn`, `zh-hans`, `zh-tw`, `zh-hant`, `chinese`, `中文` | RingCentral required package localization is package-localization complete for demo narration and Q&A. | Runtime presenter language supported. | Chinese can use OpenAI speech or `windows-sapi-zh`; local fallback routes `piper`, `windows-sapi`, and `windows-sapi-en` to `windows-sapi-zh`. | `windows-sapi-zh` still depends on an installed compatible Chinese SAPI voice such as Huihui. | Live acceptance requires a dated acceptance run before claiming Chinese live readiness. |
 | `ja` | Japanese | `ja`, `ja-jp`, `japanese`, `日本語` | RingCentral required package localization is package-localization complete for demo narration and Q&A. | Runtime presenter language supported. | Japanese requires OpenAI speech. | Local SAPI/Piper Japanese remains future work unless a later provider slice implements and tests it. | Live acceptance requires a dated acceptance run before claiming Japanese live readiness. |
 | `es` | Spanish | `es`, `es-es`, `es-mx`, `es-419`, `es-la`, `spanish`, `latam-spanish`, `latin-american-spanish`, `español`, `espanol` | RingCentral required package localization is package-localization complete for demo narration and Q&A; optional entrypoint display metadata remains partial. | Runtime presenter language supported. | Spanish requires OpenAI speech. | local SAPI/Piper Spanish remains future work; local fake, Piper, and Windows SAPI profiles must reject `--language es`. | Spanish runtime support is not live RingCentral acceptance; live acceptance requires a dated acceptance run. |
-| `fr` package seed | French | `fr` as a package-local lookup key only. | French package-local seed covers `meeting-basics-demo` and `vbg-blur-demo` narration plus one background privacy Q&A; required package localization is incomplete. | French remains package-only; presenter runtime does not support `--language fr`. | Provider compatibility is absent until a separate runtime promotion cycle. | Voice assets are absent until a provider slice adds and tests them. | Package-local French text is never live acceptance evidence. |
+| `fr` package seed | French | `fr` as a package-local lookup key only. | French package-local seed covers `meeting-basics-demo` and `vbg-blur-demo` narration plus background privacy and recording safety Q&A; required package localization is incomplete. | French remains package-only; presenter runtime does not support `--language fr`. | Provider compatibility is absent until a separate runtime promotion cycle. | Voice assets are absent until a provider slice adds and tests them. | Package-local French text is never live acceptance evidence. |
 | package-only future key | Not a runtime label | Raw package key, for example `de`, when it is not a known presenter language alias. | May be package-localization complete through package text and `localization-report --require-complete`. | Not a runtime presenter language until `voice.py`, CLI checks, providers, tests, and docs are promoted together. | Provider compatibility is absent until runtime support exists. | Voice assets are absent until a provider slice adds and tests them. | Package-only text is never live acceptance evidence. |
 
 ## Lifecycle Gates
@@ -171,12 +171,14 @@ As of 2026-05-17, French is a French package-local seed, not a runtime
 presenter language:
 
 - `localization-report --package ringcentral-video --language fr` reports
-  `7/51` demo steps, `1/16` Q&A questions, and `1/16` Q&A answers.
+  `7/51` demo steps, `2/16` Q&A questions, and `2/16` Q&A answers.
 - The seeded flows are `meeting-basics-demo`, covering microphone,
   participants, and chat narration, plus `vbg-blur-demo`, covering Settings,
   Background, Blur, and Stop video narration for background privacy.
-- The seeded Q&A is the background privacy answer for Settings, Background, and
-  Blur.
+- The seeded Q&A items are the background privacy answer for Settings,
+  Background, and Blur, plus the recording safety answer that keeps recording
+  explain-only until explicit confirmation, role permission, and participant
+  consent are clear.
 - `questionAliases.fr` is present on `1/27` RingCentral Video entrypoints with
   `2` aliases.
 - `localization-report --package ringcentral-video --language fr --require-complete`

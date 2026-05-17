@@ -1,3 +1,4 @@
+import logging
 import threading
 from pathlib import Path
 
@@ -34,6 +35,7 @@ from ai_presenter.runtime.controller import QuestionSubmitResult
 from ai_presenter.runtime.controller import render_operator_summary_text
 from ai_presenter.runtime.controller import render_voice_label
 from ai_presenter.runtime.controller import resolve_controller_status
+from ai_presenter.runtime.session import ControllerSession, RunningAppTarget
 from ai_presenter.runtime.controller_view_model import ControllerOperatorSnapshot
 from ai_presenter.runtime.controller_view_model import build_controller_operator_view_model
 from ai_presenter.runtime.temporary_package import build_temporary_package
@@ -1616,3 +1618,89 @@ def test_running_app_scan_state_clears_scan_when_refresh_removes_window() -> Non
 
     assert state.has_scanned_selection is False
     assert state.selected_label == "Demo B (DemoB:20)"
+
+
+def test_running_app_scan_telemetry_logs_bounded_success_metadata(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    session = ControllerSession()
+    window = VisibleWindow(
+        "DemoProcess",
+        42,
+        "DemoClass",
+        "Private Board Agenda",
+        (0, 0, 800, 600),
+    )
+    handle = WindowHandle("DemoProcess", 42, "DemoClass", "Private Board Agenda")
+    controls = (
+        VisibleControl("Settings", "Button", (1, 1, 2, 2)),
+        VisibleControl("Secret Launch", "Button", (3, 3, 4, 4)),
+    )
+    times = iter([10.0, 10.05])
+
+    with caplog.at_level(logging.INFO, logger="ai_presenter.runtime.controller"):
+        result = controller_module._scan_running_app_for_controller(
+            session,
+            RunningAppTarget(window=window),
+            handle_from_window=lambda selected: handle,
+            list_visible_controls=lambda selected_handle: controls,
+            now=lambda: next(times),
+        )
+
+    message = caplog.records[-1].getMessage()
+    assert "running_app_scanned status=ok duration_ms=50.00" in message
+    assert "process=DemoProcess" in message
+    assert "window_class=DemoClass" in message
+    assert "pid=42" in message
+    assert "control_count=2" in message
+    assert "entrypoint_count=3" in message
+    assert "openable_count=1" in message
+    assert "explain_only_count=2" in message
+    assert "package=temp.demoprocess.42" in message
+    assert "flow=temp-demo" in message
+    assert "Private Board Agenda" not in message
+    assert "Settings" not in message
+    assert "Secret Launch" not in message
+    assert result.status_message == (
+        "Scanned temp.demoprocess.42: 2 controls, 3 entrypoints, 50 ms"
+    )
+
+
+def test_running_app_scan_telemetry_logs_bounded_error_metadata(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    session = ControllerSession()
+    session.mark_running_for_test()
+    window = VisibleWindow(
+        "DemoProcess",
+        42,
+        "DemoClass",
+        "Private Board Agenda",
+        (0, 0, 800, 600),
+    )
+    handle = WindowHandle("DemoProcess", 42, "DemoClass", "Private Board Agenda")
+    controls = (VisibleControl("Secret Launch", "Button", (3, 3, 4, 4)),)
+    times = iter([20.0, 20.025])
+
+    with caplog.at_level(logging.INFO, logger="ai_presenter.runtime.controller"):
+        with pytest.raises(RuntimeError, match="Cannot scan while a demo is running"):
+            controller_module._scan_running_app_for_controller(
+                session,
+                RunningAppTarget(window=window),
+                handle_from_window=lambda selected: handle,
+                list_visible_controls=lambda selected_handle: controls,
+                now=lambda: next(times),
+            )
+
+    message = caplog.records[-1].getMessage()
+    assert "running_app_scanned status=error duration_ms=25.00" in message
+    assert "process=DemoProcess" in message
+    assert "window_class=DemoClass" in message
+    assert "pid=42" in message
+    assert "control_count=1" in message
+    assert "entrypoint_count" not in message
+    assert "package=" not in message
+    assert "flow=" not in message
+    assert "Private Board Agenda" not in message
+    assert "Secret Launch" not in message
+    assert "Cannot scan while a demo is running" not in message

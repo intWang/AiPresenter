@@ -125,7 +125,7 @@ query-ready, and promoted to a limited runtime presenter language for
 OpenAI-backed speech only:
 
 - `localization-report --package ringcentral-video --language es --require-complete`
-  reports `51/51` demo steps, `12/12` Q&A questions, and `12/12` Q&A answers.
+  reports `51/51` demo steps, `16/16` Q&A questions, and `16/16` Q&A answers.
 - `questionAliases.es` is present on `26/27` RingCentral Video entrypoints with
   `69` aliases.
 - Optional entrypoint display metadata is partial:

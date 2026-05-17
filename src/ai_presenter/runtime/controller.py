@@ -1,14 +1,16 @@
 from __future__ import annotations
 
+import logging
+import re
 import threading
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-import re
+from time import perf_counter
 from typing import TYPE_CHECKING, Any, Literal
 
 from ai_presenter.config.models import AppProfile
-from ai_presenter.desktop.base import VisibleWindow, WindowHandle
+from ai_presenter.desktop.base import VisibleControl, VisibleWindow, WindowHandle
 from ai_presenter.desktop.windows import WindowsDesktopDriver
 from ai_presenter.packages.models import DemoFlow, DemoStep
 from ai_presenter.runtime.catalog import ControllerAppCatalog
@@ -22,6 +24,7 @@ from ai_presenter.runtime.controller_view_model import render_controller_operato
 from ai_presenter.runtime.controller_view_model import render_voice_label as _render_voice_label
 from ai_presenter.runtime.factory import run_existing_window_material_demo
 from ai_presenter.runtime.factory import run_material_demo
+from ai_presenter.runtime.logging import elapsed_ms, log_timed_event
 from ai_presenter.runtime.questions import QuestionAnswerSource, answer_question
 from ai_presenter.runtime.session import ControllerSession, MaterialPackageTarget, RunningAppTarget
 from ai_presenter.runtime.session import create_question_interrupt_step
@@ -48,6 +51,7 @@ QUESTION_FLOW_ID = "question-answer-demo"
 _PUBLIC_UNKNOWN_FLOW_ERROR_PATTERN = re.compile(
     r"^Unknown demo flow: [A-Za-z0-9_.-]+\. Available flows: [A-Za-z0-9_. ,:-]+$"
 )
+logger = logging.getLogger(__name__)
 
 QuestionDemonstrationStatus = Literal["text_only", "interrupting", "queued", "started"]
 VoiceAssetChecker = Callable[[AppProfile, PresenterVoiceSettings], VoiceAssetAvailability | None]
@@ -78,6 +82,26 @@ class ControllerStatusSnapshot:
     is_stopping: bool
     is_switching_targets: bool
     session_is_running: bool
+
+
+@dataclass(frozen=True)
+class RunningAppScanResult:
+    handle: WindowHandle
+    package: MaterialPackage
+    flow_id: str
+    control_count: int
+    entrypoint_count: int
+    openable_count: int
+    explain_only_count: int
+    duration_ms: float
+
+    @property
+    def status_message(self) -> str:
+        rounded_duration = round(self.duration_ms)
+        return (
+            f"Scanned {self.package.app_id}: {self.control_count} controls, "
+            f"{self.entrypoint_count} entrypoints, {rounded_duration} ms"
+        )
 
 
 @dataclass(frozen=True)
@@ -316,6 +340,91 @@ class _RunningAppScanState:
     @staticmethod
     def _window_key(label: str, window: VisibleWindow) -> tuple[str, int, str]:
         return (label, window.pid, window.window_class)
+
+
+def _scan_running_app_for_controller(
+    session: ControllerSession,
+    target: RunningAppTarget,
+    *,
+    handle_from_window: Callable[[VisibleWindow], WindowHandle],
+    list_visible_controls: Callable[[WindowHandle], tuple[VisibleControl, ...]],
+    now: Callable[[], float] | None = None,
+) -> RunningAppScanResult:
+    clock = now or perf_counter
+    start = clock()
+    controls: tuple[VisibleControl, ...] | None = None
+    handle: WindowHandle | None = None
+    try:
+        handle = handle_from_window(target.window)
+        controls = list_visible_controls(handle)
+        package = session.scan_running_app(target, controls)
+        flow_id = package.demo_flows[0].id if package.demo_flows else ""
+        entrypoint_count = len(package.operation_entrypoints)
+        openable_count = sum(
+            1 for entrypoint in package.operation_entrypoints if entrypoint.open_steps
+        )
+        duration = elapsed_ms(start, clock())
+        result = RunningAppScanResult(
+            handle=handle,
+            package=package,
+            flow_id=flow_id,
+            control_count=len(controls),
+            entrypoint_count=entrypoint_count,
+            openable_count=openable_count,
+            explain_only_count=entrypoint_count - openable_count,
+            duration_ms=duration,
+        )
+        _log_running_app_scan(target.window, result, status="ok")
+        return result
+    except Exception:
+        duration = elapsed_ms(start, clock())
+        _log_running_app_scan_error(
+            target.window,
+            duration_ms=duration,
+            control_count=len(controls) if controls is not None else None,
+        )
+        raise
+
+
+def _log_running_app_scan(
+    window: VisibleWindow,
+    result: RunningAppScanResult,
+    *,
+    status: str,
+) -> None:
+    log_timed_event(
+        logger,
+        "running_app_scanned",
+        duration_ms=result.duration_ms,
+        status=status,
+        process=window.process,
+        window_class=window.window_class,
+        pid=window.pid,
+        control_count=result.control_count,
+        entrypoint_count=result.entrypoint_count,
+        openable_count=result.openable_count,
+        explain_only_count=result.explain_only_count,
+        package=result.package.app_id,
+        flow=result.flow_id,
+    )
+
+
+def _log_running_app_scan_error(
+    window: VisibleWindow,
+    *,
+    duration_ms: float,
+    control_count: int | None,
+) -> None:
+    log_timed_event(
+        logger,
+        "running_app_scanned",
+        duration_ms=duration_ms,
+        status="error",
+        process=window.process,
+        window_class=window.window_class,
+        pid=window.pid,
+        control_count=control_count,
+    )
 
 
 @dataclass(frozen=True)
@@ -769,24 +878,25 @@ def run_controller(
             refresh_operator_view()
             return
         try:
-            handle = handle_from_window(selected)
-            controls = desktop.list_visible_controls(handle)
-            package = session.scan_running_app(RunningAppTarget(window=selected), controls)
+            scan_result = _scan_running_app_for_controller(
+                session,
+                RunningAppTarget(window=selected),
+                handle_from_window=handle_from_window,
+                list_visible_controls=desktop.list_visible_controls,
+            )
             scan_state.mark_selected_scanned()
-            scanned_package = package
-            scanned_handle = handle
-            scanned_package_id = package.app_id
-            scanned_flow_id = package.demo_flows[0].id if package.demo_flows else ""
+            scanned_package = scan_result.package
+            scanned_handle = scan_result.handle
+            scanned_package_id = scan_result.package.app_id
+            scanned_flow_id = scan_result.flow_id
             controller.set_target(
-                material_package=package,
+                material_package=scan_result.package,
                 flow_id=scanned_flow_id,
-                handle=handle,
+                handle=scan_result.handle,
             )
             package_choice.set(scanned_package_id)
             flow_choice.set(scanned_flow_id)
-            status.set(
-                f"Scanned {package.app_name}: {len(package.operation_entrypoints)} entrypoints"
-            )
+            status.set(scan_result.status_message)
         except Exception as exc:
             status.set(describe_controller_action_error("Scan", exc))
         refresh_operator_view()

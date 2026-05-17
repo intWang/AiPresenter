@@ -643,6 +643,10 @@ def test_package_language_alias_normalization_is_documented() -> None:
     assert "known presenter language aliases" in normalized_lifecycle_text
     assert "Unknown package-only keys remain raw" in normalized_lifecycle_text
     assert "resolved package key" in normalized_lifecycle_text
+    assert (
+        "reports `51/51` demo steps, `16/16` Q&A questions, and `16/16` Q&A answers"
+        in normalized_lifecycle_text
+    )
 
 
 def test_entrypoints_language_marker_contract_is_documented() -> None:

@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import logging
 from time import perf_counter
+from typing import Literal
 
 from ai_presenter.packages.models import EntrypointMatchCandidate
 from ai_presenter.packages.models import MaterialPackage
@@ -13,6 +14,8 @@ from ai_presenter.runtime.logging import elapsed_ms, log_timed_event
 from ai_presenter.runtime.voice import PresenterVoiceSettings, render_presenter_text
 
 logger = logging.getLogger("ai_presenter.runtime.questions")
+
+QuestionAnswerSource = Literal["entrypoint", "no_match", "presenter_meta", "qa"]
 
 _RISKY_ENTRYPOINT_WORDS = {
     "delete",
@@ -497,6 +500,7 @@ class QuestionResponse:
     answer_text: str
     entrypoint_id: str | None = None
     can_operate: bool = False
+    answer_source: QuestionAnswerSource = "no_match"
 
 
 def answer_question(
@@ -548,6 +552,7 @@ def _answer_question(
             answer_text=_qa_answer_text(qa_match, voice),
             entrypoint_id=entrypoint_id,
             can_operate=_can_operate(package, entrypoint_id),
+            answer_source="qa",
         )
 
     is_presenter_meta_request = _is_presenter_meta_request(normalized)
@@ -560,6 +565,7 @@ def _answer_question(
         if is_presenter_meta_request:
             return QuestionResponse(
                 answer_text=_render_text(_PRESENTER_META_REQUEST_ANSWER, voice),
+                answer_source="presenter_meta",
             )
         return QuestionResponse(
             answer_text=_render_text(_NO_MATCH_ANSWERS[voice.language], voice)
@@ -568,6 +574,7 @@ def _answer_question(
         answer_text=_render_entrypoint_answer(entrypoint, voice),
         entrypoint_id=entrypoint.id,
         can_operate=_can_operate(package, entrypoint.id),
+        answer_source="entrypoint",
     )
 
 

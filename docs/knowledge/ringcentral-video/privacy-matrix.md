@@ -1,6 +1,6 @@
 # RingCentral Video Privacy And Safety Matrix
 
-Date: 2026-05-16
+Date: 2026-05-17
 
 ## Default Policy
 
@@ -44,6 +44,16 @@ Spanish participant wording must preserve the same privacy boundary as English:
 - Identity disclosure: `Muéstrame los participantes`, `Lista los participantes`, `¿Quién está en la reunión?`, `¿Quiénes están en la lista de participantes?`, `con nombres`, `con roles`, `host`, and `moderador` stay answer-only.
 - Accent folding is a matching convenience, not a permission change. `Quién/Quien`, `Quiénes/Quienes`, `está/esta`, and `reunión/reunion` should route to the same privacy decision.
 - Panel/list terms do not make a request safe when the prompt also asks who is present, names, roles, host, or moderator status.
+
+Chinese participant wording follows the same split:
+
+- Safe navigation: `参会者在哪里`, `参会人列表在哪里`, and `打开参会人列表` may open or describe the Participants panel/list.
+- Identity disclosure: `列出参会者`, `谁在会议里`, `读参会人名字`, and `谁是主持人或协管员` stay answer-only.
+
+Japanese participant wording follows the same split:
+
+- Safe navigation: `参加者一覧はどこですか` and `参加者パネルを開いて` may open or describe the Participants panel/list.
+- Identity disclosure: `参加者名を読んで`, `参加者の名前を教えて`, `参加者一覧に誰がいますか`, and `ホストまたはモデレーターは誰ですか` stay answer-only.
 
 ## Safety In Runtime
 

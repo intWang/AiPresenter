@@ -21,7 +21,7 @@ from ai_presenter.runtime.controller_view_model import render_controller_operato
 from ai_presenter.runtime.controller_view_model import render_voice_label as _render_voice_label
 from ai_presenter.runtime.factory import run_existing_window_material_demo
 from ai_presenter.runtime.factory import run_material_demo
-from ai_presenter.runtime.questions import answer_question
+from ai_presenter.runtime.questions import QuestionAnswerSource, answer_question
 from ai_presenter.runtime.session import ControllerSession, MaterialPackageTarget, RunningAppTarget
 from ai_presenter.runtime.session import create_question_interrupt_step
 from ai_presenter.runtime.voice import PRESENTER_LANGUAGE_CHOICES
@@ -62,6 +62,7 @@ class QuestionSubmitResult:
     demonstration_message: str = ""
     entrypoint_id: str | None = None
     can_operate: bool = False
+    answer_source: QuestionAnswerSource = "no_match"
 
 
 @dataclass(frozen=True)
@@ -162,6 +163,10 @@ def describe_question_result(result: QuestionSubmitResult) -> str:
         return f"Demonstrating: {result.entrypoint_id}"
     if result.entrypoint_id is not None and not result.can_operate:
         return f"Answered only: {result.entrypoint_id} is not safe to operate automatically"
+    if result.answer_source == "qa":
+        return "Answered only: matched text guidance; no demo was started"
+    if result.answer_source == "presenter_meta":
+        return "Answered only: presenter settings response; no demo was started"
     if result.entrypoint_id is None:
         return "Answered only: no matching safe control"
     return f"Answered only: {result.entrypoint_id}"
@@ -380,6 +385,7 @@ class PresenterController:
                 answer_text=response.answer_text,
                 entrypoint_id=response.entrypoint_id,
                 can_operate=response.can_operate,
+                answer_source=response.answer_source,
             )
         question_target = _target_with_question_flow(target, interrupt)
         if self.is_running and not self.is_stopping:
@@ -390,6 +396,7 @@ class PresenterController:
                 demonstration_message="I queued that for the next safe step.",
                 entrypoint_id=response.entrypoint_id,
                 can_operate=response.can_operate,
+                answer_source=response.answer_source,
             )
         if self.is_running:
             return QuestionSubmitResult(
@@ -397,6 +404,7 @@ class PresenterController:
                 demonstration_message="I answered in text because the current demo is ending.",
                 entrypoint_id=response.entrypoint_id,
                 can_operate=response.can_operate,
+                answer_source=response.answer_source,
             )
         if self._start_target(question_target, voice):
             return QuestionSubmitResult(
@@ -405,12 +413,14 @@ class PresenterController:
                 demonstration_message="Demonstrating it now.",
                 entrypoint_id=response.entrypoint_id,
                 can_operate=response.can_operate,
+                answer_source=response.answer_source,
             )
         return QuestionSubmitResult(
             answer_text=response.answer_text,
             demonstration_message="I answered in text because another demo is already running.",
             entrypoint_id=response.entrypoint_id,
             can_operate=response.can_operate,
+            answer_source=response.answer_source,
         )
 
     def join(self, timeout: float | None = None) -> None:

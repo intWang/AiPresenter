@@ -802,6 +802,12 @@ def test_presenter_controller_queues_safe_mixed_meta_question_for_running_demo(
             None,
             "参会人姓名",
         ),
+        (
+            "参加者名を読んで",
+            PresenterVoiceSettings(language="ja"),
+            None,
+            "参加者名",
+        ),
     ],
 )
 def test_presenter_controller_keeps_sensitive_mixed_meta_question_text_only_while_running(
@@ -850,6 +856,12 @@ def test_presenter_controller_keeps_sensitive_mixed_meta_question_text_only_whil
     assert result.can_operate is False
     assert expected_answer in result.answer_text
     assert not result.answer_text.startswith("Presenter settings:")
+    expected_outcome = (
+        "Answered only: matched text guidance; no demo was started"
+        if expected_entrypoint_id is None
+        else f"Answered only: {expected_entrypoint_id} is not safe to operate automatically"
+    )
+    assert describe_question_result(result) == expected_outcome
     assert control.pop_interrupt() is None
     assert control.is_stop_requested is False
     assert calls == ["meeting-control-map-demo"]
@@ -1021,6 +1033,12 @@ def test_presenter_controller_starts_safe_mixed_meta_question_demo_when_idle(
             None,
             "参会人姓名",
         ),
+        (
+            "参加者名を読んで",
+            PresenterVoiceSettings(language="ja"),
+            None,
+            "参加者名",
+        ),
     ],
 )
 def test_presenter_controller_keeps_sensitive_mixed_meta_question_text_only_when_idle(
@@ -1061,6 +1079,12 @@ def test_presenter_controller_keeps_sensitive_mixed_meta_question_text_only_when
     assert result.can_operate is False
     assert expected_answer in result.answer_text
     assert not result.answer_text.startswith("Presenter settings:")
+    expected_outcome = (
+        "Answered only: matched text guidance; no demo was started"
+        if expected_entrypoint_id is None
+        else f"Answered only: {expected_entrypoint_id} is not safe to operate automatically"
+    )
+    assert describe_question_result(result) == expected_outcome
     assert calls == []
     assert control.pop_interrupt() is None
 
@@ -1144,6 +1168,15 @@ def test_describe_question_result_distinguishes_queued_started_and_risky() -> No
         answer_text="Leave meeting: Leave or end the meeting.",
         entrypoint_id="ringcentral.video.toolbar.leave",
         can_operate=False,
+        answer_source="entrypoint",
+    )
+    privacy_guidance = QuestionSubmitResult(
+        answer_text="Participant privacy guidance.",
+        answer_source="qa",
+    )
+    no_match = QuestionSubmitResult(
+        answer_text="I could not find a matching control.",
+        answer_source="no_match",
     )
 
     assert describe_question_result(queued) == "Queued safe demo: ringcentral.video.toolbar.chat"
@@ -1152,6 +1185,11 @@ def test_describe_question_result_distinguishes_queued_started_and_risky() -> No
         describe_question_result(risky)
         == "Answered only: ringcentral.video.toolbar.leave is not safe to operate automatically"
     )
+    assert (
+        describe_question_result(privacy_guidance)
+        == "Answered only: matched text guidance; no demo was started"
+    )
+    assert describe_question_result(no_match) == "Answered only: no matching safe control"
 
 
 def test_render_voice_label_uses_controller_labels() -> None:

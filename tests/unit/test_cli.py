@@ -197,7 +197,7 @@ def test_demo_dry_run_loads_profile_package_and_flow() -> None:
     assert result.exit_code == 0
     assert "Loaded profile: ringcentral-video" in result.stdout
     assert "Loaded package: ringcentral-video" in result.stdout
-    assert "Loaded flow: meeting-controls-tour" in result.stdout
+    assert "Loaded flow: meeting-controls-tour (22 steps)" in result.stdout
 
 
 def test_demo_passes_language_and_tone_to_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -328,7 +328,7 @@ def test_controller_dry_run_loads_profile_package_and_flow() -> None:
     assert result.exit_code == 0
     assert "Loaded profile: ringcentral-video-bind-speaker" in result.stdout
     assert "Loaded package: ringcentral-video" in result.stdout
-    assert "Loaded flow: meeting-control-map-demo" in result.stdout
+    assert "Loaded flow: meeting-control-map-demo (22 steps)" in result.stdout
     assert "Controller dry run complete." in result.stdout
 
 

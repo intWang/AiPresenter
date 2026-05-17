@@ -204,7 +204,7 @@ def demo(
 
     typer.echo(f"Loaded profile: {loaded_profile.id}")
     typer.echo(f"Loaded package: {loaded_package.app_id}")
-    typer.echo(f"Loaded flow: {loaded_flow.id}")
+    typer.echo(f"Loaded flow: {loaded_flow.id} ({len(loaded_flow.steps)} steps)")
     typer.echo(f"Loaded voice: {render_voice_label(voice_settings)}")
     if not isinstance(loaded_profile, DesktopAppProfile):
         raise typer.BadParameter(f"Only desktop profiles can run in this MVP: {loaded_profile.id}")
@@ -249,7 +249,7 @@ def controller(
 
     typer.echo(f"Loaded profile: {loaded_profile.id}")
     typer.echo(f"Loaded package: {loaded_package.app_id}")
-    typer.echo(f"Loaded flow: {loaded_flow.id}")
+    typer.echo(f"Loaded flow: {loaded_flow.id} ({len(loaded_flow.steps)} steps)")
     typer.echo(f"Loaded voice: {render_voice_label(voice_settings)}")
     if not isinstance(loaded_profile, DesktopAppProfile):
         raise typer.BadParameter(f"Only desktop profiles can run in this MVP: {loaded_profile.id}")

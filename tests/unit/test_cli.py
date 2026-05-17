@@ -1440,6 +1440,134 @@ def test_validation_targets_rejects_unknown_checklist_reference(tmp_path: Path) 
     assert "ringcentral.video.missing" in result.output
 
 
+def test_validation_targets_rejects_unbacked_accepted_evidence(
+    tmp_path: Path,
+) -> None:
+    evidence_path = tmp_path / "evidence-index.md"
+    acceptance_path = tmp_path / "acceptance-runs.md"
+    evidence_text = Path("docs/knowledge/ringcentral-video/evidence-index.md").read_text(
+        encoding="utf-8"
+    )
+    evidence_path.write_text(
+        evidence_text.replace(
+            "| `ringcentral.video.toolbar.chat` | Executable UIA route with toggle cleanup | `Observed` |",
+            "| `ringcentral.video.toolbar.chat` | Executable UIA route with toggle cleanup | `Accepted` |",
+        ),
+        encoding="utf-8",
+    )
+    acceptance_path.write_text(
+        Path("docs/knowledge/ringcentral-video/acceptance-runs.md").read_text(
+            encoding="utf-8"
+        ),
+        encoding="utf-8",
+    )
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "validation-targets",
+            "--package",
+            "ringcentral-video",
+            "--evidence",
+            str(evidence_path),
+            "--target",
+            "rcv-controller-chat-question",
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert "Accepted evidence for ringcentral.video.toolbar.chat" in result.output
+    assert "dated passing live/manual acceptance run" in result.output
+    assert "acceptance-runs.md" in result.output
+
+
+def test_validation_targets_accepts_backed_accepted_evidence(
+    tmp_path: Path,
+) -> None:
+    evidence_path = tmp_path / "evidence-index.md"
+    acceptance_path = tmp_path / "acceptance-runs.md"
+    evidence_text = Path("docs/knowledge/ringcentral-video/evidence-index.md").read_text(
+        encoding="utf-8"
+    )
+    evidence_path.write_text(
+        evidence_text.replace(
+            "| `ringcentral.video.toolbar.chat` | Executable UIA route with toggle cleanup | `Observed` |",
+            "| `ringcentral.video.toolbar.chat` | Executable UIA route with toggle cleanup | `Accepted` |",
+        ),
+        encoding="utf-8",
+    )
+    acceptance_path.write_text(
+        """
+# RingCentral Video Acceptance Runs
+
+## 2026-05-17 09:00 Local - Manual RingCentral Acceptance
+
+- Entrypoint IDs tested: `ringcentral.video.toolbar.chat`
+- Steps executed: Opened and closed the Chat panel.
+- Outcome: pass
+- Accepted promotion eligible: yes
+- Promotion rationale: Current build route passed and cleanup restored.
+- Recovery: Chat panel closed and toolbar was usable again.
+- Privacy notes: No chat content was read or captured.
+""",
+        encoding="utf-8",
+    )
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "validation-targets",
+            "--package",
+            "ringcentral-video",
+            "--evidence",
+            str(evidence_path),
+            "--acceptance-runs",
+            str(acceptance_path),
+            "--target",
+            "rcv-controller-chat-question",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "ringcentral.video.toolbar.chat=Accepted" in result.stdout
+
+
+def test_validation_targets_rejects_missing_explicit_acceptance_runs(
+    tmp_path: Path,
+) -> None:
+    evidence_path = tmp_path / "evidence-index.md"
+    missing_acceptance_path = tmp_path / "missing-acceptance-runs.md"
+    evidence_text = Path("docs/knowledge/ringcentral-video/evidence-index.md").read_text(
+        encoding="utf-8"
+    )
+    evidence_path.write_text(
+        evidence_text.replace(
+            "| `ringcentral.video.toolbar.chat` | Executable UIA route with toggle cleanup | `Observed` |",
+            "| `ringcentral.video.toolbar.chat` | Executable UIA route with toggle cleanup | `Accepted` |",
+        ),
+        encoding="utf-8",
+    )
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "validation-targets",
+            "--package",
+            "ringcentral-video",
+            "--evidence",
+            str(evidence_path),
+            "--acceptance-runs",
+            str(missing_acceptance_path),
+            "--target",
+            "rcv-controller-chat-question",
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert missing_acceptance_path.name in result.output
+    assert "ringcentral.video.toolbar.chat=Accepted" not in result.output
+
+
 def test_validation_targets_include_blocked_lists_do_not_execute_routes() -> None:
     result = CliRunner().invoke(
         app,

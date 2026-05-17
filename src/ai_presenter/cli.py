@@ -36,6 +36,7 @@ RINGCENTRAL_KNOWLEDGE_DIR = (
 )
 DEFAULT_VALIDATION_CHECKLIST = RINGCENTRAL_KNOWLEDGE_DIR / "validation-checklist-index.md"
 DEFAULT_EVIDENCE_INDEX = RINGCENTRAL_KNOWLEDGE_DIR / "evidence-index.md"
+DEFAULT_ACCEPTANCE_RUNS_NAME = "acceptance-runs.md"
 
 
 @app.callback()
@@ -353,6 +354,11 @@ def validation_targets(
         "--evidence",
         help="Evidence index markdown path.",
     ),
+    acceptance_runs: Path | None = typer.Option(
+        None,
+        "--acceptance-runs",
+        help="Optional acceptance-runs markdown path for Accepted evidence guard.",
+    ),
     include_blocked: bool = typer.Option(
         False,
         "--include-blocked",
@@ -364,12 +370,23 @@ def validation_targets(
     try:
         checklist_text = checklist.read_text(encoding="utf-8")
         evidence_text = evidence.read_text(encoding="utf-8")
+        acceptance_text: str | None
+        if acceptance_runs is not None:
+            acceptance_text = acceptance_runs.read_text(encoding="utf-8")
+        else:
+            acceptance_path = evidence.parent / DEFAULT_ACCEPTANCE_RUNS_NAME
+            acceptance_text = (
+                acceptance_path.read_text(encoding="utf-8")
+                if acceptance_path.is_file()
+                else None
+            )
         catalog = discover_validation_targets(
             loaded_package,
             checklist_text=checklist_text,
             checklist_path=checklist,
             evidence_text=evidence_text,
             evidence_path=evidence,
+            acceptance_text=acceptance_text,
             include_blocked=include_blocked,
         )
         lines = render_validation_target_lines(catalog, priority=priority, target_id=target)

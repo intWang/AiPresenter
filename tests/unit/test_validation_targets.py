@@ -44,6 +44,7 @@ def discover_catalog(
     *,
     checklist_text: str | None = None,
     evidence_text: str | None = None,
+    acceptance_text: str | None = None,
     include_blocked: bool = False,
 ) -> ValidationTargetCatalog:
     return discover_validation_targets(
@@ -52,6 +53,7 @@ def discover_catalog(
         checklist_path=Path("docs/knowledge/ringcentral-video/validation-checklist-index.md"),
         evidence_text=evidence_text if evidence_text is not None else load_evidence_text(),
         evidence_path=Path("docs/knowledge/ringcentral-video/evidence-index.md"),
+        acceptance_text=acceptance_text,
         include_blocked=include_blocked,
     )
 
@@ -380,6 +382,22 @@ def test_accepted_evidence_guard_rejects_manual_pass_without_recovery() -> None:
             load_ringcentral_package(),
             evidence_text,
             acceptance_text=acceptance_text,
+        )
+
+
+def test_discover_validation_targets_enforces_accepted_evidence_guard() -> None:
+    evidence_text = evidence_with_level("ringcentral.video.toolbar.chat", "Accepted")
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Accepted evidence for ringcentral.video.toolbar.chat requires a "
+            "dated passing live/manual acceptance run in acceptance-runs.md"
+        ),
+    ):
+        discover_catalog(
+            evidence_text=evidence_text,
+            acceptance_text=load_acceptance_text(),
         )
 
 

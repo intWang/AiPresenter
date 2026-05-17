@@ -83,10 +83,15 @@ def discover_validation_targets(
     checklist_path: Path,
     evidence_text: str | None = None,
     evidence_path: Path | None = None,
+    acceptance_text: str | None = None,
     include_blocked: bool = False,
 ) -> ValidationTargetCatalog:
     if evidence_text and evidence_text.strip():
-        evidence_report = validate_entrypoint_evidence_index(package, evidence_text)
+        evidence_report = validate_entrypoint_evidence_index(
+            package,
+            evidence_text,
+            acceptance_text=acceptance_text,
+        )
         evidence_levels = evidence_report.evidence_levels
         evidence_gaps = evidence_report.evidence_gaps
     else:

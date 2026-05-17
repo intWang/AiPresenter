@@ -6,6 +6,8 @@ Date: 2026-05-16
 
 Use this file to record dated automated and manual acceptance evidence for RingCentral Video. A checklist in a runbook is not acceptance evidence until a run is recorded here.
 
+Failed or partial live/manual runs are useful history, but they do not promote a route to `Accepted`. Accepted promotion requires a dated passing live/manual acceptance record for the current build and route under test, with cleanup restored and privacy notes complete.
+
 ## Automated Baseline Template
 
 ```markdown
@@ -20,9 +22,12 @@ Use this file to record dated automated and manual acceptance evidence for RingC
   - `.\.venv\Scripts\python -m mypy --no-incremental src tests`
   - `.\.venv\Scripts\ai-presenter doctor --profile ringcentral-video-bind-speaker --package ringcentral-video --flow meeting-control-map-demo`
 - Results:
+- Accepted promotion eligible: no
 - Warnings:
 - Follow-up:
 ```
+
+Automated baselines, dry runs, and `doctor` checks can support repo baseline evidence only. They do not prove live RingCentral acceptance.
 
 ## Manual Acceptance Template
 
@@ -46,9 +51,12 @@ Use this file to record dated automated and manual acceptance evidence for RingC
 - Window bounds:
 - Evidence files:
 - Steps executed:
-- Pass/fail:
+- Outcome: pass | fail | blocked | incomplete | skipped
+- Accepted promotion eligible: yes | no
+- Promotion rationale:
 - Failures:
 - Recovery:
+- Follow-up:
 - Privacy notes:
 - Locator updates needed:
 
@@ -60,6 +68,14 @@ Use this file to record dated automated and manual acceptance evidence for RingC
 - In Evidence files, name only sanitized artifacts; delete or quarantine raw artifacts.
 - In Privacy notes, state what was redacted or intentionally not captured.
 ```
+
+### Evidence Level Update Rules
+
+- Accepted promotion requires a dated live/manual `pass` for the current build and route under test.
+- Failed, blocked, incomplete, skipped, automated-only, dry-run, `doctor`, and read-only observation records may be logged here, but they are not promotion evidence.
+- If the outcome is fail, blocked, incomplete, or skipped, leave the evidence level unchanged or lower confidence, then record follow-up.
+- A read-only observation may pass for observation scope without making a clicked route `Accepted`.
+- Update `evidence-index.md` only after the dated run is recorded and the evidence-level change is justified.
 
 ## Current Automated Evidence From Cycle 001
 

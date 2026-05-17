@@ -1350,9 +1350,10 @@ def test_ringcentral_knowledge_docs_preserve_evidence_boundaries() -> None:
         "Do not promote a route to `Accepted` from automated tests, dry runs, "
         "`doctor`, or read-only UIA observation alone."
     ) in checklist_text
-    assert "`Accepted` requires a dated manual/live record in `acceptance-runs.md`." in (
-        checklist_text
-    )
+    assert (
+        "`Accepted` requires a dated passing manual/live record in "
+        "`acceptance-runs.md`, with cleanup/privacy notes complete."
+    ) in checklist_text
     assert (
         "`Observed` can come from sanitized UIA/window metadata, but does not "
         "prove click or cleanup."
@@ -1433,6 +1434,49 @@ def test_ringcentral_knowledge_docs_preserve_evidence_boundaries() -> None:
         assert "checklist is acceptance evidence" not in normalized
         assert "doctor proves live acceptance" not in normalized
         assert "dry run proves live acceptance" not in normalized
+
+
+def test_ringcentral_acceptance_runs_define_outcome_promotion_rules() -> None:
+    acceptance_text = Path(
+        "docs/knowledge/ringcentral-video/acceptance-runs.md"
+    ).read_text(encoding="utf-8")
+
+    for template_field in (
+        "- Outcome: pass | fail | blocked | incomplete | skipped",
+        "- Accepted promotion eligible: yes | no",
+        "- Promotion rationale:",
+        "- Failures:",
+        "- Recovery:",
+        "- Follow-up:",
+        "- Privacy notes:",
+    ):
+        assert template_field in acceptance_text
+
+    for rule in (
+        (
+            "Accepted promotion requires a dated live/manual `pass` for the "
+            "current build and route under test."
+        ),
+        (
+            "Failed, blocked, incomplete, skipped, automated-only, dry-run, "
+            "`doctor`, and read-only observation records may be logged here, "
+            "but they are not promotion evidence."
+        ),
+        (
+            "If the outcome is fail, blocked, incomplete, or skipped, leave "
+            "the evidence level unchanged or lower confidence, then record "
+            "follow-up."
+        ),
+        (
+            "A read-only observation may pass for observation scope without "
+            "making a clicked route `Accepted`."
+        ),
+        (
+            "Update `evidence-index.md` only after the dated run is recorded "
+            "and the evidence-level change is justified."
+        ),
+    ):
+        assert rule in acceptance_text
 
 
 def test_ringcentral_evidence_status_taxonomy_maps_checklist_terms() -> None:

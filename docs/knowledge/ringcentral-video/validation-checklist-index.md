@@ -39,7 +39,7 @@ This checklist turns known RingCentral Video evidence gaps into safe manual vali
 
 ## Evidence Upgrade Rules
 
-- `Accepted` requires a dated manual/live record in `acceptance-runs.md`.
+- `Accepted` requires a dated passing manual/live record in `acceptance-runs.md`, with cleanup/privacy notes complete.
 - `Observed` can come from sanitized UIA/window metadata, but does not prove click or cleanup.
 - `Repo-tested` means package shape or runtime code was tested locally, not that RingCentral accepted the route live.
 - `Blocked` means privacy, role, confirmation, locator, or side-effect risk prevents execution.

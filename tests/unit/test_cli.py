@@ -1279,6 +1279,36 @@ def test_validation_targets_detail_outputs_draft_command() -> None:
     ) in result.stdout
 
 
+def test_validation_targets_detail_outputs_entrypoint_draft_examples_for_group() -> None:
+    result = CliRunner().invoke(
+        app,
+        [
+            "validation-targets",
+            "--package",
+            "ringcentral-video",
+            "--target",
+            "rcv-top-bar-routes",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "entrypoint draft examples:" in result.stdout
+    assert (
+        "draft: ai-presenter acceptance-draft --package ringcentral-video "
+        '--checklist-target "P1 Top-bar coordinate routes"'
+    ) in result.stdout
+    assert (
+        "- ai-presenter acceptance-draft --package ringcentral-video "
+        "--entrypoint ringcentral.video.top.meeting-info "
+        '--checklist-target "P1 Top-bar coordinate routes"'
+    ) in result.stdout
+    assert (
+        "- ai-presenter acceptance-draft --package ringcentral-video "
+        "--entrypoint ringcentral.video.top.report-issue "
+        '--checklist-target "P1 Top-bar coordinate routes"'
+    ) in result.stdout
+
+
 def test_validation_targets_mixed_target_outputs_flow_and_entrypoint_draft_command() -> None:
     result = CliRunner().invoke(
         app,

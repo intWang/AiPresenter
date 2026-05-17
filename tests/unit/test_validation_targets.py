@@ -360,6 +360,68 @@ def test_render_validation_target_lines_keeps_normal_draft_command() -> None:
     ) in text
 
 
+def test_render_validation_target_lines_adds_detail_entrypoint_draft_examples_for_groups() -> None:
+    catalog = discover_catalog()
+
+    text = "\n".join(render_validation_target_lines(catalog, target_id="rcv-top-bar-routes"))
+
+    assert "entrypoint draft examples:" in text
+    assert (
+        "ai-presenter acceptance-draft --package ringcentral-video "
+        '--checklist-target "P1 Top-bar coordinate routes"'
+    ) in text
+    for entrypoint_id in (
+        "ringcentral.video.top.meeting-info",
+        "ringcentral.video.top.network-quality",
+        "ringcentral.video.top.views",
+        "ringcentral.video.top.report-issue",
+    ):
+        assert (
+            "  - ai-presenter acceptance-draft --package ringcentral-video "
+            f"--entrypoint {entrypoint_id} "
+            '--checklist-target "P1 Top-bar coordinate routes"'
+        ) in text
+
+    toolbar_text = "\n".join(
+        render_validation_target_lines(catalog, target_id="rcv-toolbar-panels")
+    )
+    assert "entrypoint draft examples:" in toolbar_text
+    assert "--entrypoint ringcentral.video.toolbar.invite" in toolbar_text
+    assert "--entrypoint ringcentral.video.toolbar.share" in toolbar_text
+    assert '--checklist-target "P1 Common toolbar panels and pickers"' in toolbar_text
+
+
+def test_render_validation_target_lines_keeps_priority_lists_without_entrypoint_draft_examples() -> None:
+    catalog = discover_catalog()
+
+    text = "\n".join(render_validation_target_lines(catalog, priority="P1"))
+
+    assert "entrypoint draft examples:" not in text
+    assert text.count("draft:") == 5
+    assert "rcv-top-bar-routes" in text
+
+
+def test_render_validation_target_lines_keeps_single_entrypoint_detail_without_examples() -> None:
+    catalog = discover_catalog()
+
+    text = "\n".join(render_validation_target_lines(catalog, target_id="rcv-notes-transcript"))
+
+    assert "entrypoint draft examples:" not in text
+    assert "--entrypoint ringcentral.video.more.notes" in text
+
+
+def test_render_validation_target_lines_keeps_mixed_flow_target_without_examples() -> None:
+    catalog = discover_catalog()
+
+    text = "\n".join(
+        render_validation_target_lines(catalog, target_id="rcv-controller-chat-question")
+    )
+
+    assert "entrypoint draft examples:" not in text
+    assert "--flow meeting-control-map-demo" in text
+    assert "--entrypoint ringcentral.video.toolbar.chat" in text
+
+
 def test_render_validation_target_lines_shows_evidence_reminder_for_p1_targets() -> None:
     catalog = discover_catalog()
 

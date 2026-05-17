@@ -1398,6 +1398,8 @@ def test_ringcentral_knowledge_docs_preserve_evidence_boundaries() -> None:
     assert "Evidence Redaction Checklist" in runbook_text
     assert "validation-targets --package ringcentral-video --priority P0" in runbook_text
     assert "metadata-first evidence reminder" in runbook_text
+    assert "--target <target-id>" in runbook_text
+    assert "per-entrypoint draft examples" in runbook_text
     assert "generated draft or `acceptance-runs.md` template" in runbook_text
     assert "Prefer UIA/window metadata first" in runbook_text
     assert "clear verification need and a privacy review path" in runbook_text

@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from collections.abc import Mapping
 from dataclasses import dataclass
+from dataclasses import replace
 from pathlib import Path
 from types import MappingProxyType
 
@@ -170,7 +171,14 @@ def render_validation_target_lines(
     for index, target in enumerate(selected_targets):
         if index:
             lines.append("")
-        lines.extend(_render_target_block(catalog.package_id, target, include_draft_command))
+        lines.extend(
+            _render_target_block(
+                catalog.package_id,
+                target,
+                include_draft_command,
+                include_entrypoint_draft_examples=target_id is not None,
+            )
+        )
     return lines
 
 
@@ -205,6 +213,8 @@ def _render_target_block(
     package_id: str,
     target: ValidationTarget,
     include_draft_command: bool,
+    *,
+    include_entrypoint_draft_examples: bool = False,
 ) -> list[str]:
     lines = [f"- {target.id} [{target.priority}] {target.route_or_group}"]
     if target.entrypoint_ids:
@@ -222,7 +232,27 @@ def _render_target_block(
         lines.append(f"  blocked: {target.blocked_reason}")
     if include_draft_command and target.blocked_reason is None:
         lines.append(f"  draft: {acceptance_draft_command(package_id, target)}")
+        if include_entrypoint_draft_examples:
+            examples = _entrypoint_draft_example_commands(package_id, target)
+            if examples:
+                lines.append("  entrypoint draft examples:")
+                lines.extend(f"    - {example}" for example in examples)
     return lines
+
+
+def _entrypoint_draft_example_commands(
+    package_id: str,
+    target: ValidationTarget,
+) -> list[str]:
+    if target.flow_ids or len(target.entrypoint_ids) <= 1:
+        return []
+    return [
+        acceptance_draft_command(
+            package_id,
+            replace(target, entrypoint_ids=(entrypoint_id,)),
+        )
+        for entrypoint_id in target.entrypoint_ids
+    ]
 
 
 def _format_evidence(target: ValidationTarget) -> str:

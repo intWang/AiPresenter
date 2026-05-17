@@ -13,7 +13,7 @@
 This uses the default fake providers. It verifies desktop automation, window binding, state detection, event filtering, and logging. It does not prove audible speech or OpenAI behavior.
 
 - Before live route validation, open `docs/knowledge/ringcentral-video/validation-checklist-index.md` and choose the smallest target route group. Record any pass/fail evidence in `acceptance-runs.md`; runbook checkboxes are not acceptance evidence.
-- To list prioritized manual targets with current evidence gaps, run `.venv\Scripts\ai-presenter validation-targets --package ringcentral-video --priority P0` and follow the metadata-first evidence reminder before copying any draft command.
+- To list prioritized manual targets with current evidence gaps, run `.venv\Scripts\ai-presenter validation-targets --package ringcentral-video --priority P0` and follow the metadata-first evidence reminder before copying any draft command. For a multi-entrypoint target, rerun with `--target <target-id>` to get per-entrypoint draft examples.
 - Before collecting evidence, use the `Evidence Redaction Checklist` in the generated draft or `acceptance-runs.md` template. Prefer UIA/window metadata first; request screenshots only when there is a clear verification need and a privacy review path.
 - To prepare a manual evidence draft without touching RingCentral, run `.venv\Scripts\ai-presenter acceptance-draft --package ringcentral-video --entrypoint ringcentral.video.main.add-coworkers`; complete the draft only after the actual manual run.
 

@@ -14,7 +14,9 @@ from ai_presenter.cli import REPO_PROFILE_DIR
 from ai_presenter.cli import resolve_material_package
 from ai_presenter.cli import resolve_profile
 from ai_presenter.runtime import diagnostics
+from ai_presenter.runtime.voice import PRESENTER_LANGUAGE_CHOICES
 from ai_presenter.runtime.voice import PresenterVoiceSettings
+from ai_presenter.runtime.voice import presenter_language_aliases
 from ai_presenter.runtime.voice_assets import VoiceAssetAvailability
 
 
@@ -647,6 +649,43 @@ def test_package_language_alias_normalization_is_documented() -> None:
         "reports `51/51` demo steps, `16/16` Q&A questions, and `16/16` Q&A answers"
         in normalized_lifecycle_text
     )
+
+
+def test_language_lifecycle_matrix_matches_runtime_language_contract() -> None:
+    lifecycle_text = Path("docs/knowledge/language-lifecycle.md").read_text(
+        encoding="utf-8"
+    )
+    normalized_lifecycle_text = " ".join(lifecycle_text.split())
+
+    for label, language in PRESENTER_LANGUAGE_CHOICES:
+        aliases = ", ".join(
+            f"`{alias}`" for alias in presenter_language_aliases(language)
+        )
+        assert f"| `{language}` | {label} |" in lifecycle_text
+        assert aliases in lifecycle_text
+
+    for phrase in (
+        "## Current Language State Matrix",
+        "package-localization complete",
+        "runtime presenter language",
+        "provider compatibility",
+        "live acceptance evidence",
+        "`--localization-language` checks package text",
+        "`--language` selects runtime presenter voice",
+        "English is the default runtime voice language",
+        "Chinese can use OpenAI speech or `windows-sapi-zh`",
+        "Japanese requires OpenAI speech",
+        "Spanish requires OpenAI speech",
+        "local SAPI/Piper Spanish remains future work",
+        "local fake, Piper, and Windows SAPI profiles must reject `--language es`",
+        "Package-only text is never live acceptance evidence",
+        "Live acceptance requires a dated acceptance run",
+        (
+            "profile/provider compatibility is checked separately when `--language es` "
+            "selects a Spanish runtime voice"
+        ),
+    ):
+        assert phrase in normalized_lifecycle_text
 
 
 def test_entrypoints_language_marker_contract_is_documented() -> None:

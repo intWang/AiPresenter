@@ -4,6 +4,21 @@ Date: 2026-05-16
 
 This note defines the difference between package-local language coverage and runtime presenter support. It exists because a language can have package text, Q&A, and passing localization reports before AiPresenter can safely run or speak that language in a live demo.
 
+## Current Language State Matrix
+
+This matrix separates package-localization complete status, runtime presenter
+language support, provider compatibility, local voice assets, and live
+acceptance evidence. `--localization-language` checks package text;
+`--language` selects runtime presenter voice.
+
+| Runtime key | Label | Aliases | Package localization state | Runtime presenter language | Provider compatibility | Local voice assets | Live acceptance evidence |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `en` | English | `en`, `en-us`, `en-gb`, `english` | RingCentral source language and fallback package text. | English is the default runtime voice language. | Supports normal configured speech routes; direct `windows-sapi-zh` resolves back to `windows-sapi-en`. | Piper and English SAPI assets are local-profile dependent. | Live acceptance requires a dated acceptance run for the selected profile, speech route, flow, environment, result, cleanup, and privacy notes. |
+| `zh` | Chinese | `zh`, `zh-cn`, `zh-hans`, `zh-tw`, `zh-hant`, `chinese`, `中文` | RingCentral required package localization is package-localization complete for demo narration and Q&A. | Runtime presenter language supported. | Chinese can use OpenAI speech or `windows-sapi-zh`; local fallback routes `piper`, `windows-sapi`, and `windows-sapi-en` to `windows-sapi-zh`. | `windows-sapi-zh` still depends on an installed compatible Chinese SAPI voice such as Huihui. | Live acceptance requires a dated acceptance run before claiming Chinese live readiness. |
+| `ja` | Japanese | `ja`, `ja-jp`, `japanese`, `日本語` | RingCentral required package localization is package-localization complete for demo narration and Q&A. | Runtime presenter language supported. | Japanese requires OpenAI speech. | Local SAPI/Piper Japanese remains future work unless a later provider slice implements and tests it. | Live acceptance requires a dated acceptance run before claiming Japanese live readiness. |
+| `es` | Spanish | `es`, `es-es`, `es-mx`, `es-419`, `es-la`, `spanish`, `latam-spanish`, `latin-american-spanish`, `español`, `espanol` | RingCentral required package localization is package-localization complete for demo narration and Q&A; optional entrypoint display metadata remains partial. | Runtime presenter language supported. | Spanish requires OpenAI speech. | local SAPI/Piper Spanish remains future work; local fake, Piper, and Windows SAPI profiles must reject `--language es`. | Spanish runtime support is not live RingCentral acceptance; live acceptance requires a dated acceptance run. |
+| package-only future key | Not a runtime label | Raw package key, for example `de`, when it is not a known presenter language alias. | May be package-localization complete through package text and `localization-report --require-complete`. | Not a runtime presenter language until `voice.py`, CLI checks, providers, tests, and docs are promoted together. | Provider compatibility is absent until runtime support exists. | Voice assets are absent until a provider slice adds and tests them. | Package-only text is never live acceptance evidence. |
+
 ## Lifecycle Gates
 
 1. Package seed
@@ -138,10 +153,10 @@ OpenAI-backed speech only:
   canonical decomposition. It must not be treated as Japanese width folding,
   transliteration, stemming, semantic matching, or provider compatibility.
 - `doctor --require-localization --localization-language es` may inspect
-  Spanish package content independently from runtime voice checks. OpenAI-backed
-  profiles should report `[OK] localization` plus `[OK] runtime language
-  support`; incompatible local profiles should still fail the runtime language
-  support boundary.
+  Spanish package content independently from runtime voice checks. The
+  `runtime language support` check can report `[OK]` because the presenter
+  runtime recognizes `es`; profile/provider compatibility is checked separately
+  when `--language es` selects a Spanish runtime voice.
 - `demo --language es` and `controller --language es` are supported only with
   OpenAI speech profiles, such as `profiles/ringcentral-video-openai.example.yaml`.
 - Fake, Piper, `windows-sapi`, `windows-sapi-en`, and `windows-sapi-zh` profiles

@@ -2838,6 +2838,94 @@ def test_chinese_meeting_link_short_question_uses_privacy_qa() -> None:
 @pytest.mark.parametrize(
     "question",
     [
+        "\u4f1a\u8b70ID\u3092\u8aad\u3093\u3067",
+        "\u4f1a\u8b70\u30ea\u30f3\u30af\u3092\u30b3\u30d4\u30fc\u3057\u3066",
+        "\u4f1a\u8b70\u30ea\u30f3\u30af\u3092\u5171\u6709\u3057\u3066",
+        "\u30df\u30fc\u30c6\u30a3\u30f3\u30b0ID\u3092\u8aad\u307f\u4e0a\u3052\u3066",
+        "\u30c0\u30a4\u30e4\u30eb\u30a4\u30f3\u60c5\u5831\u3092\u8aad\u3093\u3067",
+        "\u30db\u30b9\u30c8\u60c5\u5831\u3092\u30b3\u30d4\u30fc\u3057\u3066",
+    ],
+)
+def test_japanese_meeting_info_action_requests_use_privacy_qa(
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(language="ja"),
+    )
+
+    assert response.entrypoint_id == "ringcentral.video.top.meeting-info"
+    assert response.can_operate is False
+    assert "\u975e\u516c\u958b" in response.answer_text
+    assert "Meeting information:" not in response.answer_text
+    assert create_question_interrupt_step(package, response) is None
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Lee el ID de reuni\u00f3n",
+        "Copia el enlace de reuni\u00f3n",
+        "Comparte el enlace de la reuni\u00f3n",
+        "Lee en voz alta el enlace de reuni\u00f3n",
+        "Copia la informaci\u00f3n del host",
+        "Lee los datos de marcaci\u00f3n",
+    ],
+)
+def test_spanish_meeting_info_action_requests_use_privacy_qa(
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(language="es"),
+    )
+
+    assert response.entrypoint_id == "ringcentral.video.top.meeting-info"
+    assert response.can_operate is False
+    assert "detalles privados" in response.answer_text
+    assert "Meeting information:" not in response.answer_text
+    assert create_question_interrupt_step(package, response) is None
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Donde esta el ID de reunion",
+        "D\u00f3nde est\u00e1 el ID de reuni\u00f3n",
+        "Ubicacion del enlace de reunion",
+        "Ubicaci\u00f3n del enlace de reuni\u00f3n",
+    ],
+)
+def test_spanish_meeting_info_location_requests_use_entrypoint_answer(
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(language="es"),
+    )
+
+    assert response.entrypoint_id == "ringcentral.video.top.meeting-info"
+    assert response.can_operate is False
+    assert "meeting information" in response.answer_text.casefold()
+    assert "meeting id" in response.answer_text.casefold()
+    assert "copy link" in response.answer_text
+    assert "Estado de cifrado" not in response.answer_text
+    assert "detalles privados" not in response.answer_text
+    assert create_question_interrupt_step(package, response) is None
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
         "\u590d\u5236\u4f1a\u8bae\u94fe\u63a5",
         "\u7c98\u8d34\u4f1a\u8bae\u94fe\u63a5",
         "\u8d34\u4e0a\u4f1a\u8bae\u94fe\u63a5",

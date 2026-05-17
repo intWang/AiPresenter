@@ -56,6 +56,18 @@ _PRIVATE_MEETING_INFO_ACTION_TOKENS = {
     "\u8bfb",
     "\u8bfb\u51fa",
     "\u6717\u8bfb",
+    "\u30b3\u30d4\u30fc",
+    "\u5171\u6709",
+    "\u8cbc\u308a\u4ed8\u3051",
+    "\u8aad",
+    "copia",
+    "copiar",
+    "comparte",
+    "compartir",
+    "lee",
+    "leer",
+    "pega",
+    "pegar",
 }
 _PRIVATE_MEETING_INFO_ALIAS_FRAGMENTS = {
     "meeting id",
@@ -70,7 +82,34 @@ _PRIVATE_MEETING_INFO_CONTENT_FRAGMENTS = _PRIVATE_MEETING_INFO_ALIAS_FRAGMENTS 
     "meeting details",
     "meeting information",
     "meeting url",
+    "datos de marcacion",
+    "detalles de la reunion",
+    "detalles de reunion",
+    "enlace de la reunion",
+    "enlace de reunion",
+    "id de la reunion",
+    "id de reunion",
+    "informacion de la reunion",
+    "informacion de reunion",
+    "informacion del host",
+    "url de la reunion",
+    "url de reunion",
+    "\u4f1a\u8b70 id",
+    "\u4f1a\u8b70id",
+    "\u4f1a\u8b70\u30ea\u30f3\u30af",
+    "\u4f1a\u8b70\u60c5\u5831",
+    "\u4f1a\u8b70\u8a73\u7d30",
+    "\u30c0\u30a4\u30e4\u30eb\u30a4\u30f3",
+    "\u30db\u30b9\u30c8",
+    "\u30df\u30fc\u30c6\u30a3\u30f3\u30b0 id",
+    "\u30df\u30fc\u30c6\u30a3\u30f3\u30b0id",
+    "\u30df\u30fc\u30c6\u30a3\u30f3\u30b0\u30ea\u30f3\u30af",
 }
+_PRIVATE_MEETING_INFO_LOCATION_FRAGMENTS = (
+    _PRIVATE_MEETING_INFO_ALIAS_FRAGMENTS
+    | (_PRIVATE_MEETING_INFO_CONTENT_FRAGMENTS - {"host", "\u30db\u30b9\u30c8"})
+    | {"host information", "informacion del host", "\u30db\u30b9\u30c8\u60c5\u5831"}
+)
 _RECORDING_SAFETY_ENTRYPOINT_ID = "ringcentral.video.more.recording"
 _NOTES_TRANSCRIPT_SAFETY_QUESTION = (
     "Where are captions, live transcription, and translation controls?"
@@ -154,6 +193,8 @@ _NOTES_TRANSCRIPT_ACTION_OR_CONTENT_TERMS = (
 _LOCATION_LOOKUP_TERMS = (
     "where",
     "location",
+    "donde",
+    "ubicacion",
     "哪里",
     "哪儿",
     "在哪",
@@ -349,6 +390,8 @@ def _match_qa(package: MaterialPackage, normalized_question: str) -> QuestionAns
     )
     if meeting_info_privacy_match is not None:
         return meeting_info_privacy_match
+    if _is_meeting_info_location_lookup(normalized_question):
+        return None
 
     if _is_entrypoint_title_lookup(package, normalized_question):
         return None
@@ -490,6 +533,12 @@ def _match_entrypoint(package: MaterialPackage, normalized_question: str) -> Ope
     alias_match = _match_entrypoint_alias(package, normalized_question)
     if alias_match is not None:
         return alias_match
+    meeting_info_location_match = _match_meeting_info_location_entrypoint(
+        package,
+        normalized_question,
+    )
+    if meeting_info_location_match is not None:
+        return meeting_info_location_match
 
     query_tokens = _meaningful_tokens(normalized_question)
     if not query_tokens:
@@ -523,6 +572,18 @@ def _match_entrypoint_alias(
         except KeyError:
             return None
     return None
+
+
+def _match_meeting_info_location_entrypoint(
+    package: MaterialPackage,
+    normalized_question: str,
+) -> OperationEntrypoint | None:
+    if not _is_meeting_info_location_lookup(normalized_question):
+        return None
+    try:
+        return package.entrypoint_by_id(_MEETING_INFO_ENTRYPOINT_ID)
+    except KeyError:
+        return None
 
 
 def _match_package_entrypoint_alias(
@@ -599,6 +660,15 @@ def _can_match_qa_fragment(
     if entrypoint_match is None:
         return True
     return entrypoint_match.id in item.related_entrypoint_ids
+
+
+def _is_meeting_info_location_lookup(normalized_question: str) -> bool:
+    return any(
+        term in normalized_question for term in _LOCATION_LOOKUP_TERMS
+    ) and any(
+        fragment in normalized_question
+        for fragment in _PRIVATE_MEETING_INFO_LOCATION_FRAGMENTS
+    )
 
 
 def _contains_cjk(text: str) -> bool:

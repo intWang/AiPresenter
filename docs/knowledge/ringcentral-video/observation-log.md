@@ -38,9 +38,9 @@ This is the append-only place to record what AiPresenter has actually observed a
 
 - Source: `packages/ringcentral-video.yaml`
 - Evidence type: repository package, not live app observation.
-- Known shape: 27 operation entrypoints, 4 demo flows, 51 demo steps, 21 explainers, 16 Q&A items, 223 Q&A question prompts, 171 package-owned question aliases, and manual controls for `say`, `skip`, and `focus`.
+- Known shape: 27 operation entrypoints, 4 demo flows, 51 demo steps, 21 explainers, 16 Q&A items, 224 Q&A question prompts, 171 package-owned question aliases, and manual controls for `say`, `skip`, and `focus`.
 - Alias shape: English aliases cover 4/27 entrypoints with 17 aliases, Chinese aliases cover 15/27 entrypoints with 49 aliases, Japanese aliases cover 13/27 entrypoints with 34 aliases, Spanish aliases cover 26/27 entrypoints with 69 aliases, and French aliases cover 1/27 entrypoints with 2 aliases.
-- French seed note: French package-local coverage is 7/51 demo steps and 2/16 Q&A questions/answers; it is not runtime `--language fr` support or live acceptance.
+- French seed note: French package-local coverage is 7/51 demo steps and 3/16 Q&A questions/answers; it is not runtime `--language fr` support or live acceptance.
 - Change note: English Chat panel aliases now include `open chat`, `show chat`, `where is chat`, and `chat button` so Presenter-meta-prefixed Chat location requests remain explicit RingCentralVideo intents.
 - Limit: this does not prove the local RingCentral build still exposes the same UIA labels, menu order, or coordinates.
 

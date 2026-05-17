@@ -1796,6 +1796,11 @@ qa:
     - Mute all participants
     - Remove a participant
     - Lock the meeting
+    - Unlock the meeting
+    - Change meeting security
+    - Where are security settings?
+    - Open meeting security settings
+    - Meeting security settings
     es:
     - ¿Dónde están los controles de host para participantes?
     ja:

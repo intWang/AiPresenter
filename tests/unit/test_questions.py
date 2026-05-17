@@ -1051,6 +1051,11 @@ def test_ringcentral_participant_identity_requests_stay_answer_only(
         "Mute all participants",
         "Remove a participant",
         "Lock the meeting",
+        "Unlock the meeting",
+        "Change meeting security",
+        "Where are security settings?",
+        "Open meeting security settings",
+        "Meeting security settings",
     ],
 )
 def test_ringcentral_participant_host_action_requests_stay_answer_only(
@@ -1070,9 +1075,11 @@ def test_ringcentral_participant_host_action_requests_stay_answer_only(
     assert create_question_interrupt_step(package, response) is None
     assert "Do not mute others" in response.answer_text
     assert "lock the meeting" in response.answer_text
+    assert "change security settings" in response.answer_text
     assert "explicitly asks" in response.answer_text
     assert "verified" in response.answer_text
     assert "Participants panel:" not in response.answer_text
+    assert "Background settings:" not in response.answer_text
     assert "I could not find a matching control" not in response.answer_text
 
 

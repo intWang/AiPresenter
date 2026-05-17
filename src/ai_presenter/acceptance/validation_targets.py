@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from dataclasses import replace
 from pathlib import Path
 from types import MappingProxyType
+from typing import Literal
 
 from ai_presenter.packages.models import MaterialPackage
 
@@ -34,6 +35,7 @@ _EVIDENCE_CAPTURE_NOTE = (
     "content before recording results."
 )
 _ALLOWED_EVIDENCE_LEVELS = ("Accepted", "Observed", "Repo-tested", "Backlog", "Blocked")
+AcceptanceSource = Literal["absent", "explicit", "auto-discovered"]
 _ACCEPTANCE_FIELD_RE = re.compile(r"^-\s*([^:]+):\s*(.*)$")
 _DATED_MANUAL_ACCEPTANCE_HEADING_RE = re.compile(
     r"^\d{4}-\d{2}-\d{2}\b.*manual ringcentral acceptance",
@@ -65,6 +67,8 @@ class ValidationTargetCatalog:
     evidence_path: Path | None
     targets: tuple[ValidationTarget, ...]
     targets_by_id: Mapping[str, ValidationTarget]
+    acceptance_path: Path | None = None
+    acceptance_source: AcceptanceSource = "absent"
 
 
 @dataclass(frozen=True)
@@ -84,6 +88,8 @@ def discover_validation_targets(
     evidence_text: str | None = None,
     evidence_path: Path | None = None,
     acceptance_text: str | None = None,
+    acceptance_path: Path | None = None,
+    acceptance_source: AcceptanceSource = "absent",
     include_blocked: bool = False,
 ) -> ValidationTargetCatalog:
     if evidence_text and evidence_text.strip():
@@ -119,6 +125,8 @@ def discover_validation_targets(
         evidence_path=evidence_path,
         targets=target_tuple,
         targets_by_id=MappingProxyType({target.id: target for target in target_tuple}),
+        acceptance_path=acceptance_path,
+        acceptance_source=acceptance_source,
     )
 
 
@@ -180,6 +188,7 @@ def render_validation_target_lines(
         f"Package: {catalog.package_id}",
         f"Checklist: {_display_path(catalog.checklist_path)}",
         f"Evidence: {_display_path(catalog.evidence_path) if catalog.evidence_path else 'none'}",
+        f"Acceptance runs: {_format_acceptance_source(catalog)}",
         f"Note: {_NON_EVIDENCE_NOTE}",
     ]
     if _should_render_evidence_capture_note(catalog, selected_targets):
@@ -209,6 +218,12 @@ def _should_render_evidence_capture_note(
         target.blocked_reason is None and target.priority.casefold() in {"p0", "p1"}
         for target in selected_targets
     )
+
+
+def _format_acceptance_source(catalog: ValidationTargetCatalog) -> str:
+    if catalog.acceptance_path is None:
+        return "none (absent)"
+    return f"{_display_path(catalog.acceptance_path)} ({catalog.acceptance_source})"
 
 
 def _filter_targets(

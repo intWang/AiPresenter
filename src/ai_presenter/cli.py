@@ -5,6 +5,7 @@ import typer
 
 from ai_presenter.acceptance.manual_record import AcceptanceDraftRequest
 from ai_presenter.acceptance.manual_record import render_manual_acceptance_draft
+from ai_presenter.acceptance.validation_targets import AcceptanceSource
 from ai_presenter.acceptance.validation_targets import discover_validation_targets
 from ai_presenter.acceptance.validation_targets import render_validation_target_lines
 from ai_presenter.config.loader import load_profile
@@ -371,15 +372,22 @@ def validation_targets(
         checklist_text = checklist.read_text(encoding="utf-8")
         evidence_text = evidence.read_text(encoding="utf-8")
         acceptance_text: str | None
+        acceptance_path: Path | None
+        acceptance_source: AcceptanceSource = "absent"
         if acceptance_runs is not None:
             acceptance_text = acceptance_runs.read_text(encoding="utf-8")
+            acceptance_path = acceptance_runs
+            acceptance_source = "explicit"
         else:
-            acceptance_path = evidence.parent / DEFAULT_ACCEPTANCE_RUNS_NAME
+            implicit_acceptance_path = evidence.parent / DEFAULT_ACCEPTANCE_RUNS_NAME
             acceptance_text = (
-                acceptance_path.read_text(encoding="utf-8")
-                if acceptance_path.is_file()
+                implicit_acceptance_path.read_text(encoding="utf-8")
+                if implicit_acceptance_path.is_file()
                 else None
             )
+            acceptance_path = implicit_acceptance_path if acceptance_text is not None else None
+            if acceptance_path is not None:
+                acceptance_source = "auto-discovered"
         catalog = discover_validation_targets(
             loaded_package,
             checklist_text=checklist_text,
@@ -387,6 +395,8 @@ def validation_targets(
             evidence_text=evidence_text,
             evidence_path=evidence,
             acceptance_text=acceptance_text,
+            acceptance_path=acceptance_path,
+            acceptance_source=acceptance_source,
             include_blocked=include_blocked,
         )
         lines = render_validation_target_lines(catalog, priority=priority, target_id=target)

@@ -45,6 +45,7 @@ def discover_catalog(
     checklist_text: str | None = None,
     evidence_text: str | None = None,
     acceptance_text: str | None = None,
+    acceptance_path: Path | None = None,
     include_blocked: bool = False,
 ) -> ValidationTargetCatalog:
     return discover_validation_targets(
@@ -54,6 +55,8 @@ def discover_catalog(
         evidence_text=evidence_text if evidence_text is not None else load_evidence_text(),
         evidence_path=Path("docs/knowledge/ringcentral-video/evidence-index.md"),
         acceptance_text=acceptance_text,
+        acceptance_path=acceptance_path,
+        acceptance_source="auto-discovered" if acceptance_path else "absent",
         include_blocked=include_blocked,
     )
 
@@ -495,7 +498,11 @@ def test_render_validation_target_lines_suppresses_blocked_draft_command() -> No
 
 
 def test_render_validation_target_lines_keeps_normal_draft_command() -> None:
-    catalog = discover_catalog()
+    acceptance_path = Path("docs/knowledge/ringcentral-video/acceptance-runs.md")
+    catalog = discover_catalog(
+        acceptance_text=load_acceptance_text(),
+        acceptance_path=acceptance_path,
+    )
 
     text = "\n".join(render_validation_target_lines(catalog, target_id="rcv-add-coworkers-modal"))
     checklist_path = Path("docs/knowledge/ringcentral-video/validation-checklist-index.md")
@@ -503,6 +510,7 @@ def test_render_validation_target_lines_keeps_normal_draft_command() -> None:
 
     assert f"Checklist: {checklist_path}" in text
     assert f"Evidence: {evidence_path}" in text
+    assert f"Acceptance runs: {acceptance_path} (auto-discovered)" in text
     assert "repo-derived planning list only; not live acceptance evidence" in text
     assert text.count(VALIDATION_TARGETS_EVIDENCE_REMINDER) == 1
     assert text.index(VALIDATION_TARGETS_EVIDENCE_REMINDER) < text.index("draft:")
@@ -621,6 +629,7 @@ def test_render_validation_target_lines_marks_missing_evidence_source_as_none() 
 
     assert "Checklist: docs" in text
     assert "Evidence: none" in text
+    assert "Acceptance runs: none (absent)" in text
     assert "repo-derived planning list only; not live acceptance evidence" in text
     assert "rcv-add-coworkers-modal" in text
     assert "entrypoints: ringcentral.video.main.add-coworkers" in text

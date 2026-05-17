@@ -36,6 +36,11 @@ VALIDATION_TARGETS_CHECKLIST_SOURCE = (
 VALIDATION_TARGETS_EVIDENCE_SOURCE = (
     "Evidence: " + str(Path("docs/knowledge/ringcentral-video/evidence-index.md"))
 )
+VALIDATION_TARGETS_ACCEPTANCE_SOURCE = (
+    "Acceptance runs: "
+    + str(Path("docs/knowledge/ringcentral-video/acceptance-runs.md"))
+    + " (auto-discovered)"
+)
 
 
 def assert_acceptance_draft_boundary(text: str) -> None:
@@ -1302,6 +1307,7 @@ def test_validation_targets_lists_ringcentral_targets() -> None:
     assert "Package: ringcentral-video" in result.stdout
     assert VALIDATION_TARGETS_CHECKLIST_SOURCE in result.stdout
     assert VALIDATION_TARGETS_EVIDENCE_SOURCE in result.stdout
+    assert VALIDATION_TARGETS_ACCEPTANCE_SOURCE in result.stdout
     assert VALIDATION_TARGETS_NON_EVIDENCE_NOTE in result.stdout
     assert result.stdout.count(VALIDATION_TARGETS_EVIDENCE_REMINDER) == 1
     assert "rcv-add-coworkers-modal" in result.stdout
@@ -1529,7 +1535,11 @@ def test_validation_targets_accepts_backed_accepted_evidence(
     )
 
     assert result.exit_code == 0
+    assert f"Acceptance runs: {acceptance_path} (explicit)" in result.stdout
     assert "ringcentral.video.toolbar.chat=Accepted" in result.stdout
+    assert "Steps executed" not in result.stdout
+    assert "Promotion rationale" not in result.stdout
+    assert "Privacy notes" not in result.stdout
 
 
 def test_validation_targets_rejects_missing_explicit_acceptance_runs(

@@ -1556,6 +1556,11 @@ def test_doctor_loads_profile_package_and_flow(monkeypatch: pytest.MonkeyPatch) 
         "11 Q&A question prompts contain package-owned alias substrings outside "
         "related entrypoints"
     ) in result.stdout
+    assert "[OK] question policy:" in result.stdout
+    assert (
+        "2/27 entrypoints use answerOnly question policy: "
+        "ringcentral.video.top.meeting-info, ringcentral.video.more.notes"
+    ) in result.stdout
     assert "[OK] explainer coverage" in result.stdout
     assert "[OK] demo flow: meeting-control-map-demo" in result.stdout
     assert "[OK] presenter context" in result.stdout

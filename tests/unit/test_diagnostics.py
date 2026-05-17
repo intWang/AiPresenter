@@ -695,6 +695,37 @@ def test_diagnostics_reports_qa_alias_substring_info_for_ringcentral_package() -
     assert "Q&A-first matching still applies" in substring_check.detail
 
 
+def test_diagnostics_reports_question_policy_for_ringcentral_package() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    report = diagnostics.diagnose_configuration(
+        profile=profile,
+        material_package=package,
+    )
+
+    policy_check = next(check for check in report.checks if check.name == "question policy")
+    assert policy_check.status == "OK"
+    assert policy_check.detail == (
+        "2/27 entrypoints use answerOnly question policy: "
+        "ringcentral.video.top.meeting-info, ringcentral.video.more.notes"
+    )
+
+
+def test_diagnostics_reports_no_answer_only_question_policy() -> None:
+    profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
+    package = _alias_package(("demo.chat", {"en": ["chat"]}))
+
+    report = diagnostics.diagnose_configuration(
+        profile=profile,
+        material_package=package,
+    )
+
+    policy_check = next(check for check in report.checks if check.name == "question policy")
+    assert policy_check.status == "OK"
+    assert policy_check.detail == "0/1 entrypoints use answerOnly question policy"
+
+
 def test_diagnostics_warns_for_duplicate_qa_questions() -> None:
     profile = load_profile(Path("profiles/ringcentral-video-bind-speaker.yaml"))
     package = _qa_package(

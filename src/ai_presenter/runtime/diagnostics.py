@@ -262,6 +262,7 @@ def _diagnose_material_package(
     checks.append(_diagnose_qa_questions(material_package, index))
     checks.append(_diagnose_qa_alias_overlaps(material_package, index))
     checks.append(_diagnose_qa_alias_substring_risks(material_package, index))
+    checks.append(_diagnose_question_policy_coverage(material_package))
     checks.append(_diagnose_explainer_coverage(material_package))
 
     if flow_id is not None:
@@ -385,6 +386,19 @@ def _diagnose_explainer_coverage(material_package: MaterialPackage) -> Diagnosti
         "explainer coverage",
         f"{len(entrypoint_ids)}/{len(entrypoint_ids)} entrypoints covered",
     )
+
+
+def _diagnose_question_policy_coverage(material_package: MaterialPackage) -> DiagnosticCheck:
+    answer_only_ids = [
+        entrypoint.id
+        for entrypoint in material_package.operation_entrypoints
+        if entrypoint.question_policy == "answerOnly"
+    ]
+    total = len(material_package.operation_entrypoints)
+    detail = f"{len(answer_only_ids)}/{total} entrypoints use answerOnly question policy"
+    if answer_only_ids:
+        detail = f"{detail}: {', '.join(answer_only_ids)}"
+    return DiagnosticCheck("OK", "question policy", detail)
 
 
 def _diagnose_question_aliases(

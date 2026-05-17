@@ -127,6 +127,7 @@ Current expected package signals as of 2026-05-17:
 - Q&A items: 16.
 - Q&A question prompts: 220.
 - Package-owned aliases: 169.
+- Answer-only question-policy entrypoints: 2 (`ringcentral.video.top.meeting-info`, `ringcentral.video.more.notes`).
 - English aliases: 4/27 entrypoints, 17 aliases.
 - Chinese aliases: 15/27 entrypoints, 49 aliases.
 - Japanese aliases: 13/27 entrypoints, 34 aliases.
@@ -135,8 +136,9 @@ Current expected package signals as of 2026-05-17:
 - Spanish is runtime-selectable only with OpenAI-backed speech. Its localization
   is complete, but local SAPI/Piper routes and live RingCentral acceptance are
   still out of scope.
-- `doctor` may report one INFO-level Q&A alias substring risk summary covering
-  11 prompts; this is expected until the package design changes.
+- `doctor` reports one OK-level answer-only question-policy summary covering
+  2 entrypoints and may report one INFO-level Q&A alias substring risk summary
+  covering 11 prompts; this is expected until the package design changes.
 
 ## Verification Commands
 

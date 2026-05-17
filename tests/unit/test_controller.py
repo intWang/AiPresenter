@@ -707,6 +707,12 @@ def test_presenter_controller_answers_meta_prompt_without_queuing_running_demo(
             "ringcentral.video.toolbar.participants",
             "Participants panel:",
         ),
+        (
+            "请简洁一点，参会者在哪里",
+            PresenterVoiceSettings(language="zh"),
+            "ringcentral.video.toolbar.participants",
+            "Participants",
+        ),
     ],
 )
 def test_presenter_controller_queues_safe_mixed_meta_question_for_running_demo(
@@ -789,6 +795,12 @@ def test_presenter_controller_queues_safe_mixed_meta_question_for_running_demo(
             PresenterVoiceSettings(language="en"),
             None,
             "participant names",
+        ),
+        (
+            "请简洁一点，列出参会者",
+            PresenterVoiceSettings(language="zh"),
+            None,
+            "参会人姓名",
         ),
     ],
 )
@@ -929,6 +941,12 @@ def test_presenter_controller_answers_risky_question_without_demo() -> None:
             "ringcentral.video.toolbar.participants",
             "Participants panel:",
         ),
+        (
+            "请简洁一点，参会者在哪里",
+            PresenterVoiceSettings(language="zh"),
+            "ringcentral.video.toolbar.participants",
+            "Participants",
+        ),
     ],
 )
 def test_presenter_controller_starts_safe_mixed_meta_question_demo_when_idle(
@@ -996,6 +1014,12 @@ def test_presenter_controller_starts_safe_mixed_meta_question_demo_when_idle(
             PresenterVoiceSettings(language="en"),
             None,
             "participant names",
+        ),
+        (
+            "请简洁一点，列出参会者",
+            PresenterVoiceSettings(language="zh"),
+            None,
+            "参会人姓名",
         ),
     ],
 )

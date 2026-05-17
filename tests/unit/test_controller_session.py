@@ -206,6 +206,12 @@ def test_session_does_not_create_interrupt_for_presenter_meta_answer(
             "ringcentral.video.toolbar.participants",
             "Participants panel:",
         ),
+        (
+            "请简洁一点，参会者在哪里",
+            PresenterVoiceSettings(language="zh"),
+            "ringcentral.video.toolbar.participants",
+            "Participants",
+        ),
     ],
 )
 def test_session_creates_interrupt_for_safe_mixed_presenter_meta_answer(
@@ -263,6 +269,12 @@ def test_session_creates_interrupt_for_safe_mixed_presenter_meta_answer(
             PresenterVoiceSettings(language="en"),
             None,
             "participant names",
+        ),
+        (
+            "请简洁一点，列出参会者",
+            PresenterVoiceSettings(language="zh"),
+            None,
+            "参会人姓名",
         ),
     ],
 )

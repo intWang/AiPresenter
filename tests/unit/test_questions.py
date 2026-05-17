@@ -1556,22 +1556,157 @@ def test_ringcentral_participant_identity_requests_stay_answer_only(
 
 
 @pytest.mark.parametrize(
+    ("question", "voice", "expected_fragments"),
+    [
+        (
+            "\u5217\u51fa\u53c2\u4f1a\u8005",
+            PresenterVoiceSettings(language="zh"),
+            (
+                "\u53c2\u4f1a\u4eba\u59d3\u540d",
+                "\u89d2\u8272",
+                "\u79c1\u4eba\u6807\u7b7e\u9875",
+            ),
+        ),
+        (
+            "\u8c01\u5728\u4f1a\u8bae\u91cc",
+            PresenterVoiceSettings(language="zh"),
+            (
+                "\u53c2\u4f1a\u4eba\u59d3\u540d",
+                "\u89d2\u8272",
+                "\u79c1\u4eba\u6807\u7b7e\u9875",
+            ),
+        ),
+        (
+            "\u8bfb\u53c2\u4f1a\u4eba\u540d\u5b57",
+            PresenterVoiceSettings(language="zh"),
+            (
+                "\u53c2\u4f1a\u4eba\u59d3\u540d",
+                "\u89d2\u8272",
+                "\u79c1\u4eba\u6807\u7b7e\u9875",
+            ),
+        ),
+        (
+            "\u8c01\u662f\u4e3b\u6301\u4eba\u6216\u534f\u7ba1\u5458",
+            PresenterVoiceSettings(language="zh"),
+            (
+                "\u53c2\u4f1a\u4eba\u59d3\u540d",
+                "\u89d2\u8272",
+                "\u79c1\u4eba\u6807\u7b7e\u9875",
+            ),
+        ),
+        (
+            "\u53c2\u52a0\u8005\u540d\u3092\u8aad\u3093\u3067",
+            PresenterVoiceSettings(language="ja"),
+            (
+                "\u53c2\u52a0\u8005\u540d",
+                "\u5f79\u5272",
+                "\u975e\u516c\u958b\u30bf\u30d6",
+            ),
+        ),
+        (
+            "\u53c2\u52a0\u8005\u306e\u540d\u524d\u3092\u6559\u3048\u3066",
+            PresenterVoiceSettings(language="ja"),
+            (
+                "\u53c2\u52a0\u8005\u540d",
+                "\u5f79\u5272",
+                "\u975e\u516c\u958b\u30bf\u30d6",
+            ),
+        ),
+        (
+            "\u53c2\u52a0\u8005\u4e00\u89a7\u306b\u8ab0\u304c\u3044\u307e\u3059\u304b",
+            PresenterVoiceSettings(language="ja"),
+            (
+                "\u53c2\u52a0\u8005\u540d",
+                "\u5f79\u5272",
+                "\u975e\u516c\u958b\u30bf\u30d6",
+            ),
+        ),
+        (
+            "\u30db\u30b9\u30c8\u307e\u305f\u306f\u30e2\u30c7\u30ec\u30fc\u30bf\u30fc\u306f\u8ab0\u3067\u3059\u304b",
+            PresenterVoiceSettings(language="ja"),
+            (
+                "\u53c2\u52a0\u8005\u540d",
+                "\u5f79\u5272",
+                "\u975e\u516c\u958b\u30bf\u30d6",
+            ),
+        ),
+        (
+            "Muestrame los participantes",
+            PresenterVoiceSettings(language="es"),
+            ("nombres", "roles", "privadas"),
+        ),
+        (
+            "Lista los participantes",
+            PresenterVoiceSettings(language="es"),
+            ("nombres", "roles", "privadas"),
+        ),
+        (
+            "Muestrame el panel de participantes con nombres",
+            PresenterVoiceSettings(language="es"),
+            ("nombres", "roles", "privadas"),
+        ),
+        (
+            "Quien esta en la reunion?",
+            PresenterVoiceSettings(language="es"),
+            ("nombres", "roles", "privadas"),
+        ),
+        (
+            "Quien es host o moderador?",
+            PresenterVoiceSettings(language="es"),
+            ("nombres", "roles", "privadas"),
+        ),
+    ],
+)
+def test_localized_participant_identity_requests_stay_answer_only(
+    question: str,
+    voice: PresenterVoiceSettings,
+    expected_fragments: tuple[str, ...],
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=voice,
+    )
+
+    assert response.entrypoint_id is None
+    assert response.entrypoint_id != "ringcentral.video.toolbar.participants"
+    assert response.can_operate is False
+    assert create_question_interrupt_step(package, response) is None
+    for fragment in expected_fragments:
+        assert fragment in response.answer_text
+    assert "Participants panel:" not in response.answer_text
+    assert "I could not find a matching control" not in response.answer_text
+
+
+@pytest.mark.parametrize(
     "question",
     [
         "Please be brief and show participants panel",
         "Please be brief and open participants panel",
         "Please be brief and where is participants panel",
         "\u8bf7\u7b80\u6d01\u4e00\u70b9\uff0c\u53c2\u4f1a\u8005\u5728\u54ea\u91cc",
+        "\u53c2\u4f1a\u4eba\u5217\u8868\u5728\u54ea\u91cc",
+        "\u6253\u5f00\u53c2\u4f1a\u4eba\u5217\u8868",
+        "\u53c2\u52a0\u8005\u4e00\u89a7\u306f\u3069\u3053\u3067\u3059\u304b",
+        "\u53c2\u52a0\u8005\u30d1\u30cd\u30eb\u3092\u958b\u3044\u3066",
+        "Muestrame el panel de participantes",
+        "Donde esta la lista de participantes?",
     ],
 )
 def test_participants_panel_location_requests_stay_operable_with_meta(
     question: str,
 ) -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
-    voice = (
-        PresenterVoiceSettings(language="zh")
+    voice = PresenterVoiceSettings(
+        language="ja"
+        if "\u53c2\u52a0" in question
+        else "zh"
         if any(ord(char) > 127 for char in question)
-        else PresenterVoiceSettings()
+        else "es"
+        if "participantes" in question.lower()
+        else "en"
     )
 
     response = answer_question(
@@ -1583,9 +1718,10 @@ def test_participants_panel_location_requests_stay_operable_with_meta(
     assert response.entrypoint_id == "ringcentral.video.toolbar.participants"
     assert response.can_operate is True
     assert create_question_interrupt_step(package, response) is not None
-    assert "Participants panel:" in response.answer_text
+    assert ":" in response.answer_text
     assert not response.answer_text.startswith("Presenter settings:")
     assert "participant names" not in response.answer_text
+    assert "nombres" not in response.answer_text
     assert "private tabs" not in response.answer_text
 
 
@@ -2577,7 +2713,6 @@ def test_ringcentral_chinese_questions_match_package_aliases_without_legacy_tabl
     monkeypatch.setattr(questions_module, "_ENTRYPOINT_ALIASES", {})
 
     expected = {
-        "谁在会议里": "ringcentral.video.toolbar.participants",
         "换麦克风": "ringcentral.video.toolbar.audio-menu",
         "换摄像头": "ringcentral.video.toolbar.video-menu",
         "网络质量": "ringcentral.video.top.network-quality",
@@ -2599,6 +2734,16 @@ def test_ringcentral_chinese_questions_match_package_aliases_without_legacy_tabl
         if entrypoint_id == "ringcentral.video.more.notes":
             assert response.can_operate is False
             assert create_question_interrupt_step(package, response) is None
+
+    participant_identity_response = answer_question(
+        package=package,
+        question="谁在会议里",
+        voice=PresenterVoiceSettings(language="zh"),
+    )
+    assert participant_identity_response.entrypoint_id is None
+    assert participant_identity_response.can_operate is False
+    assert create_question_interrupt_step(package, participant_identity_response) is None
+    assert "参会人姓名" in participant_identity_response.answer_text
 
 
 def test_ringcentral_japanese_meeting_control_questions_match_package_aliases_without_legacy_table(
@@ -2956,7 +3101,7 @@ def test_ringcentral_spanish_unseeded_entrypoint_keeps_alias_label_fallback() ->
     ("question", "language"),
     [
         ("panel de participantes", "en"),
-        ("\u8c01\u5728\u4f1a\u8bae\u91cc", "zh"),
+        ("\u53c2\u4f1a\u8005\u5728\u54ea\u91cc", "zh"),
         ("\u53c2\u52a0\u8005\u4e00\u89a7\u306f\u3069\u3053\u3067\u3059\u304b", "ja"),
     ],
 )

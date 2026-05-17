@@ -575,6 +575,111 @@ def test_presenter_controller_starts_spanish_openai_question_demo_when_idle() ->
     ]
 
 
+@pytest.mark.parametrize(
+    ("question", "voice"),
+    [
+        ("Please be brief", PresenterVoiceSettings(language="en")),
+        ("\u8bf7\u7528\u4e2d\u6587\u56de\u7b54", PresenterVoiceSettings(language="zh")),
+    ],
+)
+def test_presenter_controller_answers_meta_prompt_without_question_demo_when_idle(
+    question: str,
+    voice: PresenterVoiceSettings,
+) -> None:
+    profile, package = _controller_inputs()
+    control = DemoControl()
+    calls: list[str] = []
+
+    def runner(
+        _profile: DesktopAppProfile,
+        _package: MaterialPackage,
+        captured_flow_id: str,
+        *,
+        control: DemoControl,
+        voice: PresenterVoiceSettings | None = None,
+    ) -> None:
+        calls.append(captured_flow_id)
+
+    controller = PresenterController(
+        profile=profile,
+        material_package=package,
+        flow_id="meeting-control-map-demo",
+        control=control,
+        runner=runner,
+        voice=voice,
+    )
+
+    result = controller.submit_question(question)
+    controller.join(timeout=1)
+
+    assert result.demonstration_status == "text_only"
+    assert result.demonstration_message == ""
+    assert result.entrypoint_id is None
+    assert result.can_operate is False
+    assert result.answer_text.startswith("Presenter settings:")
+    assert controller.is_running is False
+    assert controller.last_error is None
+    assert calls == []
+    assert control.pop_interrupt() is None
+    assert control.is_stop_requested is False
+
+
+@pytest.mark.parametrize(
+    ("question", "voice"),
+    [
+        ("Please be brief", PresenterVoiceSettings(language="en")),
+        ("\u8bf7\u7528\u4e2d\u6587\u56de\u7b54", PresenterVoiceSettings(language="zh")),
+    ],
+)
+def test_presenter_controller_answers_meta_prompt_without_queuing_running_demo(
+    question: str,
+    voice: PresenterVoiceSettings,
+) -> None:
+    profile, package = _controller_inputs()
+    control = DemoControl()
+    started = threading.Event()
+    release = threading.Event()
+    calls: list[str] = []
+
+    def runner(
+        _profile: DesktopAppProfile,
+        _package: MaterialPackage,
+        captured_flow_id: str,
+        *,
+        control: DemoControl,
+        voice: PresenterVoiceSettings | None = None,
+    ) -> None:
+        calls.append(captured_flow_id)
+        started.set()
+        release.wait(timeout=1)
+
+    controller = PresenterController(
+        profile=profile,
+        material_package=package,
+        flow_id="meeting-control-map-demo",
+        control=control,
+        runner=runner,
+    )
+
+    controller.start()
+    assert started.wait(timeout=1)
+    controller.set_voice(voice)
+
+    result = controller.submit_question(question)
+    release.set()
+    controller.join(timeout=1)
+
+    assert result.demonstration_status == "text_only"
+    assert result.demonstration_message == ""
+    assert result.entrypoint_id is None
+    assert result.can_operate is False
+    assert result.answer_text.startswith("Presenter settings:")
+    assert control.pop_interrupt() is None
+    assert control.is_stop_requested is False
+    assert calls == ["meeting-control-map-demo"]
+    assert "question-answer-demo" not in calls
+
+
 def test_presenter_controller_starts_safe_question_demo_with_indexed_flow_lookup() -> None:
     profile, package = _controller_inputs()
     calls: list[str] = []

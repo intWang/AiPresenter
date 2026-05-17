@@ -149,6 +149,36 @@ def test_session_does_not_create_interrupt_for_risky_answer() -> None:
     assert session.create_interrupt_step(response) is None
 
 
+@pytest.mark.parametrize(
+    ("question", "voice"),
+    [
+        ("Please be brief", PresenterVoiceSettings(language="en")),
+        ("\u8bf7\u7528\u4e2d\u6587\u56de\u7b54", PresenterVoiceSettings(language="zh")),
+    ],
+)
+def test_session_does_not_create_interrupt_for_presenter_meta_answer(
+    question: str,
+    voice: PresenterVoiceSettings,
+) -> None:
+    session = ControllerSession()
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    session.select_target(
+        MaterialPackageTarget(
+            profile=load_desktop_profile(),
+            package=package,
+            flow_id="meeting-control-map-demo",
+        )
+    )
+    session.set_voice(voice)
+
+    response = session.answer_question(question)
+
+    assert response.entrypoint_id is None
+    assert response.can_operate is False
+    assert response.answer_text.startswith("Presenter settings:")
+    assert session.create_interrupt_step(response) is None
+
+
 def test_session_does_not_create_interrupt_for_notes_question_policy() -> None:
     session = ControllerSession()
     package = load_material_package(Path("packages/ringcentral-video.yaml"))

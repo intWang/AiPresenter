@@ -39,7 +39,16 @@ _RISKY_ENTRYPOINT_WORDS = {
     "unmute",
 }
 _GENERIC_ENTRYPOINT_TOKENS = {"people"}
-_BROAD_QA_FRAGMENT_TOKENS = {"secure", "security", "status", "verify"}
+_BROAD_QA_FRAGMENT_TOKENS = {
+    "secure",
+    "security",
+    "status",
+    "verify",
+    "\u5b89\u5168",
+    "\u72b6\u6001",
+    "\u786e\u8ba4",
+    "\u9690\u79c1",
+}
 _MEETING_INFO_ENTRYPOINT_ID = "ringcentral.video.top.meeting-info"
 _MEETING_INFO_PRIVACY_QUESTION = (
     "How should AiPresenter handle meeting IDs and links safely?"
@@ -251,6 +260,25 @@ _PRESENTER_META_REQUEST_FRAGMENTS = (
     "speak japanese",
     "speak spanish",
     "support tone",
+    "\u53ef\u4ee5\u7528\u4e2d\u6587\u8bf4\u5417",
+    "\u80fd\u7528\u4e2d\u6587\u8bf4\u5417",
+    "\u6211\u662f\u521d\u5b66\u8005",
+    "\u6211\u662f\u65b0\u624b",
+    "\u7528\u4e2d\u6587\u56de\u7b54",
+    "\u7528\u53cb\u597d\u7684\u8bed\u6c14\u56de\u7b54",
+    "\u7528\u8c28\u614e\u7684\u8bed\u6c14\u56de\u7b54",
+    "\u8bf7\u8bb2\u4e2d\u6587",
+    "\u8bf7\u8bb2\u6162\u4e00\u70b9",
+    "\u8bf7\u8bb2\u7b80\u5355\u4e00\u70b9",
+    "\u8bf7\u8bf4\u4e2d\u6587",
+    "\u8bf7\u8bf4\u6162\u4e00\u70b9",
+    "\u8bf7\u7528\u4e2d\u6587\u56de\u7b54",
+    "\u8bf7\u7528\u66f4\u53cb\u597d\u7684\u8bed\u6c14\u56de\u7b54",
+    "\u8bf7\u7528\u8c28\u614e\u7684\u8bed\u6c14\u56de\u7b54",
+    "\u8bf7\u7b80\u6d01\u4e00\u70b9",
+    "\u89e3\u91ca\u6162\u4e00\u70b9",
+    "\u4ece\u57fa\u7840\u8bb2\u8d77",
+    "\u56de\u7b54\u7b80\u6d01\u4e00\u70b9",
 )
 _ENTRYPOINT_ALIASES: dict[str, tuple[str, ...]] = {
     "ringcentral.video.toolbar.chat": (
@@ -471,6 +499,9 @@ def _match_qa(package: MaterialPackage, normalized_question: str) -> QuestionAns
     )
     if meeting_info_privacy_match is not None:
         return meeting_info_privacy_match
+    contained_match = _match_contained_qa_question(package, normalized_question)
+    if contained_match is not None:
+        return contained_match
     if _is_meeting_info_location_lookup(normalized_question):
         return None
 
@@ -504,6 +535,20 @@ def _match_qa(package: MaterialPackage, normalized_question: str) -> QuestionAns
             best_score = score
     if best_score >= 2:
         return best_match
+    return None
+
+
+def _match_contained_qa_question(
+    package: MaterialPackage,
+    normalized_question: str,
+) -> QuestionAnswer | None:
+    for candidate in package.qa_question_candidates:
+        if (
+            candidate.normalized_question in normalized_question
+            and candidate.normalized_question != normalized_question
+            and _is_specific_question_fragment(candidate.normalized_question)
+        ):
+            return candidate.item
     return None
 
 

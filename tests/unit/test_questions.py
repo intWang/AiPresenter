@@ -743,6 +743,36 @@ def test_presenter_meta_requests_do_not_route_to_ringcentral_controls(
 
 
 @pytest.mark.parametrize(
+    "question",
+    [
+        "\u8bf7\u7528\u4e2d\u6587\u56de\u7b54",
+        "\u53ef\u4ee5\u7528\u4e2d\u6587\u8bf4\u5417",
+        "\u8bf7\u7b80\u6d01\u4e00\u70b9",
+        "\u8bf7\u8bb2\u6162\u4e00\u70b9",
+        "\u8bf7\u7528\u66f4\u53cb\u597d\u7684\u8bed\u6c14\u56de\u7b54",
+        "\u6211\u662f\u65b0\u624b\uff0c\u8bf7\u8bb2\u7b80\u5355\u4e00\u70b9",
+    ],
+)
+def test_chinese_presenter_meta_requests_do_not_route_to_ringcentral_controls(
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(language="zh"),
+    )
+
+    assert response.entrypoint_id is None
+    assert response.can_operate is False
+    assert create_question_interrupt_step(package, response) is None
+    assert response.answer_text.startswith("Presenter settings:")
+    assert "matching control" not in response.answer_text
+    assert "Meeting information:" not in response.answer_text
+
+
+@pytest.mark.parametrize(
     (
         "question",
         "expected_entrypoint_id",
@@ -809,6 +839,144 @@ def test_presenter_meta_modifiers_do_not_steal_ringcentral_intents(
         expected_interrupt
     )
     assert expected_answer in response.answer_text
+    assert not response.answer_text.startswith("Presenter settings:")
+
+
+@pytest.mark.parametrize(
+    (
+        "question",
+        "expected_entrypoint_id",
+        "expected_can_operate",
+        "expected_interrupt",
+        "expected_answer",
+        "unexpected_answer",
+    ),
+    [
+        (
+            "\u8bf7\u7b80\u6d01\u4e00\u70b9\uff0c\u590d\u5236\u4f1a\u8bae\u94fe\u63a5",
+            "ringcentral.video.top.meeting-info",
+            False,
+            False,
+            "\u79c1\u4eba\u4f1a\u8bae\u8be6\u60c5",
+            "Meeting information:",
+        ),
+        (
+            (
+                "\u8bf7\u7528\u8c28\u614e\u7684\u8bed\u6c14\u56de\u7b54\uff0c"
+                "\u4f1a\u8bae\u4fe1\u606f\u91cc\u80fd\u770b\u5230\u52a0\u5bc6"
+                "\u72b6\u6001\u5417"
+            ),
+            "ringcentral.video.top.meeting-info",
+            False,
+            False,
+            "\u52a0\u5bc6\u72b6\u6001",
+            "Meeting information:",
+        ),
+        (
+            (
+                "\u6211\u662f\u65b0\u624b\uff0c\u4e3b\u6301\u4eba\u600e\u4e48"
+                "\u7ba1\u7406\u53c2\u4f1a\u8005"
+            ),
+            None,
+            False,
+            False,
+            "\u660e\u786e\u8981\u6c42",
+            "Presenter settings:",
+        ),
+        (
+            "\u8bf7\u8bb2\u6162\u4e00\u70b9\uff0c\u5f00\u59cb\u4f1a\u8bae\u7b14\u8bb0",
+            None,
+            False,
+            False,
+            "\u4e0d\u8981\u81ea\u52a8\u5f00\u542f",
+            "Presenter settings:",
+        ),
+        (
+            "\u8bf7\u7528\u4e2d\u6587\u56de\u7b54\uff0c\u804a\u5929\u5728\u54ea\u91cc",
+            "ringcentral.video.toolbar.chat",
+            True,
+            True,
+            "\u804a\u5929",
+            "Presenter settings:",
+        ),
+        (
+            "\u6211\u662f\u65b0\u624b\uff0c\u7f51\u7edc\u8d28\u91cf",
+            "ringcentral.video.top.network-quality",
+            True,
+            True,
+            "Network quality",
+            "Presenter settings:",
+        ),
+    ],
+)
+def test_chinese_presenter_meta_modifiers_do_not_steal_ringcentral_intents(
+    question: str,
+    expected_entrypoint_id: str | None,
+    expected_can_operate: bool,
+    expected_interrupt: bool,
+    expected_answer: str,
+    unexpected_answer: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(language="zh"),
+    )
+
+    assert response.entrypoint_id == expected_entrypoint_id
+    assert response.can_operate is expected_can_operate
+    assert (create_question_interrupt_step(package, response) is not None) is (
+        expected_interrupt
+    )
+    assert expected_answer in response.answer_text
+    assert unexpected_answer not in response.answer_text
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "\u5b89\u5168",
+        "\u9690\u79c1",
+        "\u72b6\u6001",
+        "\u786e\u8ba4",
+    ],
+)
+def test_chinese_bare_safety_words_do_not_match_presenter_meta_or_security(
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(language="zh"),
+    )
+
+    assert response.entrypoint_id is None
+    assert response.can_operate is False
+    assert create_question_interrupt_step(package, response) is None
+    assert not response.answer_text.startswith("Presenter settings:")
+    assert "\u52a0\u5bc6\u72b6\u6001" not in response.answer_text
+
+
+def test_chinese_presenter_meta_mojibake_does_not_match() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+    mojibake = "\u8bf7\u7528\u4e2d\u6587\u56de\u7b54".encode("utf-8").decode(
+        "cp1252",
+        errors="ignore",
+    )
+
+    response = answer_question(
+        package=package,
+        question=mojibake,
+        voice=PresenterVoiceSettings(language="zh"),
+    )
+
+    assert response.entrypoint_id is None
+    assert response.can_operate is False
+    assert create_question_interrupt_step(package, response) is None
     assert not response.answer_text.startswith("Presenter settings:")
 
 

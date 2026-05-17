@@ -41,6 +41,47 @@ Choose the smallest artifact that makes the next cycle safer or more useful.
 | Reusable maintenance guidance | Repo knowledge doc | Lessons apply across cycles but should not alter runtime behavior. | Path/content checks, diff check, staged-file review. |
 | Potential future agent behavior | Skill candidate section | The guidance may later become a Codex skill, but it is not ready or approved. | Candidate is repo-local text only with graduation criteria. |
 
+## Continuous Optimization Cycle Protocol
+
+The main session owns cycle orchestration: choose the scope, dispatch subagent
+lenses, reconcile disagreements, integrate changes, run final verification,
+stage explicit files, verify the cached diff, and create the cycle commit.
+
+Subagents own lenses, not integration:
+
+- Demand analysis defines user/operator value and non-goals.
+- Technical scan or development maps source boundaries, test targets, and implementation risk.
+- Risk or test review checks safety, privacy, verification evidence, and staging scope.
+- Experience/lessons captures reusable prompts and next-cycle candidates.
+
+Handoffs under `docs/agent-handoffs/` are the durable coordination medium for
+those lenses. Treat them as cycle-local evidence of what was considered, not as
+evergreen truth. Handoffs can explain why a decision was made, but durable docs
+should link to current source, tests, runbooks, or evidence indexes.
+
+Every completed optimization cycle should end with one narrow commit after
+review. Discovery-only cycles may commit only handoff/docs artifacts, but they
+still use the same staging discipline. Do not install Codex home skills, change
+runtime presenter behavior, update package YAML, or claim live RingCentral
+acceptance from a maintenance-playbook cycle.
+
+Focused checks are useful during development, but they do not replace the final gate.
+Before every commit, run the full verification appropriate to the current repo baseline:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q
+.\.venv\Scripts\python.exe -m ruff check .
+.\.venv\Scripts\python.exe -m mypy src tests
+git diff --cached --check
+git diff --cached -- .coverage
+git diff --cached --stat
+git diff --cached --name-only
+```
+
+`.coverage` is local generated test output in this workspace. Keep it unstaged
+unless a future cycle explicitly owns coverage artifact changes and documents why
+that binary file belongs in the commit.
+
 ## RingCentral Video Maintenance Rules
 
 - Keep safety routing precise: Q&A-first, answer-only, blocked, observed, repo-tested, and accepted are different states.

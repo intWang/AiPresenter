@@ -1435,6 +1435,51 @@ def test_ringcentral_knowledge_docs_preserve_evidence_boundaries() -> None:
         assert "dry run proves live acceptance" not in normalized
 
 
+def test_ai_presenter_maintenance_playbook_preserves_optimization_protocol() -> None:
+    playbook_text = Path("docs/knowledge/ai-presenter-maintenance.md").read_text(
+        encoding="utf-8"
+    )
+
+    for phrase in (
+        "Use this playbook before choosing the next AiPresenter optimization artifact",
+        (
+            "This is not a runtime presenter skill, package fact source, live "
+            "RingCentral acceptance log, or Codex home skill"
+        ),
+        "Choose the smallest artifact that makes the next cycle safer or more useful",
+        "## Continuous Optimization Cycle Protocol",
+        "The main session owns cycle orchestration",
+        "Subagents own lenses, not integration",
+        "Handoffs under `docs/agent-handoffs/` are the durable coordination medium",
+        "Every completed optimization cycle should end with one narrow commit",
+        "Focused checks are useful during development, but they do not replace the final gate",
+        "git diff --cached -- .coverage",
+        "Lessons apply across cycles but should not alter runtime behavior",
+        "Candidate is repo-local text only with graduation criteria",
+        "Treat runbook checkboxes as procedure, not acceptance evidence",
+        (
+            "Handoffs can explain why a decision was made, but durable docs should link "
+            "to current source, tests, runbooks, or evidence indexes"
+        ),
+        "Always prove `.coverage` is not staged before commit",
+        (
+            "Promote a candidate only when the guidance has proven reusable, the repository "
+            "can verify it, and the user explicitly wants active skill behavior"
+        ),
+    ):
+        assert phrase in playbook_text
+
+    normalized = " ".join(playbook_text.split()).casefold()
+    for forbidden in (
+        "maintenance playbook changes runtime behavior",
+        "repo-tested means accepted",
+        "handoffs are evergreen truth",
+        "install codex skills for normal aipresenter cycles",
+        "checklist is acceptance evidence",
+    ):
+        assert forbidden not in normalized
+
+
 def test_ringcentral_knowledge_docs_are_registered_in_navigation_indexes() -> None:
     knowledge_dir = Path("docs/knowledge/ringcentral-video")
     source_text = (knowledge_dir / "source-index.md").read_text(encoding="utf-8")

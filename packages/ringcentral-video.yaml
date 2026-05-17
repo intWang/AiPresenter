@@ -1701,6 +1701,11 @@ qa:
   - ringcentral.video.toolbar.share
 - question: How can I bring people into the meeting?
   localizedQuestions:
+    en:
+    - Read the invite link
+    - Invite John
+    - Send the invite
+    - Who can I invite?
     es:
     - ¿Cómo puedo invitar a otras personas a la reunión?
     ja:
@@ -1709,8 +1714,8 @@ qa:
     - 怎么邀请参会人入会
     - 我是第一个人怎么邀请同事入会
     - 怎么复制会议邀请
-  answer: Use Invite to add coworkers or copy meeting details. The presenter should avoid reading private invite
-    links aloud unless explicitly requested.
+  answer: Use Invite to add coworkers or copy meeting details. Do not read private invite links, names, emails, or
+    suggestions, and do not send invites unless the user explicitly asks and the visible content is verified.
   localizedAnswers:
     es: Usa Invite para agregar compañeros o copiar los detalles de la reunión. El presenter no debe leer enlaces
       privados, correos, nombres ni sugerencias de invitación salvo que el usuario lo pida explícitamente y el contenido
@@ -1719,6 +1724,28 @@ qa:
     zh: 如果会议里只有你，可以用 Add coworkers；在工具栏里也可以用 Invite 添加同事或复制会议邀请。Presenter 不要朗读私人邀请链接、邮箱、姓名或建议列表，除非用户明确要求并且内容已验证。
   relatedEntrypointIds:
   - ringcentral.video.toolbar.invite
+- question: How should AiPresenter handle meeting IDs and links safely?
+  localizedQuestions:
+    en:
+    - Copy meeting link
+    - Can you read the meeting ID?
+    es:
+    - ¿Cómo debe manejar AiPresenter los ID y enlaces de reunión?
+    ja:
+    - 会議 ID やリンクを安全に扱うにはどうすればいいですか
+    zh:
+    - 怎么安全处理会议号和会议链接
+  answer: Meeting IDs and links are private meeting details. AiPresenter can explain where they are, but should not
+    copy, read aloud, or expose exact IDs, links, dial-in details, or host information unless the user explicitly asks
+    and the visible content is verified.
+  localizedAnswers:
+    es: Los ID y enlaces de reunión son detalles privados. AiPresenter puede explicar dónde están, pero no debe copiar,
+      leer en voz alta ni exponer ID, enlaces, datos de marcación o información del host salvo que el usuario lo pida
+      explícitamente y el contenido visible esté verificado.
+    ja: 会議 ID やリンクは非公開の会議情報です。AiPresenter は場所を説明できますが、ユーザーが明示的に求め、表示内容が確認されている場合を除き、正確な ID、リンク、ダイヤルイン情報、ホスト情報をコピーしたり読み上げたり公開したりしません。
+    zh: 会议号和会议链接属于私人会议详情。AiPresenter 可以说明它们在哪里，但除非用户明确要求且可见内容已验证，不要复制、朗读或暴露准确的会议号、链接、拨入信息或主持人信息。
+  relatedEntrypointIds:
+  - ringcentral.video.top.meeting-info
 - question: Can the presenter read meeting messages or participant names?
   localizedQuestions:
     es:

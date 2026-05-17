@@ -691,6 +691,59 @@ def test_ringcentral_localized_invite_qa_returns_chinese_answer_and_stays_non_op
     assert "不要朗读" in response.answer_text
 
 
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Read the invite link",
+        "Invite John",
+        "Send the invite",
+        "Who can I invite?",
+    ],
+)
+def test_ringcentral_english_invite_privacy_questions_stay_qa_first(
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(),
+    )
+
+    assert response.entrypoint_id == "ringcentral.video.toolbar.invite"
+    assert response.can_operate is False
+    assert "private invite links" in response.answer_text
+    assert "send invites" in response.answer_text
+    assert "Invite participants:" not in response.answer_text
+    assert create_question_interrupt_step(package, response) is None
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Copy meeting link",
+        "Can you read the meeting ID?",
+    ],
+)
+def test_ringcentral_english_meeting_info_privacy_questions_stay_qa_first(
+    question: str,
+) -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question=question,
+        voice=PresenterVoiceSettings(),
+    )
+
+    assert response.entrypoint_id == "ringcentral.video.top.meeting-info"
+    assert response.can_operate is False
+    assert "Meeting IDs and links are private meeting details" in response.answer_text
+    assert "Meeting information:" not in response.answer_text
+    assert create_question_interrupt_step(package, response) is None
+
+
 def test_ringcentral_localized_audio_video_readiness_qa_returns_chinese_answer() -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
 
@@ -2392,7 +2445,6 @@ def test_ringcentral_japanese_audio_troubleshooting_question_stays_qa_with_alias
         "Meeting information の場所はどこですか",
         "会議詳細の入口はどこですか",
         "\u4f1a\u8bae\u53f7\u5728\u54ea\u91cc",
-        "\u4f1a\u8bae\u94fe\u63a5",
     ],
 )
 def test_meeting_info_privacy_questions_are_answer_only(question: str) -> None:
@@ -2417,6 +2469,22 @@ def test_meeting_info_privacy_questions_are_answer_only(question: str) -> None:
     assert "https://" not in response.answer_text
     assert "ringcentral.com" not in response.answer_text
     assert "123456789" not in response.answer_text
+
+
+def test_chinese_meeting_link_short_question_uses_privacy_qa() -> None:
+    package = load_material_package(Path("packages/ringcentral-video.yaml"))
+
+    response = answer_question(
+        package=package,
+        question="\u4f1a\u8bae\u94fe\u63a5",
+        voice=PresenterVoiceSettings(language="zh"),
+    )
+
+    assert response.entrypoint_id == "ringcentral.video.top.meeting-info"
+    assert response.can_operate is False
+    assert "\u79c1\u4eba\u4f1a\u8bae\u8be6\u60c5" in response.answer_text
+    assert "Meeting information:" not in response.answer_text
+    assert create_question_interrupt_step(package, response) is None
 
 
 @pytest.mark.parametrize(

@@ -565,6 +565,21 @@ def test_localization_report_outputs_ringcentral_chinese_coverage() -> None:
     assert "Loaded profile" not in result.stdout
 
 
+def test_localization_report_explains_readiness_boundaries() -> None:
+    result = CliRunner().invoke(
+        app,
+        ["localization-report", "--package", "ringcentral-video", "--language", "es"],
+    )
+
+    assert result.exit_code == 0
+    assert "Readiness boundary:" in result.stdout
+    assert "This report checks package localization text only." in result.stdout
+    assert "Use --language with voices, doctor, demo, or controller" in result.stdout
+    assert "Live RingCentral acceptance requires a dated acceptance run." in (
+        result.stdout
+    )
+
+
 def test_localization_report_outputs_japanese_demo_and_qa_coverage() -> None:
     result = CliRunner().invoke(
         app,

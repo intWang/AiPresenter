@@ -179,6 +179,14 @@ def render_localization_status_lines(report: LocalizationStatusReport) -> list[s
                 f"{report.entrypoint_purposes_present}/{report.entrypoint_total} entrypoints"
             ),
             "",
+            "Readiness boundary:",
+            "- This report checks package localization text only.",
+            (
+                "- Use --language with voices, doctor, demo, or controller "
+                "for runtime voice checks."
+            ),
+            "- Live RingCentral acceptance requires a dated acceptance run.",
+            "",
             (
                 "Localization report: "
                 f"{report.demo_localized_steps}/{report.demo_total_steps} demo steps, "

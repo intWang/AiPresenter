@@ -582,6 +582,18 @@ def test_ringcentral_french_seed_qa_aliases_and_lifecycle_boundary_are_present()
     assert "presenter runtime does not support `--language fr`" in normalized_lifecycle_text
 
 
+def test_language_lifecycle_prioritizes_english_and_chinese_over_french() -> None:
+    lifecycle_text = Path("docs/knowledge/language-lifecycle.md").read_text(
+        encoding="utf-8"
+    )
+    normalized_lifecycle_text = " ".join(lifecycle_text.split())
+
+    assert "English and Chinese are the active optimization priority" in normalized_lifecycle_text
+    assert "deepen authored English and Chinese narration" in normalized_lifecycle_text
+    assert "do not continue French expansion by default" in normalized_lifecycle_text
+    assert "only revisit French when the user explicitly asks for it" in normalized_lifecycle_text
+
+
 def test_ringcentral_spanish_seed_qa_and_aliases_are_present() -> None:
     package = load_material_package(Path("packages/ringcentral-video.yaml"))
     item = next(qa for qa in package.qa if qa.question == "How do I protect my real background?")

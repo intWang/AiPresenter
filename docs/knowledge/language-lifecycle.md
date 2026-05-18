@@ -4,6 +4,27 @@ Date: 2026-05-16
 
 This note defines the difference between package-local language coverage and runtime presenter support. It exists because a language can have package text, Q&A, and passing localization reports before AiPresenter can safely run or speak that language in a live demo.
 
+## Current Optimization Priority
+
+As of 2026-05-18, English and Chinese are the active optimization priority.
+Future language cycles should deepen authored English and Chinese narration,
+Q&A, question matching, voice readiness, controller behavior, and RingCentral
+Video acceptance evidence before adding more low-priority languages.
+
+- English remains the source and default runtime language. Prioritize polished
+  demo scripts, operator-facing copy, RingCentral product knowledge, and
+  acceptance evidence.
+- Chinese is the primary non-English runtime language. Prioritize natural
+  authored Chinese narration, Chinese question input, Chinese safety Q&A,
+  `windows-sapi-zh` readiness, OpenAI speech behavior, and parity with English
+  safety boundaries.
+- French is a low-priority package-local seed kept for boundary coverage. The
+  rule is: do not continue French expansion by default; only revisit French
+  when the user explicitly asks for it.
+- Spanish and Japanese should be maintained at their current documented support
+  levels, but they are not the default next optimization focus unless the user
+  redirects priorities.
+
 ## Current Language State Matrix
 
 This matrix separates package-localization complete status, runtime presenter
@@ -197,6 +218,11 @@ presenter language:
 
 ## Future Cycle Rules
 
+- Prioritize English and Chinese deepening over new language expansion unless
+  the user explicitly redirects the language roadmap.
+- Do not choose French package-local coverage as a default next slice; keep the
+  existing French seed as boundary documentation unless a user request reopens
+  it.
 - Use `--localization-language` for package coverage checks when the language may not be runtime-supported.
 - Use `--language` for runtime presenter voice selection.
 - Do not describe a language as runnable by the presenter, ready for voice output, ready for live demos, or accepted because package localization is complete.
